@@ -139,7 +139,7 @@ Still everybody can go home after six hours. However, we encounter another probl
 Paint_Shop += red_paint + 2 << green_paint
 ```
 
-![](https://github.com/timnon/pyschedule/blob/master/pics/bike-changeover-cost.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-changeover-cost.png)
 
 To avoid the cleaning, the red painting is now scheduled after the green painting. Bob will now have to stay in the paint shop for eight hours, so they want to plan for a joint lunch between the third and the fifth working hour:
 
