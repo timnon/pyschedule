@@ -2,7 +2,7 @@
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/gantt.png)
 
-pyschedule is the easiest way to match tasks with resources, period. It covers problems such as ffow- and job-shop scheduling, travelling salesman, vehicle routing with time windows, and many more combinations of theses. Install it with pip:
+pyschedule is the easiest way to match tasks with resources, period. It covers problems such as flow- and job-shop scheduling, travelling salesman, vehicle routing with time windows, and many more combinations of theses. Install it with pip:
 
 ```
 pip install pyschedule
@@ -53,12 +53,17 @@ This should show you the following gantt chart:
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
-For more details take a look at the following example or go to the examples folder.
+pyschedule solves scheduling problems so far using either CPLEX or GLPK via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. You can select GLPK using:
 
+```
+solvers.pulp().solve(S,kind='GLPK')
+```
+
+For more details go to the examples folder above or have a look at the following example:
 
 #Alice and Bob optimize their bike paint shop with pyschedule
 
-Alice and Bob are running a nice paint shop for bikes where they pimp bikes with fresh colors. Today they have to paint a green and a red bike. For starters they create a new scenarion using pyschedules
+Alice and Bob are running a nice paint shop for bikes where they pimp bikes with fresh colors. Today they have to paint a green and a red bike. For starters they create a new scenario using pyschedule:
 ```
 from pyschedule import *
 S = pyschedule.Scenario('bike paint shop')
@@ -128,7 +133,7 @@ S += green_pre > 2
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-later.png)
 
-Still everybody can go home after six hours. However, we encounter another problem, it is actually quite hard to switch the paint shop from red to green because the red color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that if task red_paint is scheduled before task red_green, then there should be at least a gap of two hours in between them:
+Still everybody can go home after six hours. However, we encounter another problem, it is actually quite hard to switch the paint shop from red to green because the red color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that there needs to be a break of two hours if the green painting follows the red one:
 
 ```
 Paint_Shop += red_paint + 2 << green_paint
