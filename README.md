@@ -1,5 +1,6 @@
 # pyschedule - fast forward resource-constrained scheduling in python
 
+![](https://github.com/timnon/pyschedule/blob/master/pics/gantt.png)
 
 pyschedule is the easiest way to match tasks with resources, period. It covers problems such as ffow- and job-shop scheduling, travelling salesman, vehicle routing with time windows, and many more combinations of theses. Install it with pip:
 
