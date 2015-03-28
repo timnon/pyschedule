@@ -27,7 +27,7 @@ wash += Alice | Bob
 clean += Alice | Bob
 
 # solve and print solution
-solvers.pulp().solve(S)
+solvers.pulp().solve(S,kind='CPLEX')
 print S.solution()
 ```
 
