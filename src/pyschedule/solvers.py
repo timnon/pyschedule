@@ -108,18 +108,23 @@ class pulp(object) :
 		# generate a precedence contraint, optionally for a resource R
 		def get_prec_cons(P,R=None) :
 			cons = list()
-			if P.kind == '<' :
-				con = sum([ x[str(T)]*P[T]        for T in P if isinstance(T,Task) and P[T] <  0 ]) + \
+			if P.kind == '<':
+				con = sum([ x[str(T)]*P[T]          for T in P if isinstance(T,Task) and P[T] <  0 ]) + \
 		                      sum([ x[str(T)]*P[T]+T.length for T in P if isinstance(T,Task) and P[T] >= 0 ]) + \
-		                      sum([      P[T]          for T in P if T == 1 ]) <= 0
+		                      sum([      P[T]               for T in P if T == 1 ]) <= 0
+				cons.append(con)
+			elif P.kind == '<=' :
+				con = sum([ x[str(T)]*P[T]          for T in P if isinstance(T,Task) and P[T] <  0 ]) + \
+		                      sum([ x[str(T)]*P[T]+T.length for T in P if isinstance(T,Task) and P[T] >= 0 ]) + \
+		                      sum([      P[T]               for T in P if T == 1 ]) == 0
 				cons.append(con)
 			elif P.kind == '<<' or P.kind == '!=' :
 				z = pulp.LpVariable((P.left,P.right,R),0,1,cat=pulp.LpInteger)
-				con1 = sum([ x[str(T)]*P[T]         for T in P if isinstance(T,Task) and P[T] <  0 ]) + \
-		                      sum([ x[str(T)]*P[T]+T.length for T in P if isinstance(T,Task) and P[T] >= 0 ]) + \
-		                      sum([      P[T]          for T in P if T == 1 ]) <= z*T_MAX
-				con2 = sum([ -x[str(T)]*P[T]          for T in P if isinstance(T,Task) and P[T] >  0 ]) + \
-		                      sum([  -x[str(T)]*P[T]+T.length for T in P if isinstance(T,Task) and P[T] <= 0 ]) <= (1-z)*T_MAX
+				con1 = sum([ x[str(T)]*P[T]            for T in P if isinstance(T,Task) and P[T] <  0 ]) + \
+		                       sum([ x[str(T)]*P[T]+T.length   for T in P if isinstance(T,Task) and P[T] >= 0 ]) + \
+		                       sum([      P[T]                 for T in P if T == 1 ]) <= z*T_MAX
+				con2 = sum([ -x[str(T)]*P[T]           for T in P if isinstance(T,Task) and P[T] >  0 ]) + \
+		                       sum([  -x[str(T)]*P[T]+T.length for T in P if isinstance(T,Task) and P[T] <= 0 ]) <= (1-z)*T_MAX
 				cons += [con1,con2]
 			else :
 				print('ERROR: precedence '+str(P)+' cant be interpreted')

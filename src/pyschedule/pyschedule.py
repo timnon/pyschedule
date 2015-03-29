@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+from __future__ import print_function
+
+
 '''
 Copyright 2015 Tim Nonner
 
@@ -25,13 +28,10 @@ python package to formulate and solve resource-constrained
 scheduling problems
 """
 
-
 #TODO: time in str and datetime
 #TODO: add global unit
 #TODO: set start like T.start = 4 which will use this as a constraint
 
-
-from __future__ import print_function
 import sys, hashlib
 from collections import OrderedDict
 
@@ -232,6 +232,12 @@ class Task(SchedElement) :
 	def __gt__(self,other) :
 		return TaskAffine(self) > other
 
+	def __le__(self,other) :
+		return TaskAffine(self) <= other
+
+	def __ge__(self,other) :
+		return TaskAffine(self) <= other
+
 	def __ne__(self,other) :
 		return TaskAffine(self) != other
 
@@ -273,6 +279,20 @@ class TaskAffine(SchedElementAffine) :
 			return self > TaskAffine(other)
 		return Precedence(TaskAffine(self),'>',TaskAffine(other))
 
+	def __le__(self,other) :
+		if isiterable(other) :
+			return [ self <= x for x in other ]
+		if not isinstance(other,type(self)) :
+			return self <= TaskAffine(other)
+		return Precedence(TaskAffine(self),'<=',TaskAffine(other))
+
+	def __ge__(self,other) :
+		if isiterable(other) :
+			return [ self >= x for x in other ]
+		if not isinstance(other,type(self)) :
+			return self >= TaskAffine(other)
+		return Precedence(TaskAffine(self),'>=',TaskAffine(other))
+
 	def __ne__(self,other) :
 		if isiterable(other) :
 			return [ self != x for x in other ]
@@ -305,12 +325,13 @@ class Precedence(TaskAffine) :
 			left = TaskAffine(left)
 		if not isinstance(right,TaskAffine) :
 			right = TaskAffine(right)
-		if not kind in {'<','>','<<','>>','!='} :
+		if not kind in {'<','>','<<','>>','<=','>=','!='} :
 			raise Exception('ERROR: '+str(kind)+' does not describe a precedence')
 		if kind == '>>' or kind == '>' :
 			left, right = right, left
 			if kind == '>>' : kind = '<<'
 			if kind == '>' : kind = '<'
+			if kind == '>=' : kind = '<='
 		self.left  = left
 		self.right = right
 		self.kind = kind

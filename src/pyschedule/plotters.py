@@ -87,7 +87,7 @@ class gantt_matplotlib(object) :
 		# to its connected component
 		edges = [ (str(T),str(T)) for T in tasks ]
 		if color_prec_groups :
-			edges += [ (str(T),str(T_)) for P in S.precs if P.kind == '<' \
+			edges += [ (str(T),str(T_)) for P in S.precs if P.kind == '<' or P.kind == '<='\
 		                   for T in P.tasks() for T_ in P.tasks() \
                                    if T in tasks and T_ in tasks ]
 		comps = get_connected_components(edges)
