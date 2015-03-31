@@ -339,7 +339,7 @@ class Precedence(TaskAffine) :
 		#TODO: add many more checkers for precedences
 		nr_tasks = len([ key for key in self if isinstance(key,Task) ])
 		if nr_tasks > 2 :
-			raise Exception('ERROR: too many tasks in precedence ' + str(left) + str(kind) + str(right))
+			raise Exception('ERROR: too many tasks in precedence ' + str(self))
 
 	def tasks(self) :
 		return set([ T for T in self if isinstance(T,Task) ])

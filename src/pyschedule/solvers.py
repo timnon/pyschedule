@@ -35,20 +35,20 @@ import time
 # asdfdsfsdffdasfdfsdfdsfdfadsf
 class pulp(object) :
 	"""
-	An interface to the pulp MIP solver package, supported are CPLEX and GLPK
+	An interface to the pulp MIP solver package, supported are CPLEX, GLPK, CBC
 	"""
 
 	def __init__(self) :
 		pass
 
-	def solve(self,scenario,kind='CPLEX',msg=0,lp_filename=None) :
+	def solve(self,scenario,kind='CBC',msg=0,lp_filename=None) :
 		"""
 		Solves the given scenario using a MIP via package pulp, the solution will
 		be written to the given scenario
 
 		Args:
 			scenario:    scenario to solve
-			kind:        MIP-solver to use: CPLEX, GLPK
+			kind:        MIP-solver to use: CPLEX, GLPK, CBC
 			msg:         0 means no feedback (default) during computation, 1 means feedback
 			lp_filename: if set, then a .lp file will be written here
 	
@@ -169,6 +169,8 @@ class pulp(object) :
 			prob.solve(pulp.CPLEX(msg=msg))
 		elif kind == 'GLPK' :
 			prob.solve(pulp.GLPK(msg=msg))
+		elif kind == 'CBC' :
+			prob.solve(pulp.PULP_CBC_CMD(msg=msg))
 		else :
 			raise Exception('ERROR: solver not known to pulp')
 
@@ -183,7 +185,6 @@ class pulp(object) :
 		else :
 			if msg : print ('ERROR: no solution found')
 			return 1
-
 
 		return 0
 	

@@ -27,7 +27,7 @@ wash += Alice | Bob
 clean += Alice | Bob
 
 # solve and print solution
-solvers.pulp().solve(S,kind='CPLEX')
+solvers.pulp().solve(S)
 print S.solution()
 ```
 
@@ -53,10 +53,10 @@ This should show you the following gantt chart:
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
-pyschedule solves scheduling problems so far using either CPLEX or GLPK via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. You can select GLPK using:
+pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which is part of pulp but pretty slow. For instance, you can select CPLEX using:
 
 ```
-solvers.pulp().solve(S,kind='GLPK')
+solvers.pulp().solve(S,kind='CPLEX')
 ```
 
 For more details go to the examples folder above or have a look at the following example:
