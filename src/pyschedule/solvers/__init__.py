@@ -20,8 +20,15 @@ specific language governing permissions and limitations
 under the License.
 '''
 
+"""
+This module contains solvers that accept the pyschedule scenario format
+as input. Each solver should correspond to a class which offers the
+method "solve" that takes a scenario as minimal input. If a solution
+exists, then a 0 should be returned, otherwise a 1. The optimal solution
+should be directly written to the passed scenario
+"""
 
-from .pyschedule import *
-import solvers
-import plotters
-__doc__ = pyschedule.__doc__
+import pulp as pulp
+import cpoptimizer as cpoptimier
+#import experimental as experimental
+

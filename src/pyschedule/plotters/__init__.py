@@ -21,7 +21,13 @@ under the License.
 '''
 
 
-from .pyschedule import *
-import solvers
-import plotters
-__doc__ = pyschedule.__doc__
+"""
+This module contains plotters that accept the pyschedule scenario format
+as input. Each plotter should correspond to a class which offers the
+method "plot" that takes a scenario as minimal input. If the scenario
+has been solved beforehand, then a viualization should be returnd (in some way).
+"""
+
+
+import matplotlib as matplotlib
+
