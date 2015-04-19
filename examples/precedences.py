@@ -14,5 +14,5 @@ S += MakeSpan > { I1, I2, I3, I4 }
 
 S += I1 < I2, I2 < I3, I3 < I4
 
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-plotters.gantt_matplotlib().plot(S)
+solvers.pulp.solve(S,msg=1)
+plotters.matplotlib.plot(S)

@@ -18,5 +18,5 @@ S += [ T[(i,j-1)] < T[(i,j)] for i in range(n) for j in range(1,n) ]
 for i in range(n) :
 	R[i] += [ T[((i+j) % n,j)] for j in range(n) ]
 
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-plotters.gantt_matplotlib().plot(S,color_prec_groups=True)
+solvers.pulp.solve(S,msg=1)
+plotters.matplotlib.plot(S,color_prec_groups=False)

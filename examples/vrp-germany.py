@@ -279,7 +279,6 @@ Worms 49.37 8.21\n\
 Wuppertal 51.16 7.12\n\
 Wurzburg 49.46 9.55'
 
-
 # euclidean distance computation
 def eucl_dist(orig,dest) :
 	return math.sqrt( (orig[0]-dest[0])**2 + (orig[1]-dest[1])**2 )
@@ -287,86 +286,66 @@ def eucl_dist(orig,dest) :
 # get cities table
 cities_table = [ row.split(' ') for row in cities.split('\n') ]
 cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
-n = 10 # use only ten cities to test, more cities take a lone time #len(cities_table)
-capacity = 10#n/2.0 # each vehicle can visit half of the cities
+n = 10# use only ten cities to test, more cities take a lone time #len(cities_table)
+capacity = 5 #n/2.0 # each vehicle can visit half of the cities
 coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
 cities = list(coords)
 
 # add coordinates of vitual start and end at the first city in list
 start_city = cities_table[0][0]
-coords['start_blue'] = coords[start_city]
-coords['end_blue'] = coords[start_city]
-coords['start_red'] = coords[start_city]
+coords['start'] = coords[start_city]
 coords['end_red'] = coords[start_city]
+coords['end_blue'] = coords[start_city]
+
+large_number = 1000
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
 S = Scenario('VRP Germany')
 T = { city : S.Task(city) for city in cities }
 
-# create read and blue vehicle as resource and start and end tasks thereof
+# resources
 # capacity + 2 to include start and end task
 R_blue, R_red = S.Resource('blue',capacity=capacity+2), S.Resource('red',capacity=capacity+2)
-T['start_blue'], T['end_blue'] = S.Task('start_blue'), S.Task('end_blue')
-T['start_red'], T['end_red'] = S.Task('start_red'), S.Task('end_red')
-# start before end
-S += T['start_blue'] < T['end_blue']
-S += T['start_red'] < T['end_red']
-# assign vehicle resources
-T['start_blue'] += R_blue
-T['end_blue'] += R_blue
-T['start_red'] += R_red
-T['end_red'] += R_red
 
-# each city can be visited by either the red or the blue vehicle
+# tasks
+T['start'] = S.Task('start')
+T['end_red'], T['end_blue'] = S.Task('end_red'), S.Task('end_blue')
+
+# precedences
+S += T['start'] < { T[city] for city in cities }
+S += T['end_blue'] > { T[city] for city in cities }
+S += T['end_blue'] > { T[city] for city in cities }
+S += T['start'] < T['end_red'], T['start'] < T['end_blue'], T['end_red'] < T['end_blue']
+S += T['end_blue'] > { T[city] for city in cities }
+
+# resource assignement
+T['start'] += R_blue + R_red
+T['end_red'] += R_red
+T['end_blue'] += R_blue
 for city in cities : T[city] += R_blue | R_red
 
-# flow-time objective: sum of difference between starts and ends
-S += ( T['end_blue'] - T['start_blue'] ) + ( T['end_red'] - T['start_red'] ) 
-
-# add additional makespan penalizer to avoid having start and end collapse
-MakeSpan = S.Task('MakeSpan')
-S += MakeSpan > { T[city] for city in coords }
-large_number = 1000
-S += MakeSpan > large_number/2
-S += MakeSpan*large_number
+# distances
+S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
+       for city in cities for city_ in cities if city != city_ ]
+S += [ T['start'] + int(eucl_dist(coords['start'],coords[city_])) << T[city] for city in cities ]
+S += [ T[city] + int(eucl_dist(coords[city],coords['end_blue'])) << T['end_blue'] for city in cities ]
+S += [ T[city] + int(eucl_dist(coords[city],coords['end_red'])) << T['end_red'] for city in cities ]
 
 
-# distances between cities for blue vehicle
-R_blue += [ T[city] + eucl_dist(coords[city],coords[city_]) << T[city_] \
-            for city in cities for city_ in cities if city != city_ ]
-# distances for blue vehicle for valid connections
-R_blue += [ T[city] + eucl_dist(coords[city],coords['end_blue']) << T['end_blue'] for city in cities ]
-R_blue += [ T['start_blue'] + eucl_dist(coords['start_blue'],coords[city]) << T[city] for city in cities ]
-# distances for blue vehicle for valid connections
-R_blue += [ T[city] + large_number << T['start_blue'] for city in cities ]
-R_blue += [ T['end_blue'] + large_number << T[city] for city in cities ]
+S += [ T['end_blue'] + large_number << T[city] for city in cities ]
+S += [ T['end_red'] + large_number << T[city] for city in cities ]
 
+# objective
+S += T['end_red'] + T['end_blue']
 
-# distances between cities for red vehicle
-R_red +=  [ T[city] + eucl_dist(coords[city],coords[city_]) << T[city_] \
-            for city in cities for city_ in cities if city != city_ ]
-# distances for red vehicle for valid connections
-R_red += [ T[city] + eucl_dist(coords[city],coords['end_red']) << T['end_red'] for city in cities ]
-R_red += [ T['start_red'] + eucl_dist(coords['start_red'],coords[city]) << T[city] for city in cities ]
-# distances for red vehicle for valid connections
-R_red += [ T[city] + large_number << T['start_red'] for city in cities ]
-R_red += [ T['end_red'] + large_number << T[city] for city in cities ]
-
-
-# add some optional time windows
-S += [ T[city] < 20 for city in cities[0:len(cities):2] ]
-S += [ T[city] > 20 for city in cities[1:len(cities):2] ]
-
-
-
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-# do not plot MakeSpan penalizer, only helper task
-plotters.gantt_matplotlib().plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False,hide_tasks=[MakeSpan])
+solvers.pulp.solve(S,kind='CPLEX',msg=1)
+plotters.matplotlib.plot(S,resource_height=1.0,)
 
 # plot tours
 import pylab
 sol = S.solution()
-blue_tour = [ coords[city] for (city,resource,start,end) in sol if city in coords if resource == 'blue' ]
+
+blue_tour = [ coords[city] for (city,resource,start,end) in sol if city in coords and resource == 'blue' ]
 pylab.plot([ x for x,y in blue_tour ],[ y for x,y in blue_tour],linewidth=2.0,color='blue')
 red_tour = [ coords[city] for (city,resource,start,end) in sol if city in coords if resource == 'red' ]
 pylab.plot([ x for x,y in red_tour ],[ y for x,y in red_tour],linewidth=2.0,color='red')
@@ -376,19 +355,6 @@ for city in cities : pylab.text(coords[city][0], coords[city][1], city,color='bl
 
 pylab.title('VRP Germany')
 pylab.show()
-
-
-
-
-	
-
-
-
-
-
-
-
-
 
 
 

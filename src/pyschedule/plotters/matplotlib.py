@@ -67,6 +67,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 		return comps
 
 	tasks = [ T for T in S.tasks() if T not in hide_tasks ] #TODO: upload since hide_tasks might contain string
+	tasks = S.tasks()
 	
 	# get connected components dict for coloring
 	# each task is mapping to an integer number which corresponds

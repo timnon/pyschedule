@@ -297,21 +297,23 @@ coords['end'] = coords[start_city]
 
 # scenario and city tasks
 S = Scenario('TSP Germany')
-T = { city : S.Task(city) for city in coords }
+T = { city : S.Task(city) for city in coords  }
+R = S.Resource('car')
 
+for city in coords :
+	T[city] += R
 
 # make sure that the tour start and ends at start_city
 S += T['start'] < { T[city] for city in coords if city != 'start' }
 S += T['end'] > { T[city] for city in coords if city != 'end' }
 
-
 # add euclidean distances as conditional precedences
-S += [ T[city] + eucl_dist(coords[city],coords[city_]) << T[city_] \
+S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in coords for city_ in coords if city != city_ ]
 
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-plotters.gantt_matplotlib().plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
+solvers.pulp.solve(S,kind='CPLEX',time_limit=120,msg=1)
+plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
 # plot tours
 import pylab
@@ -325,10 +327,6 @@ for city in cities : pylab.text(coords[city][0], coords[city][1], city,color='bl
 pylab.title('TSP Germany')
 pylab.show()
 	
-
-
-
-
 
 
 

@@ -52,5 +52,5 @@ for i in range(n) :
 	for j in range(n) :
 		T[(i,j)] += R[mach_table[i][j]-1]
 
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-plotters.gantt_matplotlib().plot(S,resource_height=100.0,show_task_labels=False,color_prec_groups=True)
+solvers.pulp.solve(S,kind='CPLEX',time_limit=30,msg=1)
+plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])

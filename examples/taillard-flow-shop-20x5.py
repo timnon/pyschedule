@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 from pyschedule import *
+import math
 
 # Taillards 20x5 flow-shop instance downloaded from
 # http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/flowshop.dir/tai20_5.txt
@@ -12,6 +13,7 @@ proc ='\
 58 56 20 85 53 35 53 41 69 13 86 72  8 49 47 87 58 18 68 28'
 
 proc_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
+#proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
 n = len(proc_table[0])
 m = len(proc_table)
 #n = 6
@@ -25,5 +27,5 @@ for i in range(n) :
 	for j in range(m) :
 		T[(i,j)] += R[j]
 
-solvers.pulp().solve(S,kind='CPLEX',msg=1,lp_filename=None)
-plotters.gantt_matplotlib().plot(S,resource_height=100.0,show_task_labels=False,color_prec_groups=True)
+solvers.pulp.solve(S,kind='CPLEX',time_limit=30,msg=1)
+plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
