@@ -46,7 +46,7 @@ pip install matplotlib
 and then you can run:
 
 ```
-plotters.gantt_matplotlib().plot(S)
+plotters.matplotlib.plot(S)
 ```
 
 This should show you the following gantt chart:
@@ -56,7 +56,7 @@ This should show you the following gantt chart:
 pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which is part of pulp but pretty slow. For instance, you can select CPLEX using:
 
 ```
-solvers.pulp().solve(S,kind='CPLEX')
+solvers.pulp.solve(S,kind='CPLEX')
 ```
 
 For more details go to the examples folder above or have a look at the following example:
@@ -111,7 +111,7 @@ Now we have the first version of our scenario, lets solve and plot it. For the u
 
 ```
 solvers.pulp().solve(S,kind='CPLEX')
-plotters.gantt_matplotlib().plot(S,color_prec_groups=True)  
+plotters.matplotlib.plot(S,color_prec_groups=True)  
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-first.png)
