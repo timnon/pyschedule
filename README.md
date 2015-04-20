@@ -12,7 +12,7 @@ This is how it works:
 
 ```
 # load pyschedule and create a scenario
-from pyschedule import *
+import pyschedule
 S = pyschedule.Scenario('hello pyschedule')
 
 # create two resources
@@ -27,8 +27,8 @@ wash += Alice | Bob
 clean += Alice | Bob
 
 # solve and print solution
-solvers.pulp().solve(S)
-print S.solution()
+pyschedule.solvers.pulp.solve(S)
+print(S.solution())
 ```
 
 The printout should look as follows:
@@ -46,7 +46,7 @@ pip install matplotlib
 and then you can run:
 
 ```
-plotters.matplotlib.plot(S)
+pyschedule.plotters.matplotlib.plot(S)
 ```
 
 This should show you the following gantt chart:
@@ -56,7 +56,7 @@ This should show you the following gantt chart:
 pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which is part of pulp but pretty slow. For instance, you can select CPLEX using:
 
 ```
-solvers.pulp.solve(S,kind='CPLEX')
+pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 ```
 
 For more details go to the examples folder above or have a look at the following example:
@@ -65,7 +65,7 @@ For more details go to the examples folder above or have a look at the following
 
 Alice and Bob are running a nice paint shop for bikes where they pimp bikes with fresh colors. Today they have to paint a green and a red bike. For starters they create a new scenario using pyschedule:
 ```
-from pyschedule import *
+import pyschedule
 S = pyschedule.Scenario('bike paint shop')
 ```
 
@@ -110,8 +110,8 @@ red_post += Alice | Bob
 Now we have the first version of our scenario, lets solve and plot it. For the use of GLPK, replace "CPLEX" by "GLPK":
 
 ```
-solvers.pulp().solve(S,kind='CPLEX')
-plotters.matplotlib.plot(S,color_prec_groups=True)  
+pyschedule.solvers.pulp.solve(S,kind='CPLEX')
+pyschedule.plotters.matplotlib.plot(S,color_prec_groups=True)  
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-first.png)
