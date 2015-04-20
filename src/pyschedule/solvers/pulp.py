@@ -40,7 +40,7 @@ def _solve_mip(mip,kind='CBC',time_limit=None,msg=0) :
 			options += ['sec',str(time_limit)]
 		mip.solve(pulp.PULP_CBC_CMD(msg=msg,options=options))
 	else :
-		raise Exception('ERROR: solver '+kind+'not known')
+		raise Exception('ERROR: solver '+kind+' not known')
 
 	if msg :
 		print('INFO: execution time for solving mip (sec) = '+str(time.time()-start_time))
@@ -181,9 +181,11 @@ class ContinuousMIP(object) :
 		self.big_m = big_m
 		self.build_mip_from_scenario(msg=msg)
 		_solve_mip(self.mip, kind=kind, time_limit=time_limit, msg=msg)
+
 		if self.mip.status != 1 :
 			if msg : print('ERROR: no solution found')
-			return None
+			#return None #TODO: problem sometimes still returned 0 when solution found
+
 		self.read_solution_from_mip(msg=msg)
 		return self.scenario
 
@@ -326,7 +328,8 @@ class DiscreteMIP(object) :
 		self.scenario = scenario
 		self.max_time_step = max_time_step
 		self.build_mip_from_scenario(msg=msg)
-		_solve_mip(self.mip,kind=kind,time_limit=time_limit,msg=msg)	
+		_solve_mip(self.mip,kind=kind,time_limit=time_limit,msg=msg)
+
 		if self.mip.status != 1 :
 			if msg : print ('ERROR: no solution found')
 			return None
