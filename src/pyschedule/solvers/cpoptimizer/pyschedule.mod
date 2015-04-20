@@ -49,6 +49,7 @@ tuple Bound {
 {Resource} Resources = ...;
 {TaskResource} TaskResources = ...;
 {Precedence} Precedences = ...;
+{Precedence} TightPrecedences = ...;
 {CondPrecedence} CondPrecedences = ...;
 {Bound} UpperBounds = ...;
 {Bound} LowerBounds = ...;

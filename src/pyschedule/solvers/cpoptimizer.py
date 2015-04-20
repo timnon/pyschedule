@@ -110,6 +110,7 @@ def solve(scenario,msg=0) :
 	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
 	f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
 	f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
+	f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
 	f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
 	f.write('UpperBounds={\n'+to_str(UpperBounds)+'\n};\n\n')
 	f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
