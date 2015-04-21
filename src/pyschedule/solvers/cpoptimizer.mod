@@ -119,7 +119,7 @@ execute DISPLAY {
 }
 
 execute {
-	var f = new IloOplOutputFile("pyschedule.out");
+	var f = new IloOplOutputFile("tmp/cpoptimizer.out");
 	for (T in Tasks)
 	{
 		 f.writeln(Intervals[T]);

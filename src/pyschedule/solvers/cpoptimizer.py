@@ -103,8 +103,11 @@ def solve(scenario,msg=0) :
 		return '\n'.join([ '<'+' '.join([ str(x) for x in row ])+'>'  \
                                   for row in l ])
 
+	if not os.path.exists(solvers_path+'/tmp') :
+		os.makedirs(solvers_path+'/tmp')
+
 	# write .dat-file
-	f = open(solvers_path+'/cpoptimizer/pyschedule.dat','w')
+	f = open(solvers_path+'/tmp/cpoptimizer.dat','w')
 	f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
 	f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
 	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
@@ -118,7 +121,7 @@ def solve(scenario,msg=0) :
 
 	# run cp-optimizer
 	start_time = time.time()
-	os.system('oplrun '+solvers_path+'/cpoptimizer/pyschedule.mod '+solvers_path+'/cpoptimizer/pyschedule.dat')
+	os.system('oplrun '+solvers_path+'/cpoptimizer.mod '+solvers_path+'/tmp/cpoptimizer.dat')
 	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
 
 	# parse output 
@@ -138,7 +141,7 @@ def solve(scenario,msg=0) :
 
 	plan = Group(ZeroOrMore(int_row)) + Group(ZeroOrMore(res_seq))
 
-	opl_plan = plan.parseFile(solvers_path+'/cpoptimizer/pyschedule.out')
+	opl_plan = plan.parseFile(solvers_path+'/tmp/cpoptimizer.out')
 
 	int_plan = opl_plan[0]
 	res_seq_plan = opl_plan[1]
