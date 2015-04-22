@@ -153,7 +153,8 @@ class Scenario(_SchedElement):
 		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
-		self.precs = list()
+		self.constraints = list()
+		#self.precs = list()
 
 	def Task(self,name,length=1) :
 		"""
@@ -217,40 +218,29 @@ class Scenario(_SchedElement):
 		for T in self.tasks() :
 			T.start = None
 
-	def precs_lax(self) :
-		return [ prec for prec in self.precs
-                         if isinstance(prec.left,Task) and isinstance(prec.right,Task) 
-                         and prec.kind == '<' and _isnumeric(prec.offset) ]
+	def precs(self) :
+		return [ C for C in self.constraints if isinstance(C,Precedence) ]
 
 	def precs_tight(self) :
-		return [ prec for prec in self.precs
-                         if isinstance(prec.left,Task) and isinstance(prec.right,Task) 
-                         and prec.kind == '<=' and _isnumeric(prec.offset) ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceTight) ]
 
 	def precs_cond(self) :
-		return [ prec for prec in self.precs
-                         if isinstance(prec.left,Task) and isinstance(prec.right,Task) 
-                         and prec.kind == '<<' and _isnumeric(prec.offset) ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
 
 	def precs_low(self) :
-		return [ prec for prec in self.precs
-                         if _isnumeric(prec.left) and isinstance(prec.right,Task)
-                         and prec.kind == '<' and prec.offset == 0 ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
 
 	def precs_up(self) :
-		return [ prec for prec in self.precs
-                         if isinstance(prec.left,Task) and _isnumeric(prec.right)
-                         and prec.kind == '<' and prec.offset == 0 ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
 			for x in other : self += x
 			return self
 
-		elif isinstance(other,_TaskConstraint) :
+		elif isinstance(other,_TaskAffineConstraint) :
 			pos_tasks = [ T for T in other if isinstance(T,Task) and other[T] >= 0 ]
 			neg_tasks = [ T for T in other if isinstance(T,Task) and other[T] < 0 ]
-
 			if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
 				raise Exception('ERROR: can only deal with simple precedences of \
 		                                 the form T1 + 3 < T2 or T1 < 3 and not '+str(other) )
@@ -263,28 +253,28 @@ class Scenario(_SchedElement):
 				left = pos_tasks[0]
 				right = neg_tasks[0]
 				if other.kind == '<' :
-					self.precs.append(Precedence(left=left,offset=offset,kind='<',right=right))
+					self.constraints.append(Precedence(left=left,offset=offset,right=right))
 				elif other.kind == '<=' :
-					self.precs.append(Precedence(left=left,offset=offset,kind='<=',right=right))
+					self.constraints.append(PrecedenceTight(left=left,offset=offset,right=right))
 				elif other.kind == '<<' :
 					shared_resources = list( set(left.resources_req.resources()) & set(right.resources_req.resources()) )
-					prec = Precedence(left=left,offset=offset,kind='<<',right=right)
+					prec = PrecedenceCond(left=left,offset=offset,right=right)
 					if not shared_resources :
 						raise Exception('ERROR: tried to add precedence '+str(prec)+' but tasks dont compete for resources')
-					self.precs.append(prec)
+					self.constraints.append(prec)
 				return self
 			elif pos_tasks and not neg_tasks :
 				left = pos_tasks[0]
 				right = -offset
-				self.precs.append(Precedence(left=left,kind='<',right=right))
+				self.constraints.append(PrecedenceUp(left=left,right=right))
 				return self
 			elif not pos_tasks and neg_tasks :
-				left = offset
-				right = neg_tasks[0]
-				self.precs.append(Precedence(left=left,kind='<',right=right))
+				left = neg_tasks[0]
+				right = offset
+				self.constraints.append(PrecedenceLow(left=left,right=right))
 				return self
 
-			raise Exception('ERROR: cannot add task constraint '+str(other)+' to scenario')
+			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
 
 		elif isinstance(other,(Task,_TaskAffine)) : #TODO: attention Precedence is also _TaskAffine
 			self.objective += other
@@ -307,10 +297,10 @@ class Scenario(_SchedElement):
 		s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
 
-		if self.precs_lax() :
+		if self.precs() :
 			# print precedences
 			s += 'PRECEDENCES:\n'
-			s += '\n'.join([ P.__repr__() for P in self.precs_lax() ]) + '\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs() ]) + '\n'
 			s += '\n'
 
 		if self.precs_tight() :
@@ -328,13 +318,13 @@ class Scenario(_SchedElement):
 		if self.precs_low() :
 			# print precedences
 			s += 'LOWER BOUNDS:\n'
-			s += '\n'.join([ P.__repr__() for P in self.bounds_low() ]) + '\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs_low() ]) + '\n'
 			s += '\n'
 
 		if self.precs_up() :
 			# print precedences
 			s += 'UPPER BOUNDS:\n'
-			s += '\n'.join([ P.__repr__() for P in self.bounds_up() ]) + '\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs_up() ]) + '\n'
 			s += '\n'
 
 		s += '##############################################\n'
@@ -408,7 +398,7 @@ class _TaskAffine(_SchedElementAffine) :
 			return [ self < x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self < _TaskAffine(other)
-		return _TaskConstraint(self-other,'<')
+		return _TaskAffineConstraint(self-other,'<')
 
 	def __gt__(self,other) :
 		if _isiterable(other) :
@@ -422,7 +412,7 @@ class _TaskAffine(_SchedElementAffine) :
 			return [ self <= x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self <= _TaskAffine(other)
-		return _TaskConstraint(self-other,'<=')
+		return _TaskAffineConstraint(self-other,'<=')
 
 	def __ge__(self,other) :
 		if _isiterable(other) :
@@ -436,7 +426,7 @@ class _TaskAffine(_SchedElementAffine) :
 			return [ self << x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self << _TaskAffine(other)
-		return _TaskConstraint(self-other,'<<')
+		return _TaskAffineConstraint(self-other,'<<')
 
 	def __rshift__(self,other) :
 		if _isiterable(other) :
@@ -447,8 +437,11 @@ class _TaskAffine(_SchedElementAffine) :
 
 
 
-class _TaskConstraint(_TaskAffine) :
-
+class _TaskAffineConstraint(_TaskAffine) :
+	"""
+	A representation of some inequality of e.g. the form T1 + T2*3 + 2 < 0
+	The inquality sign is determined by parameter kind. 
+	"""
 	def __init__(self,task_affine,kind) :
 		_TaskAffine.__init__(self)
 		self.update(_DICT_TYPE(task_affine))
@@ -456,22 +449,25 @@ class _TaskConstraint(_TaskAffine) :
 
 
 
-class Precedence(object) :
+class _Constraint(_SchedElement) :
 	"""
-	A precedence of the form T1+5<=T2 for left=T1, offset=5, kind='<=', and right=T2
-	or 8<T1 for left=8, offset=0, kind='<', and right=T1. The typing should be clear
-	from the context, e.g. precedences of the former type should be always a separate list
-	than precedences of the latter type. This makes sense since different precedences
-	are treated somewhat differenctly in any solver.
+	An arbitrary constraint
+	"""
+	def __init__(self) :
+		_SchedElement.__init__(self,name='',numeric_name_prefix='C')
 
-	Precedences should not be directly generated by via operators like <, << or <=
+
+
+class Precedence(_Constraint) :
 	"""
-	
-	def __init__(self,left=0,offset=0,kind='<',right=0) :
+	A precedence constraint of two tasks, left and right, and an offset, e.g. T1 + 3 < T2
+	"""
+	def __init__(self,left,offset,right,kind='<') :
+		_Constraint.__init__(self)
 		self.left = left
+		self.right = right
 		self.offset = offset
 		self.kind = kind
-		self.right = right
 
 	def tasks(self) :
 		return [self.left,self.right]
@@ -485,7 +481,49 @@ class Precedence(object) :
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
+		
 
+
+class PrecedenceTight(Precedence) :
+	"""
+	A tight precedence of the form T1 + 3 <= T2, where 3 is the exact distance
+	"""
+	def __init__(self,left,offset,right) :
+		Precedence(left,offset,right,kind='<=')
+
+
+
+class PrecedenceCond(Precedence) :
+	"""
+	A conditional precedence of the form T1 + 3 << T2, where 3 is the changeover cost
+	"""
+	def __init__(self,left,offset,right) :
+		Precedence.__init__(left,offset,right,kind='<<')
+
+
+
+class PrecedenceUp(Precedence) :
+	"""
+	An upper bound of the form T1 < 5
+	"""
+	def __init__(self,left,right) :
+		Precedence.__init__(left,0,right,kind='<')
+
+	def tasks(self) :
+		return [self.left]
+
+
+
+class PrecedenceLow(Precedence) :
+	"""
+	An upper bound of the form T1 > 5
+	"""
+	def __init__(self,left,right) :
+		Precedence.__init__(left,0,right,kind='<')
+
+	def tasks(self) :
+		return [self.left]
+		
 
 
 class Resource(_SchedElement) :

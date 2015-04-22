@@ -22,7 +22,7 @@ specific language governing permissions and limitations
 under the License.
 '''
 
-import time
+import time, copy
 
 
 def _solve_mip(mip,kind='CBC',time_limit=None,msg=0) :
@@ -48,18 +48,24 @@ def _solve_mip(mip,kind='CBC',time_limit=None,msg=0) :
 		print('INFO: objective = '+str(pulp.value(mip.objective)))
 
 
-def solve(scenario,big_m=10000,kind='CBC',time_limit=None,msg=0) :
+def solve(scenario,big_m=10000,kind='CBC',time_limit=None,msg=0,return_copy=False) :
 	"""
 	Shortcut to continuous mip
 	"""
+	if return_copy :
+		scenario = copy.deepcopy(scenario)
 	ContinuousMIP().solve(scenario,big_m=big_m,kind=kind,time_limit=time_limit,msg=msg)
+	return scenario
 
 
-def solve_discrete(scenario,max_time_step,kind='CBC',time_limit=None,msg=0) :
+def solve_discrete(scenario,max_time_step,kind='CBC',time_limit=None,msg=0,return_copy=False) :
 	"""
 	Shortcut to discrete mip
 	"""
+	if return_copy :
+		scenario = copy.deepcopy(scenario)
 	DiscreteMIP().solve(scenario,max_time_step,kind=kind,time_limit=time_limit,msg=msg)
+	return scenario
 
 
 class ContinuousMIP(object) :
@@ -131,7 +137,7 @@ class ContinuousMIP(object) :
 				mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
 				
 		# precedence constraints
-		for P in S.precs_lax() :
+		for P in S.precs() :
 			mip += x[P.left] + P.left.length + P.offset <= x[P.right] 
 		
 		# tight precedence constraints
@@ -150,7 +156,7 @@ class ContinuousMIP(object) :
 
 		# lower bounds
 		for P in S.precs_low() :
-			mip += P.left <= x[P.right]
+			mip += x[P.left] >= P.right
 
 		self.mip = mip
 		self.x = x
@@ -266,7 +272,7 @@ class DiscreteMIP(object) :
 				cons.append(con)
 
 		# precedence constraints
-		for P in S.precs_lax() :
+		for P in S.precs() :
 			for t in range(MAX_TIME) :
 				affine = pulp.LpAffineExpression([ ( x[(P.left,t)], 1), (x[(P.right,min(t+P.left.length,MAX_TIME-1))],-1)  ])
 				con = pulp.LpConstraint( affine, sense=-1, rhs=0 )
@@ -291,7 +297,7 @@ class DiscreteMIP(object) :
 
 		# lower bounds
 		for P in S.precs_low() :
-			cons.append( x[(P.right,P.left)] == 1 )
+			cons.append( x[(P.left,P.right)] == 1 )
 
 		# upper bounds
 		for P in S.precs_up() :
