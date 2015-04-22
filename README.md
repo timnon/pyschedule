@@ -136,7 +136,7 @@ S += green_pre > 2
 Still everybody can go home after six hours. However, we encounter another problem, it is actually quite hard to switch the paint shop from red to green because the red color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that there needs to be a break of two hours if the green painting follows the red one:
 
 ```
-Paint_Shop += red_paint + 2 << green_paint
+S += red_paint + 2 << green_paint
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-changeover-cost.png)
