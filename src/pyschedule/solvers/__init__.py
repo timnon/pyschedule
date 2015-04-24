@@ -28,6 +28,6 @@ exists, then a 0 should be returned, otherwise a 1. The optimal solution
 should be directly written to the passed scenario
 """
 
-import pulp as pulp
-import cpoptimizer as cpoptimier
+from . import pulp
+from . import cpoptimizer
 

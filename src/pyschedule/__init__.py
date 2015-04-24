@@ -22,5 +22,7 @@ under the License.
 
 
 from .pyschedule import *
-__all__ = ['solvers','plotters']
+from . import solvers
+from . import plotters
+__all__ = ['Scenario','solvers','plotters']
 __doc__ = pyschedule.__doc__

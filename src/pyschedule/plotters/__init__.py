@@ -29,5 +29,5 @@ has been solved beforehand, then a viualization should be returnd (in some way).
 """
 
 
-import matplotlib as matplotlib
+from . import matplotlib
 
