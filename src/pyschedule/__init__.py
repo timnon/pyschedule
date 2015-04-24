@@ -22,6 +22,5 @@ under the License.
 
 
 from .pyschedule import *
-import solvers
-import plotters
+__all__ = ['solvers','plotters']
 __doc__ = pyschedule.__doc__
