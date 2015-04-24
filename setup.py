@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pyschedule',
-      version='0.1.3.1',
+      version='0.1.3.3',
       description='A python package to formulate and solve resource-constrained scheduling problems: flow- and job-shop, travelling salesman, vehicle routing and all kind of combinations',
       url='https://github.com/timnon/pyschedule',
       author='Tim Nonner',

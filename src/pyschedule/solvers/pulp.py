@@ -31,7 +31,11 @@ def _solve_mip(mip,kind='CBC',time_limit=None,msg=0) :
 	start_time = time.time()
 	# select solver for pl
 	if kind == 'CPLEX' :
-		mip.solve(pl.CPLEX_CMD(msg=msg,timelimit=time_limit))
+		if time_limit :
+			# pulp does currently not support a timelimit in 1.5.9
+			mip.solve(pl.CPLEX_CMD(msg=msg,timelimit=time_limit))
+		else :
+			mip.solve(pl.CPLEX_CMD(msg=msg))
 	elif kind == 'GLPK' :
 		mip.solve(pl.GLPK_CMD(msg=msg))
 	elif kind == 'CBC' :
