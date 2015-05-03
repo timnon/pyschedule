@@ -40,7 +40,6 @@ def solve(scenario,msg=0) :
 
 	resources = S.resources()
 	tasks = S.tasks()
-	precedences = S.precs_lax()
 
 	id_to_resource = dict(zip(range(len(resources)),resources))
 	resource_to_id = dict(zip(resources,range(len(resources))))

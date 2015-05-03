@@ -218,20 +218,25 @@ class Scenario(_SchedElement):
 		for T in self.tasks() :
 			T.start = None
 
-	def precs(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) ]
+	def precs_lax(self) :
+		#return [ C for C in self.constraints if isinstance(C,Precedence) ]
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'lax' ]
 
 	def precs_tight(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceTight) ]
-
+		#return [ C for C in self.constraints if isinstance(C,PrecedenceTight) ]
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'tight' ]
+		
 	def precs_cond(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
+		#return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'cond' ]
 
 	def precs_low(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
+		#return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'low' ]
 
 	def precs_up(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
+		#return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'up' ]
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
@@ -253,12 +258,12 @@ class Scenario(_SchedElement):
 				left = pos_tasks[0]
 				right = neg_tasks[0]
 				if other.kind == '<' :
-					self.constraints.append(Precedence(left=left,offset=offset,right=right))
+					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='lax'))
 				elif other.kind == '<=' :
-					self.constraints.append(PrecedenceTight(left=left,offset=offset,right=right))
+					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='tight'))
 				elif other.kind == '<<' :
 					shared_resources = list( set(left.resources_req.resources()) & set(right.resources_req.resources()) )
-					prec = PrecedenceCond(left=left,offset=offset,right=right)
+					prec = Precedence(left=left,right=right,offset=offset,kind='cond')
 					if not shared_resources :
 						raise Exception('ERROR: tried to add precedence '+str(prec)+' but tasks dont compete for resources')
 					self.constraints.append(prec)
@@ -266,12 +271,12 @@ class Scenario(_SchedElement):
 			elif pos_tasks and not neg_tasks :
 				left = pos_tasks[0]
 				right = -offset
-				self.constraints.append(PrecedenceUp(left=left,right=right))
+				self.constraints.append(Precedence(left=left,right=right,kind='up'))
 				return self
 			elif not pos_tasks and neg_tasks :
 				left = neg_tasks[0]
 				right = offset
-				self.constraints.append(PrecedenceLow(left=left,right=right))
+				self.constraints.append(Precedence(left=left,right=right,kind='low'))
 				return self
 
 			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
@@ -300,7 +305,7 @@ class Scenario(_SchedElement):
 		if self.precs() :
 			# print precedences
 			s += 'PRECEDENCES:\n'
-			s += '\n'.join([ P.__repr__() for P in self.precs() ]) + '\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs_lax() ]) + '\n'
 			s += '\n'
 
 		if self.precs_tight() :
@@ -460,9 +465,16 @@ class _Constraint(_SchedElement) :
 
 class Precedence(_Constraint) :
 	"""
-	A precedence constraint of two tasks, left and right, and an offset, e.g. T1 + 3 < T2
+	A precedence constraint of two tasks, left and right, and an offset.
+	right might also be a number. The kinds of precedenceds are:
+
+	lax :  e.g. T1 + 3 < T2
+	tight : e.g. T1 + 3 <= T2
+	cond : e.g. T1 + 3 << T2
+	low : e.g. T1 > 3
+	up : e.g. T1 < 3
 	"""
-	def __init__(self,left,offset,right,kind='<') :
+	def __init__(self,left,right,offset=0,kind='lax') :
 		_Constraint.__init__(self)
 		self.left = left
 		self.right = right
@@ -473,23 +485,27 @@ class Precedence(_Constraint) :
 		return [self.left,self.right]
 
 	def __repr__(self) :
+		kind_to_sign = { 'lax':'>', 'tight':'>=', 'cond':'>>', 'low':'>', 'up':'<' }
 		s = str(self.left) + ' '
 		if self.offset != 0 :
 			s += '+ ' + str(self.offset) + ' '
-		s += str(self.kind) + ' ' + str(self.right)
+		s += str(kind_to_sign[self.kind]) + ' ' + str(self.right)
 		return s
+
+	def __str__(self) :
+		return self.__repr__()
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
 		
 
-
+'''
 class PrecedenceTight(Precedence) :
 	"""
 	A tight precedence of the form T1 + 3 <= T2, where 3 is the exact distance
 	"""
 	def __init__(self,left,offset,right) :
-		Precedence(left,offset,right,kind='<=')
+		Precedence.__init__(self,left,offset,right,kind='<=')
 
 
 
@@ -498,7 +514,7 @@ class PrecedenceCond(Precedence) :
 	A conditional precedence of the form T1 + 3 << T2, where 3 is the changeover cost
 	"""
 	def __init__(self,left,offset,right) :
-		Precedence.__init__(left,offset,right,kind='<<')
+		Precedence.__init__(self,left,offset,right,kind='<<')
 
 
 
@@ -507,7 +523,7 @@ class PrecedenceUp(Precedence) :
 	An upper bound of the form T1 < 5
 	"""
 	def __init__(self,left,right) :
-		Precedence.__init__(left,0,right,kind='<')
+		Precedence.__init__(self,left,0,right,kind='<')
 
 	def tasks(self) :
 		return [self.left]
@@ -519,10 +535,11 @@ class PrecedenceLow(Precedence) :
 	An upper bound of the form T1 > 5
 	"""
 	def __init__(self,left,right) :
-		Precedence.__init__(left,0,right,kind='<')
+		Precedence.__init__(self,left,0,right,kind='>')
 
 	def tasks(self) :
 		return [self.left]
+'''
 		
 
 

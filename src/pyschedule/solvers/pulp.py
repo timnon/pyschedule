@@ -141,7 +141,7 @@ class ContinuousMIP(object) :
 				mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
 				
 		# precedence constraints
-		for P in S.precs() :
+		for P in S.precs_lax() :
 			mip += x[P.left] + P.left.length + P.offset <= x[P.right] 
 		
 		# tight precedence constraints
@@ -275,7 +275,7 @@ class DiscreteMIP(object) :
 				cons.append(con)
 
 		# precedence constraints
-		for P in S.precs() :
+		for P in S.precs_lax() :
 			for t in range(MAX_TIME) :
 				affine = pl.LpAffineExpression([ ( x[(P.left,t)], 1), (x[(P.right,min(t+P.left.length,MAX_TIME-1))],-1)  ])
 				con = pl.LpConstraint( affine, sense=-1, rhs=0 )
