@@ -24,7 +24,7 @@ under the License.
 
 
 
-def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,color_prec_groups=False,hide_tasks=[],border_width_perc=0.02,task_colors=dict(),fig_size=(15,5)) :
+def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,color_prec_groups=False,hide_tasks=[],task_colors=dict(),fig_size=(15,5)) :
 	"""
 	Plot the given solved scenario using matplotlib
 
@@ -102,14 +102,14 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 		y = resources.index(R)*resource_height
 		ax.add_patch(
 		    patches.Rectangle(
-			(x+border_width_perc*resource_height, y+border_width_perc*resource_height),       # (x,y)
-			x_-x-2*border_width_perc*resource_height,         # width
-			resource_height*(1-2*border_width_perc),   # height
+			(x, y),       # (x,y)
+			x_-x,   # width
+			resource_height,   # height
 			color = color_map[T],
 		    )
 		)
 		if show_task_labels :
-			plt.text(x+0.1*resource_height,y+0.1*resource_height,str(T),fontsize=14,color='black')	
+			plt.text(x,y+0.1*resource_height,str(T),fontsize=14,color='black')	
 
 	# format graph
 	plt.title(str(S))	
