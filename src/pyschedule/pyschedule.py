@@ -499,49 +499,6 @@ class Precedence(_Constraint) :
 		return self.__repr__().__hash__()
 		
 
-'''
-class PrecedenceTight(Precedence) :
-	"""
-	A tight precedence of the form T1 + 3 <= T2, where 3 is the exact distance
-	"""
-	def __init__(self,left,offset,right) :
-		Precedence.__init__(self,left,offset,right,kind='<=')
-
-
-
-class PrecedenceCond(Precedence) :
-	"""
-	A conditional precedence of the form T1 + 3 << T2, where 3 is the changeover cost
-	"""
-	def __init__(self,left,offset,right) :
-		Precedence.__init__(self,left,offset,right,kind='<<')
-
-
-
-class PrecedenceUp(Precedence) :
-	"""
-	An upper bound of the form T1 < 5
-	"""
-	def __init__(self,left,right) :
-		Precedence.__init__(self,left,0,right,kind='<')
-
-	def tasks(self) :
-		return [self.left]
-
-
-
-class PrecedenceLow(Precedence) :
-	"""
-	An upper bound of the form T1 > 5
-	"""
-	def __init__(self,left,right) :
-		Precedence.__init__(self,left,0,right,kind='>')
-
-	def tasks(self) :
-		return [self.left]
-'''
-		
-
 
 class Resource(_SchedElement) :
 	"""
