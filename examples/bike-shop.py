@@ -9,7 +9,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 if not os.path.exists(path+'/pics'):
 	os.makedirs(path+'/pics')
 
-from pyschedule import *
+import pyschedule
 S = pyschedule.Scenario('bike paint shop')
 
 Alice = S.Resource('Alice')
@@ -44,8 +44,8 @@ def run(img_filename) :
 	print('INFO: compute picture:'+str(img_filename))
 	import copy
 	S_ = copy.deepcopy(S)
-	solvers.pulp.solve(S_,kind='CBC',msg=1)
-	plotters.matplotlib.plot(S_,img_filename=path+img_filename,color_prec_groups=False,hide_tasks=['MakeSpan'],task_colors=task_colors,fig_size=(15,6))
+	pyschedule.solvers.pulp.solve(S_,kind='CBC',msg=1)
+	pyschedule.plotters.matplotlib.plot(S_,img_filename=path+img_filename,color_prec_groups=False,hide_tasks=['MakeSpan'],task_colors=task_colors,fig_size=(15,6))
 run(img_filename='/pics/bike-shop-first.png')
 # STEP 1
 
