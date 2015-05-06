@@ -302,7 +302,7 @@ class Scenario(_SchedElement):
 		s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
 
-		if self.precs() :
+		if self.precs_lax() :
 			# print precedences
 			s += 'PRECEDENCES:\n'
 			s += '\n'.join([ P.__repr__() for P in self.precs_lax() ]) + '\n'
