@@ -62,13 +62,13 @@ def solve(scenario,big_m=10000,kind='CBC',time_limit=None,msg=0,return_copy=Fals
 	return scenario
 
 
-def solve_discrete(scenario,max_time_step,kind='CBC',time_limit=None,msg=0,return_copy=False) :
+def solve_discrete(scenario,horizon,kind='CBC',time_limit=None,msg=0,return_copy=False) :
 	"""
 	Shortcut to discrete mip
 	"""
 	if return_copy :
 		scenario = copy.deepcopy(scenario)
-	DiscreteMIP().solve(scenario,max_time_step,kind=kind,time_limit=time_limit,msg=msg)
+	DiscreteMIP().solve(scenario,horizon,kind=kind,time_limit=time_limit,msg=msg)
 	return scenario
 
 
@@ -97,24 +97,29 @@ class ContinuousMIP(object) :
 
 		# task variables
 		x = dict()
+
 		for T in S.tasks() :
 			x[T] = pl.LpVariable(T,0)
 
-			# fix variables if start is given
-			if T.start :
+			# fix variables if start is given (0.0 is also False!)
+			if T.start is not None :
 				mip += x[T] == T.start
 
 			# add assignment variable for each possible resource
-			for R in T.resources_req.resources() :
-				x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
+			# if resources are fixed take only these
+			if T.resources :
+				for R in T.resources :
+					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
+					mip += x[(T,R)] == 1
+			else :
+				for R in T.resources_req.resources() :
+					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
+				# everybody is required on one resource from each or clause
+				for RA in T.resources_req :
+					mip += sum([ x[(T,R)] for R in RA ]) == 1
 
 		# objective
 		mip += sum([ x[T]*S.objective[T] for T in S.objective ])
-		
-		# everybody is required on one resource from each or clause
-		for T in S.tasks() :
-			for RA in T.resources_req :
-				mip += sum([ x[(T,R)] for R in RA ]) >= 1
 
 		# resource capacity constraints
 		for R in S.resources() :
@@ -125,42 +130,65 @@ class ContinuousMIP(object) :
 		# same resource variable
 		task_pairs = [ (T,T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_) ]
 		for (T,T_) in task_pairs :
-			shared_resources = list( set(T.resources_req.resources()) & set(T_.resources_req.resources()) )
-			if shared_resources :
-				x[(T,T_,'SameResource')] = pl.LpVariable((T,T_,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
-				x[(T_,T,'SameResource')] = pl.LpVariable((T_,T,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
-				mip += x[(T,T_,'SameResource')] == x[(T_,T,'SameResource')]
-				for R in shared_resources :
-					mip += x[(T,R)] + x[(T_,R)] - 1 <= x[(T,T_,'SameResource')]
-				# ordering variables
-				x[(T,T_)] = pl.LpVariable((T,T_),0,1,cat=pl.LpBinary)
-				x[(T_,T)] = pl.LpVariable((T_,T),0,1,cat=pl.LpBinary)
-				mip += x[(T,T_)] + x[(T_,T)] == 1
+			if not T.resources or not T_.resources :
+				# if at least one of the variables is not fixed
+				#if T.start is not None or T_.start is not None :
+				if T.resources :
+					resources = T.resources
+				else :
+					resources = T.resources_req.resources()
+				if T_.resources :
+					resources_ = T_.resources
+				else :
+					resources_ = T_.resources_req.resources()
+				shared_resources = list( set(resources) & set(resources_) )
+				if shared_resources :
+					x[(T,T_,'SameResource')] = pl.LpVariable((T,T_,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
+					x[(T_,T,'SameResource')] = pl.LpVariable((T_,T,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
+					mip += x[(T,T_,'SameResource')] == x[(T_,T,'SameResource')]
+					for R in shared_resources :
+						mip += x[(T,R)] + x[(T_,R)] - 1 <= x[(T,T_,'SameResource')]
+					# ordering variables
+					x[(T,T_)] = pl.LpVariable((T,T_),0,1,cat=pl.LpBinary)
+					x[(T_,T)] = pl.LpVariable((T_,T),0,1,cat=pl.LpBinary)
+					mip += x[(T,T_)] + x[(T_,T)] == 1
 
-				mip += x[T] + T.length <= x[T_] + (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
-				mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
-				
+					mip += x[T] + T.length <= x[T_] + (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
+					mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
+			
+		
 		# precedence constraints
 		for P in S.precs_lax() :
-			mip += x[P.left] + P.left.length + P.offset <= x[P.right] 
-		
+			# if at least one of the tasks is not fixed
+			if P.left.start is None or P.right.start is None :
+				mip += x[P.left] + P.left.length + P.offset <= x[P.right] 
+	
+	
 		# tight precedence constraints
 		for P in S.precs_tight() :
-			mip += x[P.left] + P.left.length + P.offset == x[P.right] 
+			# if at least one of the tasks is not fixed
+			if P.left.start is None and P.right.start is None :
+				mip += x[P.left] + P.left.length + P.offset == x[P.right] 
 
+		# TODO: not set if not on same resource??
 		# conditional precedence constraints
 		for P in S.precs_cond() :
-			#T,T_ = tuple(sorted([P.left,P.right],key = lambda x : str(x) ))
-			mip += x[P.left] + P.left.length + P.offset <= x[P.right] + \
-	                        (1-x[(P.left,P.right)])*BIG_M + (1-x[(P.left,P.right,'SameResource')])*BIG_M
+			# if at least one of the tasks is not fixed
+			if P.left.start is None and P.right.start is None :
+				mip += x[P.left] + P.left.length + P.offset <= x[P.right] + \
+			                (1-x[(P.left,P.right)])*BIG_M + (1-x[(P.left,P.right,'SameResource')])*BIG_M
 
 		# upper bounds
 		for P in S.precs_up() :
-			mip += x[P.left] + P.left.length <= P.right
+			# if start is not fixed
+			if P.left.start is None :
+				mip += x[P.left] + P.left.length <= P.right
 
 		# lower bounds
 		for P in S.precs_low() :
-			mip += x[P.left] >= P.right
+			# if start is not fixed
+			if P.left.start is None :
+				mip += x[P.left] >= P.right
 
 		self.mip = mip
 		self.x = x
@@ -169,7 +197,11 @@ class ContinuousMIP(object) :
 	def read_solution_from_mip(self,msg=0) :
 		for T in self.scenario.tasks() :
 			T.start = self.x[T].varValue
-			T.resources = [ R for R in T.resources_req.resources() if self.x[(T,R)].varValue > 0 ]
+			if T.resources :
+				resources = T.resources
+			else :
+				resources = T.resources_req.resources()
+			T.resources = [ R for R in resources if self.x[(T,R)].varValue > 0 ]
 
 
 	def solve(self,scenario,big_m=10000,kind='CBC',time_limit=None,msg=0) :
@@ -207,21 +239,21 @@ class DiscreteMIP(object) :
 
 	def __init__(self) :
 		self.scenario = None
-		self.max_time_step = None
+		self.horizon = None
 		self.mip = None
 		self.x = None  # mip variables shortcut
 
 
 	def build_mip_from_scenario(self,msg=0) :
 		S = self.scenario
-		MAX_TIME = self.max_time_step
+		MAX_TIME = self.horizon
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# check for objective
 		if not S.objective :
 			if msg : print('INFO: use makespan objective as default')
 			S.use_makespan_objective()
-		
+
 		# task variables
 		x = dict()
 		cons = list()
@@ -230,12 +262,12 @@ class DiscreteMIP(object) :
 				x[(T,t)] = pl.LpVariable((T,t),0,1)
 			# lower boundary conditions
 			cons.append( pl.LpConstraint( x[(T,0)], sense=0, rhs=1 ) )
-			cons.append( pl.LpConstraint( x[(T,self.max_time_step-1)], sense=0, rhs=0 ) ) #required for no solution feedback
+			cons.append( pl.LpConstraint( x[(T,self.horizon-1)], sense=0, rhs=0 ) ) #required for no solution feedback
 	
 			# fix variables if start is given
 			if T.start :
-				if T.start > self.max_time_step :
-					raise Exception('ERROR: fixed start of task '+str(T)+' larger than max time step '+str(max_time_step))
+				if T.start > self.horizon :
+					raise Exception('ERROR: fixed start of task '+str(T)+' larger than max time step '+str(horizon))
 				cons.append( pl.LpConstraint( x[(T,T.start)], sense=0, rhs=1 ) )
 
 			# generate variabels for task resources
@@ -315,18 +347,18 @@ class DiscreteMIP(object) :
 
 	def read_solution_from_mip(self,msg=0) :
 		for T in self.scenario.tasks() :
-			T.start = max([ t for t in range(self.max_time_step) if self.x[(T,t)].varValue == 1.0 ])
+			T.start = max([ t for t in range(self.horizon) if self.x[(T,t)].varValue == 1.0 ])
 			T.resources = [ R for R in T.resources_req.resources() if self.x[(T,R,0)].varValue > 0 ]
 
 
-	def solve(self,scenario,max_time_step='100',kind='CBC',time_limit=None,msg=0) :
+	def solve(self,scenario,horizon='100',kind='CBC',time_limit=None,msg=0) :
 		"""
 		Solves the given scenario using a discrete MIP via the pulp package
 
 		Args:
 			scenario:            scenario to solve
 			kind:                MIP-solver to use: CPLEX, GLPK, CBC
-			max_time_step :     the number of time steps to model
+			horizon :     the number of time steps to model
 			time_limit:         a time limit, only for CPLEX and CBC
 			msg:                 0 means no feedback (default) during computation, 1 means feedback
 	
@@ -335,7 +367,7 @@ class DiscreteMIP(object) :
 			None if solving was not successful
 		"""
 		self.scenario = scenario
-		self.max_time_step = max_time_step
+		self.horizon = horizon
 		self.build_mip_from_scenario(msg=msg)
 		_solve_mip(self.mip,kind=kind,time_limit=time_limit,msg=msg)
 
