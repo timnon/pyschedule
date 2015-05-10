@@ -195,7 +195,7 @@ class Scenario(_SchedElement):
                              for T in self.tasks() for R in T.resources ]
 		solution += [ (str(T),'',T.start,T.start+T.length) \
                              for T in self.tasks() if not T.resources_req.resources() ]
-		solution = sorted(solution, key = lambda x : (x[1],x[2])) # sort according to resource and start
+		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
 		return solution
 
 	def use_makespan_objective(self) :
@@ -208,8 +208,8 @@ class Scenario(_SchedElement):
 		makespan += self.Resource('MakeSpan')
 		self += makespan*1
 		for T in tasks :
-			if not T.start :
-				self += T < makespan
+			#TODO: what for T.start is not None???
+			self += T < makespan
 
 	def clear_task_starts(self) :
 		"""
@@ -299,7 +299,15 @@ class Scenario(_SchedElement):
 		s += '\n'
 		# print tasks
 		s += 'TASKS:\n'
-		s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
+		for T in self.tasks() :
+			s += str(T)+' : '
+			if T.start is not None :
+				s += str(T.start) + ' : '
+			if T.resources :
+				s += str(T.resources) + ' : '
+			s += str(T.resources_req) + '\n'
+		s += '\n'
+		#s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
 
 		if self.precs_lax() :
@@ -485,7 +493,7 @@ class Precedence(_Constraint) :
 		return [self.left,self.right]
 
 	def __repr__(self) :
-		kind_to_sign = { 'lax':'>', 'tight':'>=', 'cond':'>>', 'low':'>', 'up':'<' }
+		kind_to_sign = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<' }
 		s = str(self.left) + ' '
 		if self.offset != 0 :
 			s += '+ ' + str(self.offset) + ' '
