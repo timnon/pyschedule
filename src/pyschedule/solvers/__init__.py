@@ -30,4 +30,6 @@ should be directly written to the passed scenario
 
 from . import pulp
 from . import cpoptimizer
+from . import ortools
+from . import listsched
 
