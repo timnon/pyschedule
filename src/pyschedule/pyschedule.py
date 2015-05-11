@@ -133,12 +133,16 @@ class _SchedElementAffine(_DICT_TYPE) :
 		else :
 			return self * type(self)(other)
 
+	def __radd__(self,other) :
+		return self + other
+
 	def __repr__(self) :
 		def format_coeff(val) :
 			if val != 1 :
 				return str(val)+'x'
 			else :
 				return ''
+		# TODO: do not plot constant if not necessary
 		return (' '+self.kind+' ').join([ format_coeff(self[key])+str(key) for key in self ])
 
 	def __hash__(self) :
@@ -150,18 +154,16 @@ class Scenario(_SchedElement):
 	
 	def __init__(self,name='scenario not named') :
 		_SchedElement.__init__(self,name,numeric_name_prefix='S')
-		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
 		self.constraints = list()
-		#self.precs = list()
 
-	def Task(self,name,length=1) :
+	def Task(self,name,length=1,objective=None) :
 		"""
 		Adds a task with the given name to the scenario. Task names need to be unique.
 		"""
-		T = Task(name,length)
-		if str(T) not in self.T : #[ str(T_) for T_ in self.tasks ] :
+		T = Task(name,length=length,objective=objective)
+		if str(T) not in self.T :
 			self.T[str(T)] = T
 		else :
 			raise Exception('ERROR: task with name '+str(T)+' already contained in scenario '+str(self))
@@ -198,18 +200,30 @@ class Scenario(_SchedElement):
 		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
 		return solution
 
+	def objective(self) :
+		"""
+		Returns the objective
+		"""
+		return sum([ T*T.objective for T in self.tasks() if _isnumeric(T.objective) ])
+
+	def clear_objective(self) :
+		"""	
+		Removes the objective
+		"""
+		for T in self.tasks() :
+			T.objective = None
+
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks without a fixed start
 		"""
-		self.objective.clear()
-		tasks = list(self.tasks())
-		makespan = self.Task('MakeSpan')
-		makespan += self.Resource('MakeSpan')
-		self += makespan*1
+		tasks = self.tasks() # save tasks before adding makespan
+		makespan = self.Task('MakeSpan',objective=1)
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
+		for R in self.resources() :
+			makespan += R
 
 	def clear_task_starts(self) :
 		"""
@@ -278,11 +292,14 @@ class Scenario(_SchedElement):
 				right = offset
 				self.constraints.append(Precedence(left=left,right=right,kind='low'))
 				return self
-
 			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
 
-		elif isinstance(other,(Task,_TaskAffine)) : #TODO: attention Precedence is also _TaskAffine
-			self.objective += other
+		elif isinstance(other,Task) :
+			other.objective = 1
+			return self
+		elif isinstance(other,_TaskAffine) :
+			for T in other :
+				T.objective = other[T]
 			return self
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
@@ -291,7 +308,7 @@ class Scenario(_SchedElement):
 		s = '\n##############################################\n\n'
 		s += 'SCENARIO: '+str(self)+'\n\n'
 		#print objective
-		s += 'OBJECTIVE: '+str(self.objective)+'\n\n'
+		s += 'OBJECTIVE: '+str(self.objective())+'\n\n'
 
 		s += 'RESOURCES:\n'
 		for R in self.resources() :
@@ -350,10 +367,11 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,start=None,resources=None) :
+	def __init__(self,name,length=1,objective=None,start=None,resources=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
-		self.start = start
 		self.length = length
+		self.objective = objective
+		self.start = start
 		self.resources = resources
 		self.resources_req = _ResourceReq()
 
@@ -398,6 +416,9 @@ class Task(_SchedElement) :
 
 	def __mul__(self,other) :
 		return _TaskAffine(self) * other
+
+	def __radd__(self,other) :
+		return _TaskAffine(self) + other
 
 
 

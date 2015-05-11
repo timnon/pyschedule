@@ -91,7 +91,7 @@ class ContinuousMIP(object) :
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# check for objective
-		if not S.objective :
+		if not S.objective() :
 			if msg : print('INFO: use makespan objective as default')
 			S.use_makespan_objective()
 
@@ -119,7 +119,8 @@ class ContinuousMIP(object) :
 					mip += sum([ x[(T,R)] for R in RA ]) == 1
 
 		# objective
-		mip += sum([ x[T]*S.objective[T] for T in S.objective ])
+		objective = S.objective()
+		mip += sum([ x[T]*objective[T] for T in objective if T in x ])
 
 		# resource capacity constraints
 		for R in S.resources() :
@@ -131,8 +132,6 @@ class ContinuousMIP(object) :
 		task_pairs = [ (T,T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_) ]
 		for (T,T_) in task_pairs :
 			if not T.resources or not T_.resources :
-				# if at least one of the variables is not fixed
-				#if T.start is not None or T_.start is not None :
 				if T.resources :
 					resources = T.resources
 				else :
@@ -250,7 +249,7 @@ class DiscreteMIP(object) :
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# check for objective
-		if not S.objective :
+		if not S.objective() :
 			if msg : print('INFO: use makespan objective as default')
 			S.use_makespan_objective()
 
@@ -288,7 +287,8 @@ class DiscreteMIP(object) :
 					cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
 
 		# objective
-		mip += pl.LpAffineExpression([ ( x[(T,t)], S.objective[T]) for T in S.objective for t in range(MAX_TIME)  ] )
+		objective = S.objective()
+		mip += pl.LpAffineExpression([ ( x[(T,t)], objective[T]) for T in objective for t in range(MAX_TIME)  ] )
 
 		# resource non-overlapping constraints 
 		for R in S.resources() :

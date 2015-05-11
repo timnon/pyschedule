@@ -38,7 +38,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		S = copy.deepcopy(scenario)
 		
 	# no objective specified
-	if not S.objective :
+	if not S.objective() :
 		S.use_makespan_objective()
 
 	ort_solver = pywrapcp.Solver(S.name)
@@ -59,12 +59,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		if T.resources :
 			for R in T.resources :
 				resource_to_intervals[R].append(I)
-				'''
-				I_ = ort_solver.FixedDurationIntervalVar(0,horizon,T.length,True,T.name+'_'+R.name)
-				resource_to_intervals[R].append(I_)
-				resource_task_to_interval[(R,T)] = I_
-				ort_solver.Add( I.StaysInSync(I_) )
-				'''
+
 		# alternative resources
 		else :
 			for RA in T.resources_req :
@@ -86,9 +81,10 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		ort_solver.Add(disj)
 
 	# move objective
+	objective = S.objective()
 	# TODO: bug, variables that are not part of the objective might not be finally defined
 	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*1 for T in S.tasks() ]+
-                                           [ task_to_interval[T].EndExpr()*1000000 for T in S.objective ])
+                                           [ task_to_interval[T].EndExpr()*1000000 for T in objective if T in task_to_interval ])
 	ort_objective = ort_solver.Minimize(ort_objective_var, 1)
 
 	# precedences
