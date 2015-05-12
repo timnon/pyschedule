@@ -69,33 +69,34 @@ def solve(scenario,solve_method,sort_method=sort_with_precs,batch_length=1,copy_
 	if copy_scenario :
 		S = copy.deepcopy(scenario)
 
+	if not S.objective() :
+		S.use_makespan_objective()
+
 	task_list = sort_method(S)
 
 	# TODO: add objective adding
 	constraints = S.constraints # keep references and clear old reference list
 	S.constraints = []
-	S.T.clear()
+	non_objective_tasks = [ T for T in task_list if not T.objective ]
+	for T in non_objective_tasks : S -= T #remove all tasks which are not part of objective
 
 	def batches(tasks, batch_length):
 	    for i in xrange(0, len(tasks), batch_length):
 		yield tasks[i:i+batch_length]
 	
-	for batch in batches(task_list,batch_length) :
+	for batch in batches(non_objective_tasks,batch_length) :
 		if msg :
 			print('INFO: batch for list scheduling '+','.join([ str(T) for T in batch]))
 		for T in batch :
-			S.T[T.name] = T
+			S += T
 		S.constraints = [ C for C in constraints if set(C.tasks()).issubset(set(S.tasks())) ]
-		# generate objective
+		S.T['MakeSpan'].start = None #remove objective
 		solve_method(S)
-		# remove objective
-		S.objective.clear()
-		del S.T['MakeSpan']
-		del S.R['MakeSpan']
 		'''
 		import pyschedule
 		pyschedule.plotters.matplotlib.plot(S)
 		'''
+		
 		
 
 

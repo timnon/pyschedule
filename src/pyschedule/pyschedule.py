@@ -222,8 +222,7 @@ class Scenario(_SchedElement):
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
-		for R in self.resources() :
-			makespan += R
+		makespan = self.resources()[0]
 
 	def clear_task_starts(self) :
 		"""
@@ -295,7 +294,7 @@ class Scenario(_SchedElement):
 			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
 
 		elif isinstance(other,Task) :
-			other.objective = 1
+			self.T[other.name] = other
 			return self
 		elif isinstance(other,_TaskAffine) :
 			for T in other :
@@ -303,6 +302,14 @@ class Scenario(_SchedElement):
 			return self
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
+
+	def __isub__(self,other) :
+		if isinstance(other,Task) :
+			if other.name in self.T :
+				del self.T[other.name]
+			else :
+				raise Exception('ERROR: task with name '+str(other.name)+' is not contained in scenario '+str(self))
+		return self
 
 	def __repr__(self) :
 		s = '\n##############################################\n\n'
