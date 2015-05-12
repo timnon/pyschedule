@@ -72,11 +72,10 @@ def solve(scenario,solve_method,sort_method=sort_with_precs,batch_length=1,copy_
 	if not S.objective() :
 		S.use_makespan_objective()
 
-	task_list = sort_method(S)
-
-	# TODO: add objective adding
 	constraints = S.constraints # keep references and clear old reference list
 	S.constraints = []
+
+	task_list = sort_method(S)
 	non_objective_tasks = [ T for T in task_list if not T.objective ]
 	for T in non_objective_tasks : S -= T #remove all tasks which are not part of objective
 

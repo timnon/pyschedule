@@ -204,7 +204,13 @@ class Scenario(_SchedElement):
 		"""
 		Returns the objective
 		"""
-		return sum([ T*T.objective for T in self.tasks() if _isnumeric(T.objective) ])
+		objective_tasks = [ T for T in self.tasks() if T.objective ]
+		if objective_tasks :
+			objective = objective_tasks[0]*1 #*1 to turn into TaskAffine
+			for T in objective_tasks[1:] :
+				objective += T
+			return objective
+		return None
 
 	def clear_objective(self) :
 		"""	
@@ -298,7 +304,8 @@ class Scenario(_SchedElement):
 			return self
 		elif isinstance(other,_TaskAffine) :
 			for T in other :
-				T.objective = other[T]
+				if T in self.tasks() :
+					T.objective = other[T]
 			return self
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))

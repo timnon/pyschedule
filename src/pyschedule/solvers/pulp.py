@@ -131,29 +131,29 @@ class ContinuousMIP(object) :
 		# same resource variable
 		task_pairs = [ (T,T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_) ]
 		for (T,T_) in task_pairs :
-			if not T.resources or not T_.resources :
-				if T.resources :
-					resources = T.resources
-				else :
-					resources = T.resources_req.resources()
-				if T_.resources :
-					resources_ = T_.resources
-				else :
-					resources_ = T_.resources_req.resources()
-				shared_resources = list( set(resources) & set(resources_) )
-				if shared_resources :
-					x[(T,T_,'SameResource')] = pl.LpVariable((T,T_,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
-					x[(T_,T,'SameResource')] = pl.LpVariable((T_,T,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
-					mip += x[(T,T_,'SameResource')] == x[(T_,T,'SameResource')]
-					for R in shared_resources :
-						mip += x[(T,R)] + x[(T_,R)] - 1 <= x[(T,T_,'SameResource')]
-					# ordering variables
-					x[(T,T_)] = pl.LpVariable((T,T_),0,1,cat=pl.LpBinary)
-					x[(T_,T)] = pl.LpVariable((T_,T),0,1,cat=pl.LpBinary)
-					mip += x[(T,T_)] + x[(T_,T)] == 1
+			if T.resources :
+				resources = T.resources
+			else :
+				resources = T.resources_req.resources()
+			if T_.resources :
+				resources_ = T_.resources
+			else :
+				resources_ = T_.resources_req.resources()
+			shared_resources = list( set(resources) & set(resources_) )
+			# TODO: restrict the number of variables
+			if shared_resources and (T.start is None or T_.start is None ) :
+				x[(T,T_,'SameResource')] = pl.LpVariable((T,T_,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
+				x[(T_,T,'SameResource')] = pl.LpVariable((T_,T,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
+				mip += x[(T,T_,'SameResource')] == x[(T_,T,'SameResource')]
+				for R in shared_resources :
+					mip += x[(T,R)] + x[(T_,R)] - 1 <= x[(T,T_,'SameResource')]
+				# ordering variables
+				x[(T,T_)] = pl.LpVariable((T,T_),0,1,cat=pl.LpBinary)
+				x[(T_,T)] = pl.LpVariable((T_,T),0,1,cat=pl.LpBinary)
+				mip += x[(T,T_)] + x[(T_,T)] == 1
 
-					mip += x[T] + T.length <= x[T_] + (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
-					mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
+				mip += x[T] + T.length <= x[T_] + (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
+				mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
 			
 		
 		# precedence constraints
