@@ -300,12 +300,21 @@ class Scenario(_SchedElement):
 			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
 
 		elif isinstance(other,Task) :
+			if other.name in self.T :
+				raise Exception('ERROR: task with name '+str(T)+' already contained in scenario '+str(self))
 			self.T[other.name] = other
 			return self
+
 		elif isinstance(other,_TaskAffine) :
 			for T in other :
 				if T in self.tasks() :
 					T.objective = other[T]
+			return self
+
+		elif isinstance(other,Resource) :
+			if other.name in self.R :
+				raise Exception('ERROR: resource with name '+str(T)+' already contained in scenario '+str(self))
+			self.R[other.name] = other
 			return self
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
