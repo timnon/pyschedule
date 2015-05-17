@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 from __future__ import print_function
 
 '''
@@ -26,6 +26,8 @@ under the License.
 python package to formulate and solve resource-constrained scheduling problems
 """
 
+#TODO: each task requires at least one resource req
+#TODO: resources requirements should not overlap (can they?)
 #TODO: cpoptimier with cond precedence constraints
 
 
@@ -73,11 +75,10 @@ class _SchedElement(object) : # extend string object
 
 class _SchedElementAffine(_DICT_TYPE) :
 
-	def __init__(self,unknown=None,element_class=None,kind='+') :
+	def __init__(self,unknown=None,element_class=_SchedElement,kind='+') :
 		_DICT_TYPE.__init__(self)
 		self.element_class = element_class
 		self.kind = kind
-
 		if unknown == None :
 			pass
 		elif isinstance(unknown,self.element_class) :
@@ -87,7 +88,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 		elif isinstance(unknown,type(self)) :
 			self.update(unknown)
 		elif isinstance(unknown,list) :
-			self.update(_DICT_TYPE(unknown))
+			self.update(_DICT_TYPE(unknown))	
 		else :
 			raise Exception('ERROR: cant init '+str(self)+' from '+str(unknown))
 
@@ -158,11 +159,15 @@ class Scenario(_SchedElement):
 		self.R = _DICT_TYPE() #resources
 		self.constraints = list()
 
-	def Task(self,name,length=1,objective=None) :
+		# parameters
+		self.is_same_resource_precs_lax = True
+		self.is_same_resource_precs_tight = True
+
+	def Task(self,name,length=1,start=None,resources=None,cost=None) :
 		"""
 		Adds a task with the given name to the scenario. Task names need to be unique.
 		"""
-		T = Task(name,length=length,objective=objective)
+		T = Task(name,length=length,cost=cost,start=start,resources=resources)
 		if str(T) not in self.T :
 			self.T[str(T)] = T
 		else :
@@ -172,11 +177,11 @@ class Scenario(_SchedElement):
 	def tasks(self) :
 		return self.T.values()
 
-	def Resource(self,name,capacity=None) :
+	def Resource(self,name,capacity=None,cost=None) :
 		"""
 		Adds a resource with the given name to the scenario. Resource names need to be unique.
 		"""
-		R = Resource(name,capacity)
+		R = Resource(name,capacity=capacity,cost=cost)
 		if str(R) not in self.R : #[ str(R_) for R_ in self.resources ] :
 			self.R[str(R)] = R #.append(R)
 		else :
@@ -196,7 +201,7 @@ class Scenario(_SchedElement):
 		solution = [ (str(T),str(R),T.start,T.start+T.length) \
                              for T in self.tasks() for R in T.resources ]
 		solution += [ (str(T),'',T.start,T.start+T.length) \
-                             for T in self.tasks() if not T.resources_req.resources() ]
+                             for T in self.tasks() if not T.resources ]
 		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
 		return solution
 
@@ -204,12 +209,16 @@ class Scenario(_SchedElement):
 		"""
 		Returns the objective
 		"""
-		objective_tasks = [ T for T in self.tasks() if T.objective ]
-		if objective_tasks :
-			objective = objective_tasks[0]*1 #*1 to turn into TaskAffine
-			for T in objective_tasks[1:] :
-				objective += T
-			return objective
+		# zero objectives are not considered, therefore only if T.objective and R.objective
+		objective_tasks = [ T for T in self.tasks() if T.cost ] 
+		objective_resources = [ R for R in self.resources() if R.cost ]
+		objective_affine = _SchedElementAffine()
+		for T in objective_tasks :
+			objective_affine += T*T.cost
+		for R in objective_resources :
+			objective_affine += R*R.cost
+		if objective_affine :
+			return objective_affine
 		return None
 
 	def clear_objective(self) :
@@ -217,18 +226,23 @@ class Scenario(_SchedElement):
 		Removes the objective
 		"""
 		for T in self.tasks() :
-			T.objective = None
+			T.cost = None
+		for R in self.resources() :
+			R.cost = None
 
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks without a fixed start
 		"""
 		tasks = self.tasks() # save tasks before adding makespan
-		makespan = self.Task('MakeSpan',objective=1)
+		makespan = self.Task('MakeSpan',cost=1)
+		makespan += self.resources()[0] # add some random resource, every task needs one
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
-		makespan = self.resources()[0]
+
+	def use_flowtime_objective(self) :
+		self += sum([ T*1 for T in self.tasks() if T.start is None ])
 
 	def clear_task_starts(self) :
 		"""
@@ -301,20 +315,26 @@ class Scenario(_SchedElement):
 
 		elif isinstance(other,Task) :
 			if other.name in self.T :
-				raise Exception('ERROR: task with name '+str(T)+' already contained in scenario '+str(self))
+				raise Exception('ERROR: task with name '+str(other.name)+' already contained in scenario '+str(self))
 			self.T[other.name] = other
 			return self
 
 		elif isinstance(other,_TaskAffine) :
 			for T in other :
 				if T in self.tasks() :
-					T.objective = other[T]
+					T.cost = other[T]
 			return self
 
 		elif isinstance(other,Resource) :
 			if other.name in self.R :
 				raise Exception('ERROR: resource with name '+str(T)+' already contained in scenario '+str(self))
 			self.R[other.name] = other
+			return self
+
+		elif isinstance(other,_ResourceAffine) :
+			for R in other :
+				if R in self.resources() :
+					R.cost = other[R]
 			return self
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
@@ -342,7 +362,7 @@ class Scenario(_SchedElement):
 		for T in self.tasks() :
 			s += str(T)+' : '
 			if T.start is not None :
-				s += str(T.start) + ' : '
+				s += str(T.start) + ','
 			if T.resources :
 				s += str(T.resources) + ' : '
 			s += str(T.resources_req) + '\n'
@@ -390,10 +410,10 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,objective=None,start=None,resources=None) :
+	def __init__(self,name,length=1,cost=None,start=None,resources=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
 		self.length = length
-		self.objective = objective
+		self.cost = cost
 		self.start = start
 		self.resources = resources
 		self.resources_req = _ResourceReq()
@@ -555,11 +575,17 @@ class Precedence(_Constraint) :
 class Resource(_SchedElement) :
 	"""
 	A resource which can process at most one task per time step
+
+	capacity :  minimal and maximal task capacity of the tuple form (min,max)
+                    if capacity is an integer then this is interpreted as the
+                    maximal task capacity and the minimal taks capacity is set to 0
+	cost : the cost of using this resource in the solution
 	"""
 
-	def __init__(self,name=None,capacity=None) :
+	def __init__(self,name=None,capacity=None,cost=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='R')
 		self.capacity = capacity
+		self.cost = cost
 
 	def __iadd__(self,other) :
 		if isinstance(other,Task) :
@@ -631,7 +657,7 @@ class _ResourceReq(list) :
 	def resources(self) :
 		return [ R for RA in self for R in RA ]
 
-	def capacity(self,R) :
+	def capacity_req(self,R) :
 		RA = [ RA_ for RA_ in self if R in RA_ ][0]
 		return RA[R]
 			

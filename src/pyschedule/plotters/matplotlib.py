@@ -89,7 +89,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 
 	solution = S.solution()
 	hide_tasks_str = [ str(T) for T in hide_tasks ]
-	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str ]
+	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str and y>x ] #tasks of zero length are not plotted
 
 	# resources list incl null resource
 	resources = sorted(list(set([ R for (T,R,x,y) in solution ])))
