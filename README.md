@@ -53,7 +53,7 @@ This should show you the following gantt chart:
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
-pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which is part of pulp but pretty slow. For instance, you can select CPLEX using:
+pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which comes packaged as part of pulp. For instance, you can select CPLEX using:
 
 ```
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
