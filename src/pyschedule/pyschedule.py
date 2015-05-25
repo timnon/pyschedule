@@ -385,17 +385,17 @@ class Scenario(_SchedElement):
 
 
 
-class Task(_SchedElement,list) :
+class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,cost=None,start=None,resources=None) :
+	def __init__(self,name,length=1,cost=None,start=None,resources=None,resources_req=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
-		list.__init__(self)
 		self.length = length
 		self.cost = cost
 		self.start = start
+		self.resources_req = resources_req
 		self.resources = resources
 
 	def resources_req_list(self) :
@@ -403,12 +403,15 @@ class Task(_SchedElement,list) :
 
 	def __getitem__(self,index) :
 		if isinstance(index,int) :
-			return list(self)[index]
+			return self.resources_req[index]
 		elif isinstance(index,Resource) :
-			return max([ RA[index] for RA in self if index in RA ])
+			return max([ RA[index] for RA in self.resources_req if index in RA ])
 		else :
 			raise Exception('ERROR: tasks can only take integers and resources as index, not '+str(index))
 		return self
+
+	def __iter__(self) :
+		return self.resources_req.__iter__()
 		
 	def __len__(self) :
 		return self.length
@@ -417,7 +420,9 @@ class Task(_SchedElement,list) :
 		if _isiterable(other) :
 			for x in other : self += x		
 		elif isinstance(other,(Resource,_ResourceAffine)) :
-			self.append(other)
+			if self.resources_req is None :
+				self.resources_req = list()
+			self.resources_req.append(other)
 		else :
 			raise Exception('ERROR: cant add '+str(other)+' to task '+str(self))
 		return self
@@ -455,6 +460,7 @@ class Task(_SchedElement,list) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
+	'''
 	# eq operator is required because otherwise the list comparison
 	# operator is used
     	def __eq__(self, other) :
@@ -463,6 +469,7 @@ class Task(_SchedElement,list) :
 		if str(self) == str(other) :
 			return True
 		return False
+	'''
 
 		
 
