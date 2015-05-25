@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-from pyschedule import *
+#! /usr/bin/python
+import pyschedule
 import math
 
 cities = '\
@@ -296,7 +296,7 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # scenario and city tasks
-S = Scenario('TSP Germany')
+S = pyschedule.Scenario('TSP Germany')
 T = { city : S.Task(city) for city in coords  }
 R = S.Resource('car')
 
@@ -312,8 +312,8 @@ S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in coords for city_ in coords if city != city_ ]
 
 
-solvers.pulp.solve(S,kind='CPLEX',time_limit=120,msg=1)
-plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
+pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
+pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
 # plot tours
 import pylab

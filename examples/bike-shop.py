@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 
 '''
 Alice and Bob are running a nice Paint Studio for bikes where they pimp bikes with the newest colors. Today they have to paint a green and a red bike. So what they do they create a scenario using pyschedule:
@@ -27,7 +27,6 @@ red_post = S.Task('red post')
 #S += green_pre + 1 <= green_paint
 S += green_pre < green_paint, green_paint + 1 < green_post
 S += red_pre <= red_paint, red_paint < red_post
-
 
 green_pre += Alice | Bob
 green_paint += Alice | Bob
@@ -65,7 +64,7 @@ run(img_filename='/pics/bike-shop-changeover.png')
 
 lunch = S.Task('lunch')
 S += lunch > 3, lunch < 5
-lunch += Alice + Bob
+lunch += Alice, Bob
 task_colors[lunch] = '#7EA7D8'
 run(img_filename='/pics/bike-shop-lunch.png')
 # STEP 6 (add lunch)

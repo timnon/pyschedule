@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-from pyschedule import *
+#! /usr/bin/python
+import pyschedule
 import math
 
 cities = '\
@@ -300,7 +300,7 @@ coords['end_blue'] = coords[start_city]
 large_number = 1000
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
-S = Scenario('VRP Germany')
+S = pyschedule.Scenario('VRP Germany')
 T = { city : S.Task(city) for city in cities }
 
 # resources
@@ -319,7 +319,7 @@ S += T['start'] < T['end_red'], T['start'] < T['end_blue'], T['end_red'] < T['en
 S += T['end_blue'] > { T[city] for city in cities }
 
 # resource assignement
-T['start'] += R_blue + R_red
+T['start'] += [ R_blue, R_red ]
 T['end_red'] += R_red
 T['end_blue'] += R_blue
 for city in cities : T[city] += R_blue | R_red
@@ -338,8 +338,8 @@ S += [ T['end_red'] + large_number << T[city] for city in cities ]
 # objective
 S += T['end_red'] + T['end_blue']
 
-solvers.pulp.solve(S,kind='CPLEX',msg=1)
-plotters.matplotlib.plot(S,resource_height=1.0,)
+pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
+pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,)
 
 # plot tours
 import pylab

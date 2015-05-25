@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 from pyschedule import *
 
 # Taillards 15x15 job-shop instance downloaded from
@@ -52,5 +52,5 @@ for i in range(n) :
 	for j in range(n) :
 		T[(i,j)] += R[mach_table[i][j]-1]
 
-solvers.pulp.solve(S,kind='CPLEX',time_limit=30,msg=1)
+solvers.pulp.solve(S,time_limit=120,msg=1)
 plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])

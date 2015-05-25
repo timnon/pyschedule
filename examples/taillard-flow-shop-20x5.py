@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-from pyschedule import *
+#! /usr/bin/python
+import pyschedule
 import math
 
 # Taillards 20x5 flow-shop instance downloaded from
@@ -12,13 +12,13 @@ proc ='\
 66 58 31 68 78 91 13 59 49 85 85  9 39 41 56 40 54 77 51 31\n\
 58 56 20 85 53 35 53 41 69 13 86 72  8 49 47 87 58 18 68 28'
 
-proc_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
-#proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
+#proc_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
+proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
 n = len(proc_table[0])
 m = len(proc_table)
 #n = 6
 
-S = Scenario('Taillards Flow-Shop 15x15')
+S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
 T = { (i,j) : S.Task((i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
 R = { j : S.Resource(j) for j in range(m) }
 
@@ -27,5 +27,6 @@ for i in range(n) :
 	for j in range(m) :
 		T[(i,j)] += R[j]
 
-solvers.pulp.solve(S,kind='CPLEX',time_limit=30,msg=1)
-plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+#pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)
+pyschedule.solvers.pulp.solve_discrete(S,time_limit=120,horizon=200,msg=1)
+pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
