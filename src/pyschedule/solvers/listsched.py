@@ -32,7 +32,7 @@ def sort_with_precs(scenario) :
 	S = scenario
 
 	'''
-	# get direct children for top sort
+	# get direct children for topological sort
 	children = { T : set() for T in S.tasks() }
 	for P in S.precs_lax() :
 		children[P.left].add(P.right)
@@ -53,43 +53,48 @@ def sort_with_precs(scenario) :
 	return task_list
 
 
-
-def solve(scenario,solve_method,sort_method=sort_with_precs,batch_length=1,copy_scenario=False,msg=0) :
+#TODO: list as parameter of solving procedure
+def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,msg=0) :
 	"""
 	Iteratively adds tasks and uses solve_method to integrate these
 	tasks into the schedule.
 
 	Arguments:
-		scenario: the scenario to solve
-		solve_method : the solve method to integrate new tasks
-		chunk_size : the number of jobs to integrate at a time
+		scenario   : the scenario to solve
+		task_list  : list of all tasks which defines the order in which all tasks are
+                             added to the schedule
+		batch_size : the number of tasks to integrate in the schedule at a time
 	"""
 
 	S = scenario
 	if copy_scenario :
 		S = copy.deepcopy(scenario)
 
-	if not S.objective() :
+	if not S.objective :
 		S.use_makespan_objective()
+
+	if not task_list :
+		task_list = sort_with_precs(S)
+		task_list = [ T for T in task_list if T.start is None ]
 
 	constraints = S.constraints # keep references and clear old reference list
 	S.constraints = []
 
-	task_list = sort_method(S)
-	non_objective_tasks = [ T for T in task_list if not T.objective ]
-	for T in non_objective_tasks : S -= T #remove all tasks which are not part of objective
+	#non_objective_tasks = [ T for T in task_list if not T.objective ]
+	for T in task_list : S -= T #remove all tasks which are not part of objective
 
-	def batches(tasks, batch_length):
-	    for i in xrange(0, len(tasks), batch_length):
-		yield tasks[i:i+batch_length]
+	def batches(tasks, batch_size):
+	    for i in xrange(0, len(tasks), batch_size):
+		yield tasks[i:i+batch_size]
 	
-	for batch in batches(non_objective_tasks,batch_length) :
+	for batch in batches(task_list,batch_size) :
 		if msg :
 			print('INFO: batch for list scheduling '+','.join([ str(T) for T in batch]))
 		for T in batch :
 			S += T
 		S.constraints = [ C for C in constraints if set(C.tasks()).issubset(set(S.tasks())) ]
-		S.T['MakeSpan'].start = None #remove objective
+		#S.T['MakeSpan'].start = None #remove objective
+
 		solve_method(S)
 		'''
 		import pyschedule

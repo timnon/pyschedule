@@ -38,8 +38,9 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		S = copy.deepcopy(scenario)
 		
 	# no objective specified
-	if not S.objective() :
-		S.use_makespan_objective()
+	if not S.objective :
+		S.use_flowtime_objective()
+
 
 	ort_solver = pywrapcp.Solver(S.name)
 
@@ -60,9 +61,9 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			for R in T.resources :
 				resource_to_intervals[R].append(I)
 
-		# alternative resources
+		# alternative resources #TODO: resources could be in multiple clauses
 		else :
-			for RA in T.resources_req :
+			for RA in T :
 				ra_tasks = list()
 				for R in RA :
 					I_ = ort_solver.FixedDurationIntervalVar(0,horizon,T.length,True,T.name+'_'+R.name)
@@ -80,11 +81,11 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		sequences[R] = disj.SequenceVar()
 		ort_solver.Add(disj)
 
+
 	# move objective
-	objective = S.objective()
 	# TODO: bug, variables that are not part of the objective might not be finally defined
-	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*1 for T in S.tasks() ]+
-                                           [ task_to_interval[T].EndExpr()*1000000 for T in objective if T in task_to_interval ])
+	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*1 for T in S.objective if T in task_to_interval ])#+
+                                          #[ task_to_interval[T].EndExpr()*1 for T in S.tasks() ])
 	ort_objective = ort_solver.Minimize(ort_objective_var, 1)
 
 	# precedences
@@ -125,7 +126,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		ort_time_limit = int(time_limit*1000)
 	else :
 		ort_time_limit = 100000000
-	branch_limit = 100000000
+	branch_limit = 100000000	
 	failures_limit = 100000000
 	solutions_limit = 10000000
 	limits = (ort_solver.Limit(ort_time_limit, branch_limit, failures_limit, solutions_limit, True))
@@ -144,7 +145,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			T.start = collector.StartValue(0, task_to_interval[T])
 		if not T.resources :
 			T.resources = [ R \
-		                        for RA in T.resources_req for R in RA \
+		                        for RA in T for R in RA \
 		                        if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
 	
 

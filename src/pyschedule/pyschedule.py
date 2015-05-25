@@ -26,9 +26,9 @@ under the License.
 python package to formulate and solve resource-constrained scheduling problems
 """
 
-#TODO: each task requires at least one resource req
 #TODO: resources requirements should not overlap (can they?)
 #TODO: cpoptimier with cond precedence constraints
+#TODO: tasks of length 0 dont seem to work???
 
 
 from collections import OrderedDict as _DICT_TYPE
@@ -48,7 +48,7 @@ def _isnumeric(var) :
 	return isinstance(var,(int)) # only integers are accepted
 
 def _isiterable(var) :
-	return isinstance(var,(list,set,tuple)) #restriction to list,set,tuple to avoid funny cases
+	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
 
 
 
@@ -155,9 +155,11 @@ class Scenario(_SchedElement):
 	
 	def __init__(self,name='scenario not named') :
 		_SchedElement.__init__(self,name,numeric_name_prefix='S')
+		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
 		self.constraints = list()
+		#self.objective_price = _ResourceAffine() #TODO: add more complex objective
 
 		# parameters
 		self.is_same_resource_precs_lax = True
@@ -205,31 +207,6 @@ class Scenario(_SchedElement):
 		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
 		return solution
 
-	def objective(self) :
-		"""
-		Returns the objective
-		"""
-		# zero objectives are not considered, therefore only if T.objective and R.objective
-		objective_tasks = [ T for T in self.tasks() if T.cost ] 
-		objective_resources = [ R for R in self.resources() if R.cost ]
-		objective_affine = _SchedElementAffine()
-		for T in objective_tasks :
-			objective_affine += T*T.cost
-		for R in objective_resources :
-			objective_affine += R*R.cost
-		if objective_affine :
-			return objective_affine
-		return None
-
-	def clear_objective(self) :
-		"""	
-		Removes the objective
-		"""
-		for T in self.tasks() :
-			T.cost = None
-		for R in self.resources() :
-			R.cost = None
-
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks without a fixed start
@@ -240,8 +217,14 @@ class Scenario(_SchedElement):
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
+		self.objective.clear()
+		self += makespan*1
 
 	def use_flowtime_objective(self) :
+		"""
+		Sets the objective a uniform flow-time objective
+		"""
+		self.objective.clear()
 		self += sum([ T*1 for T in self.tasks() if T.start is None ])
 
 	def clear_task_starts(self) :
@@ -282,7 +265,6 @@ class Scenario(_SchedElement):
 			if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
 				raise Exception('ERROR: can only deal with simple precedences of \
 		                                 the form T1 + 3 < T2 or T1 < 3 and not '+str(other) )
-
 			# get offset
 			offset = 0
 			if 1 in other : offset = other[1]
@@ -295,7 +277,7 @@ class Scenario(_SchedElement):
 				elif other.kind == '<=' :
 					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='tight'))
 				elif other.kind == '<<' :
-					shared_resources = list( set(left.resources_req.resources()) & set(right.resources_req.resources()) )
+					shared_resources = list( set(left.resources_req_list()) & set(right.resources_req_list()) )
 					prec = Precedence(left=left,right=right,offset=offset,kind='cond')
 					if not shared_resources :
 						raise Exception('ERROR: tried to add precedence '+str(prec)+' but tasks dont compete for resources')
@@ -320,9 +302,7 @@ class Scenario(_SchedElement):
 			return self
 
 		elif isinstance(other,_TaskAffine) :
-			for T in other :
-				if T in self.tasks() :
-					T.cost = other[T]
+			self.objective += other
 			return self
 
 		elif isinstance(other,Resource) :
@@ -331,11 +311,11 @@ class Scenario(_SchedElement):
 			self.R[other.name] = other
 			return self
 
+		'''
 		elif isinstance(other,_ResourceAffine) :
-			for R in other :
-				if R in self.resources() :
-					R.cost = other[R]
+			self.objective_price += other
 			return self
+		'''
 
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
 
@@ -351,7 +331,7 @@ class Scenario(_SchedElement):
 		s = '\n##############################################\n\n'
 		s += 'SCENARIO: '+str(self)+'\n\n'
 		#print objective
-		s += 'OBJECTIVE: '+str(self.objective())+'\n\n'
+		s += 'OBJECTIVE: '+str(self.objective)+'\n\n'
 
 		s += 'RESOURCES:\n'
 		for R in self.resources() :
@@ -365,7 +345,7 @@ class Scenario(_SchedElement):
 				s += str(T.start) + ','
 			if T.resources :
 				s += str(T.resources) + ' : '
-			s += str(T.resources_req) + '\n'
+			s += str(list(T)) + '\n'
 		s += '\n'
 		#s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
@@ -405,27 +385,39 @@ class Scenario(_SchedElement):
 
 
 
-class Task(_SchedElement) :
+class Task(_SchedElement,list) :
 	"""
 	A task to be processed by at least one resource
 	"""
 
 	def __init__(self,name,length=1,cost=None,start=None,resources=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
+		list.__init__(self)
 		self.length = length
 		self.cost = cost
 		self.start = start
 		self.resources = resources
-		self.resources_req = _ResourceReq()
 
+	def resources_req_list(self) :
+		return [ R for RA in self for R in RA ]
+
+	def __getitem__(self,index) :
+		if isinstance(index,int) :
+			return list(self)[index]
+		elif isinstance(index,Resource) :
+			return max([ RA[index] for RA in self if index in RA ])
+		else :
+			raise Exception('ERROR: tasks can only take integers and resources as index, not '+str(index))
+		return self
+		
 	def __len__(self) :
 		return self.length
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
 			for x in other : self += x		
-		elif isinstance(other,(Resource,_ResourceAffine,_ResourceReq)) :
-			self.resources_req += other
+		elif isinstance(other,(Resource,_ResourceAffine)) :
+			self.append(other)
 		else :
 			raise Exception('ERROR: cant add '+str(other)+' to task '+str(self))
 		return self
@@ -463,7 +455,16 @@ class Task(_SchedElement) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
+	# eq operator is required because otherwise the list comparison
+	# operator is used
+    	def __eq__(self, other) :
+		if not isinstance(other,self.__class__) :
+			return False
+		if str(self) == str(other) :
+			return True
+		return False
 
+		
 
 class _TaskAffine(_SchedElementAffine) :
 
@@ -593,7 +594,7 @@ class Resource(_SchedElement) :
 			return self
 		elif isinstance(other,Precedence) :
 			# check if each task in prec requires resource
-			wrong_tasks = [ T for T in other.tasks() if not self in T.resources_req.resources()]
+			wrong_tasks = [ T for T in other.tasks() if not self in T.resources_req_list()]
 			if not wrong_tasks :
 				self.precs.add(other)
 			else :
@@ -605,18 +606,27 @@ class Resource(_SchedElement) :
 		else :
 			raise Exception('ERROR: cant add '+str(other)+' to resource '+str(self))
 		return self
-		
-
-	def __add__(self,other) :
-		return _ResourceReq(_ResourceAffine(self)) + other
 
 	def __mul__(self,other) :
 		return _ResourceAffine(self) * other
 
 	def __or__(self,other) :
 		return _ResourceAffine(self) | other
+	
+	# iteration over resource gives the resource to simplify
+	# the construction of solvers
+	def __iter__(self) :
+		return _ResourceAffine(self).__iter__()
 
+	# necessary to allow capacity check to simplify
+	# the construction of solvers
+	def __getitem__(self,index) :
+		if index == self :
+			return 1
+		else :
+			raise Exception('ERROR: resource '+str(self)+' can only return its own capacity')
 
+	
 
 class _ResourceAffine(_SchedElementAffine) :
 
@@ -626,41 +636,7 @@ class _ResourceAffine(_SchedElementAffine) :
 	def __or__(self,other) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
-	def __add__(self,other) :
-		return _ResourceReq(self) + other
 
-
-
-class _ResourceReq(list) :
-
-	def __init__(self,unknown=None) :
-		list.__init__(self)
-		if unknown :
-			self.append(_ResourceAffine(unknown))
-
-	def __add__(self,other) :
-		if _isiterable(other) :
-			for x in other : self += x
-		other = _ResourceAffine(other)
-		if set(other) & set(self.resources()) :
-			raise Exception('ERROR: '+str(other)+' already somewhat contained in resource requirement '+str(self))
-		self.append(other)
-		return self
-
-	def __iadd__(self,other) :
-		self = self + other
-		return self
-
-	def __repr__(self) :
-		return ' + '.join([ str(x) for x in self])
-
-	def resources(self) :
-		return [ R for RA in self for R in RA ]
-
-	def capacity_req(self,R) :
-		RA = [ RA_ for RA_ in self if R in RA_ ][0]
-		return RA[R]
-			
 
 
 

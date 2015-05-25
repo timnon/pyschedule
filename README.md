@@ -146,7 +146,7 @@ To avoid the cleaning, the red painting is now scheduled after the green paintin
 ```
 Lunch = S.Task('Lunch')
 S += Lunch > 3, Lunch < 5
-Lunch += Alice + Bob
+Lunch += Alice, Bob
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-lunch.png)

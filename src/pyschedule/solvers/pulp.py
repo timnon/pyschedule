@@ -28,22 +28,25 @@ import pulp as pl
 def _isnumeric(var) :
 	return isinstance(var,(int)) # only integers are accepted
 
-def _solve_mip(mip,kind='CBC',time_limit=None,msg=0) :
+def _solve_mip(mip,kind='CBC',params=dict(),msg=0) :
 
 	start_time = time.time()
 	# select solver for pl
 	if kind == 'CPLEX' :
-		if time_limit :
+		if 'time_limit' in params :
 			# pulp does currently not support a timelimit in 1.5.9
-			mip.solve(pl.CPLEX_CMD(msg=msg,timelimit=time_limit))
+			mip.solve(pl.CPLEX_CMD(msg=msg,timelimit=params['time_limit']))
 		else :
 			mip.solve(pl.CPLEX_CMD(msg=msg))
 	elif kind == 'GLPK' :
 		mip.solve(pl.GLPK_CMD(msg=msg))
 	elif kind == 'CBC' :
-		options = []
-		if time_limit :
-			options += ['sec',str(time_limit)]
+		options = []			
+		for key in params :
+			if key == 'time_limit' :
+				options.extend(['sec',str(params['time_limit'])])
+			else :
+				options.extend([str(key),str(params[key])])
 		mip.solve(pl.PULP_CBC_CMD(msg=msg,options=options))
 	else :
 		raise Exception('ERROR: solver '+kind+' not known')
@@ -93,7 +96,7 @@ class ContinuousMIP(object) :
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# check for objective
-		if not S.objective() :
+		if not S.objective :
 			if msg : print('INFO: use makespan objective as default')
 			S.use_makespan_objective()
 
@@ -114,21 +117,20 @@ class ContinuousMIP(object) :
 					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
 					mip += x[(T,R)] == 1
 			else :
-				for R in T.resources_req.resources() :
+				for R in T.resources_req_list() :
 					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
 				# everybody is required on one resource from each or clause
-				for RA in T.resources_req :
+				for RA in T :
 					mip += sum([ x[(T,R)] for R in RA ]) == 1
 
 		# objective
-		objective = S.objective()
-		mip += sum([ x[T]*objective[T] for T in objective if T in x ])
+		mip += sum([ x[T]*S.objective[T] for T in S.objective if T in x ])
 
 		# resource capacity constraints
 		for R in S.resources() :
 			if R.capacity :
-				mip += sum([ x[(T,R)]*T.resources_req.capacity_req(R) for T in S.tasks() \
-		                               if R in T.resources_req.resources() ]) <= R.capacity
+				mip += sum([ x[(T,R)]*T[R] for T in S.tasks() \
+		                              if R in T.resources_req_list() ]) <= R.capacity
 
 		# same resource variable
 		task_pairs = [ (T,T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_) ]
@@ -136,11 +138,11 @@ class ContinuousMIP(object) :
 			if T.resources :
 				resources = T.resources
 			else :
-				resources = T.resources_req.resources()
+				resources = T.resources_req_list()
 			if T_.resources :
 				resources_ = T_.resources
 			else :
-				resources_ = T_.resources_req.resources()
+				resources_ = T_.resources_req_list()
 			shared_resources = list( set(resources) & set(resources_) )
 			# TODO: restrict the number of variables
 			if shared_resources and (T.start is None or T_.start is None ) :
@@ -197,11 +199,11 @@ class ContinuousMIP(object) :
 
 	def read_solution_from_mip(self,msg=0) :
 		for T in self.scenario.tasks() :
-			T.start = self.x[T].varValue
+			T.start = int(self.x[T].varValue)
 			if T.resources :
 				resources = T.resources
 			else :
-				resources = T.resources_req.resources()
+				resources = T.resources_req_list()
 			T.resources = [ R for R in resources if self.x[(T,R)].varValue > 0 ]
 
 
@@ -223,7 +225,7 @@ class ContinuousMIP(object) :
 		self.scenario = scenario
 		self.big_m = big_m
 		self.build_mip_from_scenario(msg=msg)
-		_solve_mip(self.mip, kind=kind, time_limit=time_limit, msg=msg)
+		_solve_mip(self.mip, kind=kind, params={'time_limit':time_limit}, msg=msg)
 
 		if self.mip.status != 1 :
 			if msg : print('ERROR: no solution found')
@@ -251,7 +253,7 @@ class DiscreteMIP(object) :
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# check for objective
-		if not S.objective() :
+		if not S.objective :
 			if msg : print('INFO: use makespan objective as default')
 			S.use_makespan_objective()
 		
@@ -274,13 +276,13 @@ class DiscreteMIP(object) :
 
 				# base time-indexed variables for task group
 				for t in range(self.horizon) :
-					x[T,t] = pl.LpVariable((T,t),0,task_group_size) # continous variables
+					x[T,t] = pl.LpVariable((T,t),0,task_group_size)#,cat=pl.LpInteger) # continous variables
 				# lower and upper boundary conditions
 				cons.append( pl.LpConstraint( x[T,0], sense=0, rhs=task_group_size ) )
 				cons.append( pl.LpConstraint( x[T,self.horizon-1], sense=0, rhs=0 ) ) #required for no solution feedback
 
 				# generate variabels for task resources
-				for R in T.resources_req.resources() :
+				for R in T.resources_req_list() :
 					# resource base variables
 					for t in range(self.horizon) :
 						x[T,R,t] = pl.LpVariable((T,R,t),0,task_group_size,cat=pl.LpInteger) #binary or not?
@@ -289,7 +291,7 @@ class DiscreteMIP(object) :
 						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,t],1), (x[T,R,t+1],-1) ]), sense=1, rhs=0 ) )
 
 				# consider each resource selection
-				for RA in T.resources_req :
+				for RA in T :
 					# resource base variables should match base variables in each time step
 					for t in range(self.horizon) :
 						affine = pl.LpAffineExpression([ (x[T,R,t],1) for R in RA ] + [(x[T,t],-1)])
@@ -307,7 +309,7 @@ class DiscreteMIP(object) :
 				# TODO: fixed resources not really tested
 				resources = [ R for T_ in self.task_groups[T] if T_.resources for R in T_.resources ]
 				for R in resources :
-					if R in T.resources_req.resources() :
+					if R in T.resources_req_list() :
 						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,0],1) ]), sense=1, rhs=resources.count(R) ) )
 					else :
 						raise Exception('ERROR: resource '+str(R)+' is not part of the requirements for task '+str(T))
@@ -319,27 +321,28 @@ class DiscreteMIP(object) :
 			t_start = T.start
 			t_end = min(T.start+T.length,self.horizon-1)
 			for R in T.resources :
-				resource_tasks = [ T_ for T_ in self.task_groups_free if R in T_.resources_req.resources() ]
+				resource_tasks = [ T_ for T_ in self.task_groups_free if R in T_.resources_req_list() ]
 				affine = pl.LpAffineExpression([ (x[T_,R,max(t_start-T_.length,0)],1) for T_ in resource_tasks ]+\
                                                                [ (x[T_,R,t_end],-1) for T_ in resource_tasks ])
 				cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
 
 		# objective
-		objective = S.objective()
-		objective_tasks = [ T for T in set(objective) & set(self.task_groups_free) ]
-		objective_resources = [ R for R in set(objective) & set(self.scenario.resources()) ]
-		for R in objective_resources :
+		# TODO: add more complex objectives
+		'''
+		for R in S.objective_price :
 			resource_upper_bound = len(self.scenario.tasks())
 			x[R] = pl.LpVariable('resource_'+str(R)+'_switch',0,1,cat=pl.LpBinary)
-			affine = pl.LpAffineExpression( [ ( x[T,R,0], 1) for T in self.task_groups_free if R in T.resources_req.resources() ] + 
+			affine = pl.LpAffineExpression( [ ( x[T,R,0], 1) for T in self.task_groups_free if R in T.resources_req_list() ] + 
                                                         [ ( x[R],-resource_upper_bound) ] )
 			cons.append( pl.LpConstraint( affine, sense=-1, rhs=0.0 ) )
-		mip += pl.LpAffineExpression([ ( x[T,t], objective[T]) for T in objective_tasks for t in range(self.horizon)  ] +
-                                             [ ( x[R], objective[R]) for R in objective_resources ])
+		'''
+		mip += pl.LpAffineExpression([ (x[T,t], S.objective[T]) for T in S.objective if T in self.task_groups_free
+                                                                        for t in range(self.horizon)  ])# +
+                                            # [ ( x[R], objective[R]) for R in objective_resources ])
 
 		# resource non-overlapping constraints 
 		for R in S.resources() :
-			resource_tasks = [ T for T in self.task_groups_free if R in T.resources_req.resources() ]
+			resource_tasks = [ T for T in self.task_groups_free if R in T.resources_req_list() ]
 			for t in range(self.horizon) :
 				affine = pl.LpAffineExpression([ (x[T,R,max(t-T.length,0)], 1) for T in resource_tasks ] + \
                                                                [ (x[T,R,t], -1) for T in resource_tasks ])
@@ -347,7 +350,7 @@ class DiscreteMIP(object) :
 			# resource capacity
 			if R.capacity :
 				resource_tasks = [ T for T in self.task_groups_free \
-                                                   if R in T.resources_req.resources() ]
+                                                   if R in T.resources_req_list() ]
 				# get lower and upper capacity bound
 				if _isnumeric(R.capacity) :
 					min_capacity = 0
@@ -357,15 +360,15 @@ class DiscreteMIP(object) :
 					max_capacity = R.capacity[1]
 				# implement lower capacity bound
 				if min_capacity > 0 :
-					affine = pl.LpAffineExpression([ (x[T,R,0],T.resources_req.capacity_req(R)) for T in resource_tasks ])
+					affine = pl.LpAffineExpression([ (x[T,R,0],T[R]) for T in resource_tasks ])
 					cons.append( pl.LpConstraint( affine, sense=1, rhs=min_capacity ) )
 				# implement upper capacity
-				affine = pl.LpAffineExpression([ (x[T,R,0],T.resources_req.capacity_req(R)) for T in resource_tasks ])
+				affine = pl.LpAffineExpression([ (x[T,R,0],T[R]) for T in resource_tasks ])
 				cons.append( pl.LpConstraint( affine, sense=-1, rhs=max_capacity ) )
 
 		# precedence constraints
 		for P in S.precs_lax() :
-			if P.left in self.task_groups and P.right in self.task_groups :
+			if P.left in self.task_groups_free and P.right in self.task_groups_free :
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
 				if P.left in self.task_groups_free and P.right in self.task_groups_free : #TODO: take care of all other cases -> treat as prec_low and prec_up
@@ -375,7 +378,7 @@ class DiscreteMIP(object) :
 	
 		# tight precedence constraints
 		for P in S.precs_tight() :
-			if P.left in self.task_groups and P.right in self.task_groups :
+			if P.left in self.task_groups_free and P.right in self.task_groups_free :
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
 				for t in range(self.horizon) :
@@ -384,10 +387,10 @@ class DiscreteMIP(object) :
 
 		# conditional precedence constraints
 		for P in S.precs_cond() :
-			if P.left in self.task_groups and P.right in self.task_groups :
+			if P.left in self.task_groups_free and P.right in self.task_groups_free :
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
-				shared_resources = list( set(P.left.resources_req.resources()) & set(P.right.resources_req.resources()) )
+				shared_resources = list( set(P.left.resources_req_list()) & set(P.right.resources_req_list()) )
 				for R in shared_resources :	
 					for t in range(self.horizon) :
 						affine = pl.LpAffineExpression([ ( x[P.left,R,max(t-P.left.length,0)],1 ), (x[P.left,R,t],-1),\
@@ -396,12 +399,12 @@ class DiscreteMIP(object) :
 
 		# lower bounds
 		for P in S.precs_low() :
-			if P.left in self.task_groups :
+			if P.left in self.task_groups_free :
 				cons.append( x[P.left,P.right] == len(self.task_groups[T]) )
 
 		# upper bounds
 		for P in S.precs_up() :
-			if P.left in self.task_groups :
+			if P.left in self.task_groups_free :
 				cons.append( x[P.left,P.right] == 0 )
 
 		# ensure that tasks with similar precedences are run on the same resources
@@ -411,8 +414,8 @@ class DiscreteMIP(object) :
 		if self.scenario.is_same_resource_precs_tight :
 			same_resource_precs.extend(S.precs_tight())
 		for P in same_resource_precs :
-			if P.left in self.task_groups and P.right in self.task_groups :
-				shared_resources = set(P.left.resources_req.resources()) & set(P.right.resources_req.resources())
+			if P.left in self.task_groups_free and P.right in self.task_groups_free :
+				shared_resources = set(P.left.resources_req_list()) & set(P.right.resources_req_list())
 				for R in shared_resources :
 					for t in range(self.horizon) :
 						affine = pl.LpAffineExpression([ ( x[(P.left,R,t)],1 ), (x[(P.right,R,t)],-1) ])
@@ -421,7 +424,7 @@ class DiscreteMIP(object) :
 
 		for con in cons :
 			mip.addConstraint(con)
-
+		
 		self.mip = mip
 		self.x = x
 
@@ -433,7 +436,7 @@ class DiscreteMIP(object) :
 			starts = [ max([ t for t in range(self.horizon) if self.x[(T,t)].varValue >= z-0.5 ]) \
                                    for z in range(int(self.x[(T,0)].varValue),0,-1) ]
 			RA_resources = collections.OrderedDict()
-			for RA in T.resources_req :
+			for RA in T :
 				RA_starts = list()
 				for R in RA :
 					R_starts = [ max([ t for t in range(self.horizon) if self.x[(T,R,t)].varValue >= z-0.5 ]) \
@@ -448,23 +451,20 @@ class DiscreteMIP(object) :
 					starts.remove(T_.start)
 				if T_.resources is not None :
 					for R in T_.resources :
-						for RA in T.resources_req :
+						for RA in T :
 							RA_resources[RA].remove(R)
 
 			start_count = 0
 			resource_count = 0		
 			for T_ in self.task_groups[T] :
 				if T_.start is None :
-					T_.start = starts[start_count]
+					T_.start = int(starts[start_count])
 					start_count += 1
 				if T_.resources is None :
 					T_.resources = []
-					for RA in T.resources_req :
+					for RA in T :
 						T_.resources.append(RA_resources[RA][resource_count][1])
 					resource_count += 1
-
-
-
 
 
 	def solve(self,scenario,horizon='100',kind='CBC',time_limit=None,task_groups=None,msg=0) :
@@ -489,7 +489,15 @@ class DiscreteMIP(object) :
 		self.horizon = horizon
 		self.task_groups = task_groups
 		self.build_mip_from_scenario(msg=msg)
-		_solve_mip(self.mip,kind=kind,time_limit=time_limit,msg=msg)
+
+		#if time_limit :
+		#	options += ['sec',str(time_limit),'ratioGap',str(0.1),'cuts','off','heur','on','preprocess','on','feas','on']#,'maxNodes',str(0),'feas','both','doh','solve']
+
+		params = dict()
+		if time_limit != None :
+			params['time_limit'] = time_limit
+		#params['cuts'] = 'off'
+		_solve_mip(self.mip,kind=kind,params=params,msg=msg)
 
 		if self.mip.status != 1 :
 			if msg : print ('ERROR: no solution found')

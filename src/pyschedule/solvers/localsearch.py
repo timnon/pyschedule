@@ -23,11 +23,11 @@ under the License.
 
 import copy, random
 
-def select_random_tasks(scenario,n_tasks=5) :
+def select_random_tasks(scenario,batch_size=20) :
 	"""
 	selects some random tasks
 	"""
-	return random.sample(scenario.tasks(),n_tasks)
+	return random.sample(scenario.tasks(),batch_size)
 
 
 
@@ -44,7 +44,7 @@ def solve(scenario,solve_method,select_method=select_random_tasks,n_iterations=1
 	if copy_scenario :
 		S = copy.deepcopy(scenario)
 
-	if not S.objective() :
+	if not S.objective :
 		S.use_makespan_objective()
 
 	for i in range(n_iterations) :
@@ -54,13 +54,14 @@ def solve(scenario,solve_method,select_method=select_random_tasks,n_iterations=1
 		for T in opt_tasks :
 			T.start = None
 			#T.resources = None
-		for T in S.objective() :
-			T.start = None
+		for T in S.objective :
+			if T in S.tasks() :
+				T.start = None
 		solve_method(S)
-
 		
 		import pyschedule
 		pyschedule.plotters.matplotlib.plot(S)
+		
 		
 		
 		
