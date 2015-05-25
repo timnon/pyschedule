@@ -72,7 +72,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 					resource_task_to_interval[(R,T)] = I_
 					ort_solver.Add( I.StaysInSync(I_) )
 				# one resource needs to get selected
-	  			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
+				ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
 
 	# resources
 	sequences = collections.OrderedDict()

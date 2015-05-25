@@ -42,7 +42,12 @@ def OR(L) :
 	"""
 	method to iterate the or-operator over a list to allow lists of alternative resources, e.g. OR([R1,R2,R3]) = R1 | R2 | R3
 	"""
-	return reduce(lambda x, y : x | y, L)
+	x = None
+	if L :
+		x = L[0]
+	for y in L[1:] :
+		x = x | y
+	return x
 
 def _isnumeric(var) :
 	return isinstance(var,(int)) # only integers are accepted
@@ -177,7 +182,7 @@ class Scenario(_SchedElement):
 		return T
 
 	def tasks(self) :
-		return self.T.values()
+		return list(self.T.values())
 
 	def Resource(self,name,capacity=None,cost=None) :
 		"""
@@ -191,7 +196,7 @@ class Scenario(_SchedElement):
 		return R
 
 	def resources(self) :
-		return self.R.values()
+		return list(self.R.values())
 
 	def R(self,name) :
 		return self._resources[name]

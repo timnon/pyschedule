@@ -442,7 +442,7 @@ class DiscreteMIP(object) :
 					R_starts = [ max([ t for t in range(self.horizon) if self.x[(T,R,t)].varValue >= z-0.5 ]) \
 		                                     for z in range(int(self.x[(T,R,0)].varValue),0,-1) ]
 					RA_starts.extend( [ (t,R) for t in R_starts ] )
-				RA_starts = sorted(RA_starts)
+				RA_starts = sorted(RA_starts, key=lambda x : x[0])
 				RA_resources[RA] = [ (t,R) for t,R in RA_starts ]
 
 			# check for predefined starts

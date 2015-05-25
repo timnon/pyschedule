@@ -84,8 +84,8 @@ def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,
 	for T in task_list : S -= T #remove all tasks which are not part of objective
 
 	def batches(tasks, batch_size):
-	    for i in xrange(0, len(tasks), batch_size):
-		yield tasks[i:i+batch_size]
+		for i in xrange(0, len(tasks), batch_size):
+			yield tasks[i:i+batch_size]
 	
 	for batch in batches(task_list,batch_size) :
 		if msg :
