@@ -95,11 +95,6 @@ class ContinuousMIP(object) :
 		BIG_M = self.big_m #TODO: GLPK has problems with large number
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
-		# check for objective
-		if not S.objective :
-			if msg : print('INFO: use makespan objective as default')
-			S.use_makespan_objective()
-
 		# task variables
 		x = dict()
 
@@ -251,11 +246,6 @@ class DiscreteMIP(object) :
 	def build_mip_from_scenario(self,msg=0) :
 		S = self.scenario
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
-
-		# check for objective
-		if not S.objective :
-			if msg : print('INFO: use makespan objective as default')
-			S.use_makespan_objective()
 		
 		# organize task groups
 		if self.task_groups == None :
