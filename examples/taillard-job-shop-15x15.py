@@ -52,5 +52,7 @@ for i in range(n) :
 	for j in range(n) :
 		T[(i,j)] += R[mach_table[i][j]-1]
 
+S.use_makespan_objective()
+
 solvers.pulp.solve(S,time_limit=120,msg=1)
 plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])

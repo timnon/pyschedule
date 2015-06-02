@@ -39,10 +39,12 @@ red_post += Alice | Bob
 task_colors = {red_pre: '#EB4845', red_paint:'#EB4845', red_post: '#EB4845', 
                green_pre: '#A1D372', green_paint: '#A1D372', green_post: '#A1D372'}
 
-def run(img_filename) :
+def run(img_filename,makespan=True) :
 	print('INFO: compute picture:'+str(img_filename))
 	import copy
 	S_ = copy.deepcopy(S)
+	if makespan :
+		S_.use_makespan_objective()
 	pyschedule.solvers.pulp.solve(S_,kind='CBC',msg=1)
 	pyschedule.plotters.matplotlib.plot(S_,img_filename=path+img_filename,color_prec_groups=False,hide_tasks=['MakeSpan'],task_colors=task_colors,fig_size=(15,6))
 run(img_filename='/pics/bike-shop-first.png')
@@ -71,7 +73,7 @@ run(img_filename='/pics/bike-shop-lunch.png')
 
 S.objective.clear()
 S += green_post*5 + red_post
-run(img_filename='/pics/bike-shop-flow-time.png')
+run(img_filename='/pics/bike-shop-flow-time.png',makespan=False)
 # STEP 7 (flow-time objective)
 
 
