@@ -26,6 +26,9 @@ cook += Alice | Bob
 wash += Alice | Bob
 clean += Alice | Bob
 
+# use makespan objective
+S.use_makespan_objective()
+
 # solve and print solution
 pyschedule.solvers.pulp.solve(S)
 print(S.solution())
@@ -37,7 +40,7 @@ The printout should look as follows:
 [('wash', 'Alice', 0.0, 2.0), ('cook', 'Alice', 2.0, 3.0), ('clean', 'Bob', 0.0, 3.0)]
 ```
 
-The default objective is to minimize the latest completion time of any task (MakeSpan). Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
+Her we use a makespan objective. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
 
 ```
 pip install matplotlib
@@ -110,6 +113,7 @@ red_post += Alice | Bob
 Now we have the first version of our scenario, lets solve and plot it. For the use of GLPK, replace "CPLEX" by "GLPK":
 
 ```
+S.use_makespan_objective()
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 pyschedule.plotters.matplotlib.plot(S,color_prec_groups=True)  
 ```
@@ -156,7 +160,7 @@ The lunch will start after the fourth hour, but it requires to switch the order 
 ```
 MakeSpan = S.Task('MakeSpan')
 S += MakeSpan > {green_post,red_post}
-S += MakeSpan # add the makespan to scenario for use as objective
+S += MakeSpan*1 # add the makespan to scenario for use as objective
 ```
 
 Finally Bob gets a call from the owner of the green bike which offers to give them a huge tip if they manage to finish his bike as early as possible. After talking with Alice, they give a six times higher priority to the green one, which translates into the following flow-time objective (six times the completion time of the green bike to one time of the red one):
