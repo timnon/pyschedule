@@ -23,6 +23,8 @@ under the License.
 
 import time, os, copy, collections
 
+#TODO: same resources
+
 def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	"""
 	Integration of the ortools scheduling solver
@@ -36,11 +38,6 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	S = scenario
 	if copy_scenario :
 		S = copy.deepcopy(scenario)
-		
-	# no objective specified
-	if not S.objective :
-		S.use_flowtime_objective()
-
 
 	ort_solver = pywrapcp.Solver(S.name)
 
@@ -49,7 +46,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	resource_to_intervals = resource_to_intervals = { R : list() for R in S.resources() }
 	resource_task_to_interval = collections.OrderedDict()
 	for T in S.tasks() :
-		I = ort_solver.FixedDurationIntervalVar(0,horizon,T.length,False,T.name)
+		I = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,False,T.name)
 		task_to_interval[T] = I
 
 		# fix start
@@ -66,7 +63,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			for RA in T :
 				ra_tasks = list()
 				for R in RA :
-					I_ = ort_solver.FixedDurationIntervalVar(0,horizon,T.length,True,T.name+'_'+R.name)
+					I_ = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,True,T.name+'_'+R.name)
 					resource_to_intervals[R].append(I_)
 					ra_tasks.append(I_)
 					resource_task_to_interval[(R,T)] = I_
@@ -81,7 +78,6 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		sequences[R] = disj.SequenceVar()
 		ort_solver.Add(disj)
 
-
 	# move objective
 	# TODO: bug, variables that are not part of the objective might not be finally defined
 	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*1 for T in S.objective if T in task_to_interval ])#+
@@ -93,6 +89,11 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		ort_solver.Add( task_to_interval[P.right].StartsAfterEnd( task_to_interval[P.left] ) )
 		# TODO: add offset, but this requires DependecyGraph which is not exposed via swig?
 
+	# precedences
+	for P in S.precs_tight() :
+		ort_solver.Add( task_to_interval[P.right].StartsAtEnd( task_to_interval[P.left] ) )
+		# TODO: add offset, but this requires DependecyGraph which is not exposed via swig?
+
 	# precedences low 
 	for P in S.precs_low() :
 		ort_solver.Add( task_to_interval[P.left].StartsAfter(P.right) )
@@ -100,6 +101,19 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	# precedences up 
 	for P in S.precs_up() :
 		ort_solver.Add( task_to_interval[P.left].StartsBefore(P.right) )
+
+	# ensure that tasks with similar precedences are run on the same resources
+	same_resource_precs = list()
+	if S.is_same_resource_precs_lax :
+		same_resource_precs.extend(S.precs_lax())
+	if S.is_same_resource_precs_tight :
+		same_resource_precs.extend(S.precs_tight())
+	for P in same_resource_precs :
+		shared_resources = set(P.left.resources_req_list()) & set(P.right.resources_req_list())
+		for R in shared_resources :
+			I_left = resource_task_to_interval[(R,P.left)]
+			I_right = resource_task_to_interval[(R,P.right)]
+			ort_solver.Add( I_left.PerformedExpr() == I_right.PerformedExpr() )
 
 	# creates search phases.
 	vars_phase = ort_solver.Phase([ort_objective_var],
@@ -139,10 +153,12 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	# solves the problem.
 	ort_solver.Solve(main_phase,search_params)
 
+	solution = collector.Solution(0)
+
 	# get last solution
 	for T in S.tasks() :
 		if T.start is None :
-			T.start = collector.StartValue(0, task_to_interval[T])
+			T.start = solution.StartMin(task_to_interval[T]) #collector.StartValue(0, task_to_interval[T])
 		if not T.resources :
 			T.resources = [ R \
 		                        for RA in T for R in RA \
