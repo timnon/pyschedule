@@ -26,10 +26,8 @@ cook += Alice | Bob
 wash += Alice | Bob
 clean += Alice | Bob
 
-# use makespan objective
-S.use_makespan_objective()
-
 # solve and print solution
+S.use_makespan_objective()
 pyschedule.solvers.pulp.solve(S)
 print(S.solution())
 ```
