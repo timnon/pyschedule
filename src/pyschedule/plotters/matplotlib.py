@@ -67,14 +67,14 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 		return comps
 
 	tasks = [ T for T in S.tasks() if T not in hide_tasks ] #TODO: upload since hide_tasks might contain string
-	tasks = S.tasks()
+	#tasks = S.tasks()
 	
 	# get connected components dict for coloring
 	# each task is mapping to an integer number which corresponds
 	# to its connected component
 	edges = [ (str(T),str(T)) for T in tasks ]
 	if color_prec_groups :
-		edges += [ (str(T),str(T_)) for P in S.precs if P.kind == '<' or P.kind == '<='\
+		edges += [ (str(T),str(T_)) for P in set(S.precs_lax()) | set(S.precs_tight()) \
 	                   for T in P.tasks() for T_ in P.tasks() \
                            if T in tasks and T_ in tasks ]
 	comps = get_connected_components(edges)
@@ -89,7 +89,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 
 	solution = S.solution()
 	hide_tasks_str = [ str(T) for T in hide_tasks ]
-	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str and y>x ] #tasks of zero length are not plotted
+	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str ] #tasks of zero length are not plotted
 
 	# resources list incl null resource
 	resources = sorted(list(set([ R for (T,R,x,y) in solution ])))
@@ -103,7 +103,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 		ax.add_patch(
 		    patches.Rectangle(
 			(x, y),       # (x,y)
-			x_-x,   # width
+			max(x_-x,0.5),   # width
 			resource_height,   # height
 			color = color_map[T],
 		    )
