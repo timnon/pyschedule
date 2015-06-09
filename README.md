@@ -38,7 +38,7 @@ The printout should look as follows:
 [('wash', 'Alice', 0.0, 2.0), ('cook', 'Alice', 2.0, 3.0), ('clean', 'Bob', 0.0, 3.0)]
 ```
 
-Her we use a makespan objective. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
+Here we use a makespan objective. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
 
 ```
 pip install matplotlib
