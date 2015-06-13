@@ -184,11 +184,11 @@ class Scenario(_SchedElement):
 	def tasks(self) :
 		return list(self.T.values())
 
-	def Resource(self,name,capacity=None,cost=None) :
+	def Resource(self,name,size=1,capacity=None,cost=None) :
 		"""
 		Adds a resource with the given name to the scenario. Resource names need to be unique.
 		"""
-		R = Resource(name,capacity=capacity,cost=cost)
+		R = Resource(name,size=size,capacity=capacity,cost=cost)
 		if str(R) not in self.R : #[ str(R_) for R_ in self.resources ] :
 			self.R[str(R)] = R #.append(R)
 		else :
@@ -205,9 +205,9 @@ class Scenario(_SchedElement):
 		"""
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
-		solution = [ (str(T),str(R),T.start,T.start+T.length) \
+		solution = [ (T,R,T.start,T.start+T.length) \
                              for T in self.tasks() for R in T.resources ]
-		solution += [ (str(T),'',T.start,T.start+T.length) \
+		solution += [ (T,'',T.start,T.start+T.length) \
                              for T in self.tasks() if not T.resources ]
 		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
 		return solution
@@ -345,12 +345,12 @@ class Scenario(_SchedElement):
 		# print tasks
 		s += 'TASKS:\n'
 		for T in self.tasks() :
-			s += str(T)+' : '
+			s += str(T)
 			if T.start is not None :
-				s += str(T.start) + ','
+				s += ' at ' + str(T.start)
 			if T.resources :
-				s += str(T.resources) + ' : '
-			s += str(list(T)) + '\n'
+				s += ' on ' + str(T.resources)
+			s += ' : ' + str(list(T)) + '\n'
 		s += '\n'
 		#s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
@@ -416,6 +416,8 @@ class Task(_SchedElement) :
 		return self
 
 	def __iter__(self) :
+		if self.resources_req is None :
+			raise Exception('ERROR: task '+str(self)+' does not have any resource requirements')
 		return self.resources_req.__iter__()
 		
 	def __len__(self) :
@@ -595,8 +597,9 @@ class Resource(_SchedElement) :
 	cost : the cost of using this resource in the solution
 	"""
 
-	def __init__(self,name=None,capacity=None,cost=None) :
+	def __init__(self,name=None,size=None,capacity=None,cost=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='R')
+		self.size = size
 		self.capacity = capacity
 		self.cost = cost
 

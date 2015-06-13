@@ -1,4 +1,5 @@
 from __future__ import absolute_import as _absolute_import
+import operator
 
 #! /usr/bin/env python
 '''
@@ -23,19 +24,13 @@ under the License.
 '''
 
 
-
 def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,color_prec_groups=False,hide_tasks=[],task_colors=dict(),fig_size=(15,5)) :
 	"""
 	Plot the given solved scenario using matplotlib
 
 	Args:
 		scenario:    scenario to plot
-		kind:        the MIP-solver to use: CPLEX, GLPK
 		msg:         0 means no feedback (default) during computation, 1 means feedback
-		lp_filename: if set, then a .lp file will be written here
-
-	Returns:
-		0: good
 	"""
 	try :
 		import matplotlib.patches as patches, matplotlib.pyplot as plt
@@ -72,9 +67,9 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 	# get connected components dict for coloring
 	# each task is mapping to an integer number which corresponds
 	# to its connected component
-	edges = [ (str(T),str(T)) for T in tasks ]
+	edges = [ (T,T) for T in tasks ]
 	if color_prec_groups :
-		edges += [ (str(T),str(T_)) for P in set(S.precs_lax()) | set(S.precs_tight()) \
+		edges += [ (T,T_) for P in set(S.precs_lax()) | set(S.precs_tight()) \
 	                   for T in P.tasks() for T_ in P.tasks() \
                            if T in tasks and T_ in tasks ]
 	comps = get_connected_components(edges)
@@ -84,44 +79,62 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 	#colors = ['red','green','blue','yellow','orange','black','purple'] #basic colors
 	colors += [ [ random.random() for i in range(3) ] for x in range(len(S.tasks())) ] #random colors
 	# replace colors with fixed task colors		
-	for T in task_colors : colors[comps[str(T)]] = task_colors[T]
+	for T in task_colors : colors[comps[T]] = task_colors[T]
 	color_map = { T : colors[comps[T]] for T in comps }
 
 	solution = S.solution()
-	hide_tasks_str = [ str(T) for T in hide_tasks ]
+	hide_tasks_str = [ T for T in hide_tasks ]
 	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str ] #tasks of zero length are not plotted
 
-	# resources list incl null resource
-	resources = sorted(list(set([ R for (T,R,x,y) in solution ])))
-
-	# plot solution
-	#fig = plt.figure()
 	fig, ax = plt.subplots(1, 1, figsize=fig_size)
-	#ax = fig.add_subplot(111, aspect='equal')
-	for (T,R,x,x_) in solution :
-		y = resources.index(R)*resource_height
-		ax.add_patch(
-		    patches.Rectangle(
-			(x, y),       # (x,y)
-			max(x_-x,0.5),   # width
-			resource_height,   # height
-			color = color_map[T],
-		    )
-		)
-		if show_task_labels :
-			plt.text(x,y+0.1*resource_height,str(T),fontsize=14,color='black')	
+	resource_sizes_count = 0
+	total_resource_sizes = sum([ R.size for R in S.resources() ])
+	R_ticks = list()
+	for R in S.resources() :
+		if R.size is not None :
+			resource_size = R.size
+		else :
+			resource_size = 1.0
+		R_ticks += [str(R)]*int(resource_size)
+		# compute the levels of the tasks on one resource
+		task_levels = dict()
+		# get solution on resource sorted according to start time
+		R_solution = [ (T,R_,x,y) for (T,R_,x,y) in solution if R_ == R ]
+		R_solution = sorted(R_solution, key=lambda x : x[2])
+		# iteratively fill all levels on resource, start with empty fill
+		level_fill = { i : 0 for i in range(int(resource_size)) }
+		for T,R_,x,y in R_solution :
+			sorted_levels =  sorted(level_fill.items(), key = operator.itemgetter(1, 0))
+			min_levels = [ level for level,fill in sorted_levels[:T[R_]] ]
+			task_levels[T] = min_levels
+			for level in min_levels :
+				level_fill[level] += T.length
+		# plot solution
+		for (T,R,x,x_) in R_solution :
+			for level in task_levels[T] :
+				y = (total_resource_sizes-1-(resource_sizes_count+level))*resource_height
+				ax.add_patch(
+				    patches.Rectangle(
+					(x, y),       # (x,y)
+					max(x_-x,0.5),   # width
+					resource_height,   # height
+					color = color_map[T],
+				    )
+				)
+				if show_task_labels :
+					plt.text(x,y+0.1*resource_height,str(T),fontsize=14,color='black')
+		resource_sizes_count += resource_size	
 
 	# format graph
 	plt.title(str(S))	
-	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(resources)) ],resources)
-	plt.ylim(0,resource_height*len(resources))
+	#plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(resources)) ],resources)
+	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(R_ticks)) ],R_ticks[::-1])
+	plt.ylim(0,resource_sizes_count*resource_height)#resource_height*len(resources))
 	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution ]))
 	if img_filename :
 		fig.figsize=(1,1)
 		plt.savefig(img_filename,dpi=200,bbox_inches='tight')
 	else :
 		plt.show()
-
-	return 0
 
 

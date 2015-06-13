@@ -224,7 +224,7 @@ class ContinuousMIP(object) :
 
 		if self.mip.status != 1 :
 			if msg : print('ERROR: no solution found')
-			#return None #TODO: problem sometimes still returned 0 when solution found
+			return None #TODO: problem sometimes still returned 0 when solution found
 
 		self.read_solution_from_mip(msg=msg)
 		return self.scenario
@@ -333,10 +333,15 @@ class DiscreteMIP(object) :
 		# resource non-overlapping constraints 
 		for R in S.resources() :
 			resource_tasks = [ T for T in self.task_groups_free if R in T.resources_req_list() ]
+			if R.size is not None :
+				resource_size = R.size
+			else :
+				resource_size = 1.0
+			# TODO: fix the capacity stuff
 			for t in range(self.horizon) :
-				affine = pl.LpAffineExpression([ (x[T,R,max(t-T.length,0)], 1) for T in resource_tasks ] + \
-                                                               [ (x[T,R,t], -1) for T in resource_tasks ])
-				cons.append( pl.LpConstraint( affine, sense=-1, rhs=1.0 ) )
+				affine = pl.LpAffineExpression([ (x[T,R,max(t-T.length,0)], T[R]) for T in resource_tasks ] + \
+                                                               [ (x[T,R,t], -T[R]) for T in resource_tasks ])
+				cons.append( pl.LpConstraint( affine, sense=-1, rhs=resource_size ) )
 			# resource capacity
 			if R.capacity :
 				resource_tasks = [ T for T in self.task_groups_free \
@@ -491,7 +496,7 @@ class DiscreteMIP(object) :
 
 		if self.mip.status != 1 :
 			if msg : print ('ERROR: no solution found')
-			#return None #TODO: problem sometimes still returned 0 when solution found
+			return None #TODO: problem sometimes still returned 0 when solution found
 
 		self.read_solution_from_mip(msg=msg)	
 		return self.scenario ##TODO: check what to return
