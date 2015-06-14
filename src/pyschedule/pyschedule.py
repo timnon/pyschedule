@@ -80,10 +80,10 @@ class _SchedElement(object) : # extend string object
 
 class _SchedElementAffine(_DICT_TYPE) :
 
-	def __init__(self,unknown=None,element_class=_SchedElement,kind='+') :
+	def __init__(self,unknown=None,element_class=_SchedElement,affine_operator='+') :
 		_DICT_TYPE.__init__(self)
 		self.element_class = element_class
-		self.kind = kind
+		self.affine_operator = affine_operator
 		if unknown == None :
 			pass
 		elif isinstance(unknown,self.element_class) :
@@ -149,7 +149,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 			else :
 				return ''
 		# TODO: do not plot constant if not necessary
-		return (' '+self.kind+' ').join([ format_coeff(self[key])+str(key) for key in self ])
+		return (' '+self.affine_operator+' ').join([ format_coeff(self[key])+str(key) for key in self ])
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
@@ -170,11 +170,11 @@ class Scenario(_SchedElement):
 		self.is_same_resource_precs_lax = True
 		self.is_same_resource_precs_tight = True
 
-	def Task(self,name,length=1,start=None,resources=None,cost=None) :
+	def Task(self,name,length=1,start=None,resources=None,cost=None,capacity_req=None) :
 		"""
 		Adds a task with the given name to the scenario. Task names need to be unique.
 		"""
-		T = Task(name,length=length,cost=cost,start=start,resources=resources)
+		T = Task(name,length=length,cost=cost,start=start,resources=resources,capacity_req=capacity_req)
 		if str(T) not in self.T :
 			self.T[str(T)] = T
 		else :
@@ -240,24 +240,25 @@ class Scenario(_SchedElement):
 			T.start = None
 
 	def precs_lax(self) :
-		#return [ C for C in self.constraints if isinstance(C,Precedence) ]
 		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'lax' ]
 
 	def precs_tight(self) :
-		#return [ C for C in self.constraints if isinstance(C,PrecedenceTight) ]
 		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'tight' ]
 		
 	def precs_cond(self) :
-		#return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
 		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'cond' ]
 
 	def precs_low(self) :
-		#return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
 		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'low' ]
 
 	def precs_up(self) :
-		#return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
 		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'up' ]
+
+	def precs_first(self) :
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'first' ]
+
+	def precs_last(self) :
+		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'last' ]
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
@@ -277,11 +278,11 @@ class Scenario(_SchedElement):
 			if pos_tasks and neg_tasks :
 				left = pos_tasks[0]
 				right = neg_tasks[0]
-				if other.kind == '<' :
+				if other.comp_operator == '<' :
 					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='lax'))
-				elif other.kind == '<=' :
+				elif other.comp_operator == '<=' :
 					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='tight'))
-				elif other.kind == '<<' :
+				elif other.comp_operator == '<<' :
 					shared_resources = list( set(left.resources_req_list()) & set(right.resources_req_list()) )
 					prec = Precedence(left=left,right=right,offset=offset,kind='cond')
 					if not shared_resources :
@@ -299,6 +300,10 @@ class Scenario(_SchedElement):
 				self.constraints.append(Precedence(left=left,right=right,kind='low'))
 				return self
 			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
+
+		elif isinstance(other,Precedence) :
+			self.constraints.append(other)
+			return self
 
 		elif isinstance(other,Task) :
 			if other.name in self.T :
@@ -385,6 +390,18 @@ class Scenario(_SchedElement):
 			s += '\n'.join([ P.__repr__() for P in self.precs_up() ]) + '\n'
 			s += '\n'
 
+		if self.precs_first() :
+			# print precedences
+			s += 'FIRST TASKS:\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs_first() ]) + '\n'
+			s += '\n'
+
+		if self.precs_last() :
+			# print precedences
+			s += 'LAST TASKS:\n'
+			s += '\n'.join([ P.__repr__() for P in self.precs_last() ]) + '\n'
+			s += '\n'
+
 		s += '##############################################\n'
 		return s
 
@@ -395,13 +412,17 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,cost=None,start=None,resources=None,resources_req=None) :
+	def __init__(self,name,length=1,cost=None,start=None,resources=None,resources_req=None,capacity_req=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
 		self.length = length
-		self.cost = cost
+		self.cost = cost #TODO: remove cost???
 		self.start = start
 		self.resources_req = resources_req
 		self.resources = resources
+		if capacity_req is not None :
+			self.capacity_req = capacity_req
+		else :
+			self.capacity_req = self.length
 
 	def resources_req_list(self) :
 		return [ R for RA in self for R in RA ]
@@ -435,9 +456,13 @@ class Task(_SchedElement) :
 		return self
 
 	def __lt__(self,other) :
+		if isinstance(other,Resource) :
+			return Precedence(left=self,right=other,kind='first')
 		return _TaskAffine(self) < other
 
 	def __gt__(self,other) :
+		if isinstance(other,Resource) :
+			return Precedence(left=self,right=other,kind='last')
 		return _TaskAffine(self) > other
 
 	def __le__(self,other) :
@@ -467,23 +492,12 @@ class Task(_SchedElement) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
-	'''
-	# eq operator is required because otherwise the list comparison
-	# operator is used
-    	def __eq__(self, other) :
-		if not isinstance(other,self.__class__) :
-			return False
-		if str(self) == str(other) :
-			return True
-		return False
-	'''
 
-		
 
 class _TaskAffine(_SchedElementAffine) :
 
 	def __init__(self,unknown=None) :
-		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Task)
+		_SchedElementAffine.__init__(self,unknown=unknown,element_class=_SchedElement)
 
 	def __lt__(self,other) :
 		if _isiterable(other) :
@@ -532,12 +546,16 @@ class _TaskAffine(_SchedElementAffine) :
 class _TaskAffineConstraint(_TaskAffine) :
 	"""
 	A representation of some inequality of e.g. the form T1 + T2*3 + 2 < 0
-	The inquality sign is determined by parameter kind. 
+	The inquality sign is determined by parameter comp_operator. 
 	"""
-	def __init__(self,task_affine,kind) :
+	def __init__(self,task_affine,comp_operator) :
 		_TaskAffine.__init__(self)
 		self.update(_DICT_TYPE(task_affine))
-		self.kind = kind
+		self.comp_operator = comp_operator
+
+	def __repr__(self) :
+		s = self.__repr__()
+		s += ' ' + str(sign) + ' 0'
 
 
 
@@ -572,11 +590,11 @@ class Precedence(_Constraint) :
 		return [self.left,self.right]
 
 	def __repr__(self) :
-		kind_to_sign = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<' }
+		kind_to_comp_operator = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<', 'first':'<', 'last':'>' }
 		s = str(self.left) + ' '
 		if self.offset != 0 :
 			s += '+ ' + str(self.offset) + ' '
-		s += str(kind_to_sign[self.kind]) + ' ' + str(self.right)
+		s += str(kind_to_comp_operator[self.kind]) + ' ' + str(self.right)
 		return s
 
 	def __str__(self) :
@@ -597,7 +615,7 @@ class Resource(_SchedElement) :
 	cost : the cost of using this resource in the solution
 	"""
 
-	def __init__(self,name=None,size=None,capacity=None,cost=None) :
+	def __init__(self,name=None,size=1,capacity=None,cost=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='R')
 		self.size = size
 		self.capacity = capacity
@@ -646,11 +664,18 @@ class Resource(_SchedElement) :
 class _ResourceAffine(_SchedElementAffine) :
 
 	def __init__(self,unknown=None) :
-		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Resource,kind='|')
+		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Resource,affine_operator='|')
 
 	def __or__(self,other) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
+
+
+		
+			
+			
+		
+		
 
 
 

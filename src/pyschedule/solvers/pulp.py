@@ -224,7 +224,7 @@ class ContinuousMIP(object) :
 
 		if self.mip.status != 1 :
 			if msg : print('ERROR: no solution found')
-			return None #TODO: problem sometimes still returned 0 when solution found
+			#return None #TODO: problem sometimes still returned 0 when solution found
 
 		self.read_solution_from_mip(msg=msg)
 		return self.scenario
@@ -317,18 +317,8 @@ class DiscreteMIP(object) :
 				cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
 
 		# objective
-		# TODO: add more complex objectives
-		'''
-		for R in S.objective_price :
-			resource_upper_bound = len(self.scenario.tasks())
-			x[R] = pl.LpVariable('resource_'+str(R)+'_switch',0,1,cat=pl.LpBinary)
-			affine = pl.LpAffineExpression( [ ( x[T,R,0], 1) for T in self.task_groups_free if R in T.resources_req_list() ] + 
-                                                        [ ( x[R],-resource_upper_bound) ] )
-			cons.append( pl.LpConstraint( affine, sense=-1, rhs=0.0 ) )
-		'''
 		mip += pl.LpAffineExpression([ (x[T,t], S.objective[T]) for T in S.objective if T in self.task_groups_free
-                                                                        for t in range(self.horizon)  ])# +
-                                            # [ ( x[R], objective[R]) for R in objective_resources ])
+                                                                        for t in range(self.horizon)  ])
 
 		# resource non-overlapping constraints 
 		for R in S.resources() :
@@ -355,10 +345,10 @@ class DiscreteMIP(object) :
 					max_capacity = R.capacity[1]
 				# implement lower capacity bound
 				if min_capacity > 0 :
-					affine = pl.LpAffineExpression([ (x[T,R,0],T[R]) for T in resource_tasks ])
+					affine = pl.LpAffineExpression([ (x[T,R,0],T.capacity_req) for T in resource_tasks ])
 					cons.append( pl.LpConstraint( affine, sense=1, rhs=min_capacity ) )
 				# implement upper capacity
-				affine = pl.LpAffineExpression([ (x[T,R,0],T[R]) for T in resource_tasks ])
+				affine = pl.LpAffineExpression([ (x[T,R,0],T.capacity_req) for T in resource_tasks ])
 				cons.append( pl.LpConstraint( affine, sense=-1, rhs=max_capacity ) )
 
 		# precedence constraints
@@ -401,7 +391,31 @@ class DiscreteMIP(object) :
 		for P in S.precs_up() :
 			if P.left in self.task_groups_free :
 				cons.append( x[P.left,P.right] == 0 )
+		
+		# first task on resource
+		for P in S.precs_first() :
+			if P.left in self.task_groups_free :
+				left_size = float(len(self.task_groups[P.left]))
+				resource_tasks = [ T for T in self.task_groups_free if str(T) != str(P.left) and P.right in T.resources_req_list() ]
+	
+							
+				for t in range(self.horizon) :
+					affine = pl.LpAffineExpression([ (x[P.left,t], len(resource_tasks)/left_size) ] + \
+                                                                       [ (x[T,P.right,min(t+P.left.length,self.horizon-1)],-1/float(len(self.task_groups[T]))) for T in resource_tasks ] + \
+                                                                       [ (x[T,P.right,0],1/float(len(self.task_groups[T]))) for T in resource_tasks ] )
+					cons.append( pl.LpConstraint( affine, sense=-1, rhs=len(resource_tasks) ) )	
 
+		# last task on resource
+		for P in S.precs_last() :
+			if P.left in self.task_groups_free :
+				left_size = float(len(self.task_groups[P.left]))
+				resource_tasks = [ T for T in self.task_groups_free if str(T) != str(P.left) and P.right in T.resources_req_list() ]
+				for t in range(self.horizon) :
+					affine = pl.LpAffineExpression( [ (x[P.left,t], len(resource_tasks)/left_size ) ] + \
+                                                                        [ (x[T,P.right,max(t-T.length,0)],-1/float(len(self.task_groups[T]))) \
+                                                                          for T in resource_tasks ])
+					cons.append( pl.LpConstraint( affine, sense=1, rhs=0 ) )
+	
 		# ensure that tasks with similar precedences are run on the same resources
 		same_resource_precs = list()
 		if self.scenario.is_same_resource_precs_lax :
@@ -496,7 +510,7 @@ class DiscreteMIP(object) :
 
 		if self.mip.status != 1 :
 			if msg : print ('ERROR: no solution found')
-			return None #TODO: problem sometimes still returned 0 when solution found
+			#return None #TODO: problem sometimes still returned 0 when solution found
 
 		self.read_solution_from_mip(msg=msg)	
 		return self.scenario ##TODO: check what to return
