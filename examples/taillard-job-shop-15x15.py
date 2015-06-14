@@ -1,5 +1,5 @@
 #! /usr/bin/python
-from pyschedule import *
+import pyschedule, math
 
 # Taillards 15x15 job-shop instance downloaded from
 # http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/jobshop.dir/tai15_15.txt
@@ -39,20 +39,22 @@ mach ='\
 11  9 13  7  5  2 14 15 12  1  8  4  3 10  6'
 
 proc_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
+proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
 mach_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in mach.split('\n') ]
-n = len(proc_table)
-#n = 6
+n = 6 #len(proc_table)
 
-S = Scenario('Taillards Flow-Shop 15x15')
-T = { (i,j) : S.Task((i,j),length=proc_table[j][i]) for i in range(n) for j in range(n) }
+S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
+T = { (i,j) : S.Task((i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
 R = { j : S.Resource(j) for j in range(n) }
 
-S += [ T[(i,j)] < T[(i,j+1)] for i in range(n) for j in range(n-1) ]
+S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(n-1) ]
 for i in range(n) :
 	for j in range(n) :
-		T[(i,j)] += R[mach_table[i][j]-1]
+		T[i,j] += R[mach_table[i][j] % n]
 
 S.use_makespan_objective()
+pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)
+pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
 
-solvers.pulp.solve(S,time_limit=120,msg=1)
-plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+
+

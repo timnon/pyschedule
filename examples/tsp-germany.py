@@ -311,14 +311,13 @@ S += T['end'] > { T[city] for city in coords if city != 'end' }
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in coords for city_ in coords if city != city_ ]
 
-
-pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
+pyschedule.solvers.pulp.solve(S,time_limit=30,msg=1)
 pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
 # plot tours
 import pylab
 sol = S.solution()
-blue_tour = [ coords[city] for (city,resource,start,end) in sol if city in coords ]
+blue_tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords ]
 pylab.plot([ x for x,y in blue_tour ],[ y for x,y in blue_tour],linewidth=2.0,color='blue')
 
 # plot city names

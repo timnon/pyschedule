@@ -17,6 +17,5 @@ for i in range(n) :
 	R[i] += [ T[((i+j) % n,j)] for j in range(n) ]
 
 S.use_makespan_objective()
-
 pyschedule.solvers.pulp.solve(S,msg=1)
 pyschedule.plotters.matplotlib.plot(S,color_prec_groups=False)

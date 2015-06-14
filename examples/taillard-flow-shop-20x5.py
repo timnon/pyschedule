@@ -1,6 +1,5 @@
 #! /usr/bin/python
-import pyschedule
-import math
+import pyschedule, math
 
 # Taillards 20x5 flow-shop instance downloaded from
 # http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/flowshop.dir/tai20_5.txt
@@ -28,6 +27,5 @@ for i in range(n) :
 		T[(i,j)] += R[j]
 
 S.use_makespan_objective()
-
-pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)
+pyschedule.solvers.pulp.solve(S,time_limit=120,horizon=200,msg=1)
 pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])

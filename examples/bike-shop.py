@@ -46,7 +46,8 @@ def run(img_filename,makespan=True) :
 	if makespan :
 		S_.use_makespan_objective()
 	pyschedule.solvers.pulp.solve(S_,kind='CBC',msg=1)
-	pyschedule.plotters.matplotlib.plot(S_,img_filename=path+img_filename,color_prec_groups=False,hide_tasks=['MakeSpan'],task_colors=task_colors,fig_size=(15,6))
+	task_colors_ = { S_.T[str(T)] : task_colors[T] for T in task_colors }
+	pyschedule.plotters.matplotlib.plot(S_,img_filename=path+img_filename,color_prec_groups=False,hide_tasks=['MakeSpan'],task_colors=task_colors_,fig_size=(15,6))
 run(img_filename='/pics/bike-shop-first.png')
 # STEP 1
 
