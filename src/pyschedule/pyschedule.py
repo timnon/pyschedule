@@ -167,8 +167,8 @@ class Scenario(_SchedElement):
 		#self.objective_price = _ResourceAffine() #TODO: add more complex objective
 
 		# parameters
-		self.is_same_resource_precs_lax = True
-		self.is_same_resource_precs_tight = True
+		self.is_same_resource_precs_lax = False
+		self.is_same_resource_precs_tight = False
 
 	def Task(self,name,length=1,start=None,resources=None,cost=None,capacity_req=None) :
 		"""

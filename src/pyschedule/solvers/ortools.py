@@ -23,7 +23,7 @@ under the License.
 
 import time, os, copy, collections
 
-#TODO: same resources
+
 
 def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	"""
@@ -80,7 +80,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 
 	# move objective
 	# TODO: bug, variables that are not part of the objective might not be finally defined
-	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*1 for T in S.objective if T in task_to_interval ])#+
+	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*S.objective[T] for T in S.objective if T in task_to_interval ])#+
                                           #[ task_to_interval[T].EndExpr()*1 for T in S.tasks() ])
 	ort_objective = ort_solver.Minimize(ort_objective_var, 1)
 
@@ -119,7 +119,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	vars_phase = ort_solver.Phase([ort_objective_var],
 		            ort_solver.CHOOSE_FIRST_UNBOUND,
 		            ort_solver.ASSIGN_MIN_VALUE)
-	sequence_phase = ort_solver.Phase([sequences[R] for R in S.resources() ],
+	sequence_phase = ort_solver.Phase(sequences.values(),
 		                ort_solver.SEQUENCE_DEFAULT)
 	main_phase = ort_solver.Compose([sequence_phase, vars_phase])
 
