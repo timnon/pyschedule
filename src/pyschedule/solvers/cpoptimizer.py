@@ -22,21 +22,10 @@ under the License.
 
 import time, os
 
-#TODO: add capacity constraints (with numbers)
-#TODO: add alternative resources
-
 def solve(scenario,msg=0) :
 
 	S = scenario
 	solvers_path = os.path.dirname(os.path.realpath(__file__))
-		
-	# no objective specified
-	if not S.objective :
-		S.use_makespan_objective()
-
-	# check if there are alternative resources
-	if max([ len(RA) for T in S.tasks() for RA in T.resources_req ]) > 1 :
-		raise Exception('ERROR: alternative resources not supported yet for CP-optimizer')
 
 	resources = S.resources()
 	tasks = S.tasks()
@@ -47,23 +36,47 @@ def solve(scenario,msg=0) :
 	id_to_task = dict(zip(range(len(tasks)),tasks))
 	task_to_id = dict(zip(tasks,range(len(tasks))))
 
-	Resources = [ (resource_to_id[R],R.capacity) for R in resources if R.capacity != None ]
-	Resources += [ (resource_to_id[R],1000) for R in resources if R.capacity == None ] #TODO: remove 100
+	LARGE_NUMBER = 1000
+
+	# TODO: only upper capacity constraints
+	Resources = [ (resource_to_id[R],R.capacity[0],R.capacity[1]) for R in resources \
+                      if R.capacity != None and R.size == 1 ]
+	Resources += [ (resource_to_id[R],0,LARGE_NUMBER) for R in resources \
+                      if R.capacity == None and R.size == 1 ]
 	Resources = sorted(Resources)
+
+	PulseResources = [ (resource_to_id[R],R.size) for R in resources \
+                           if  R.size > 1 ]
 
 	# Tasks for .dat-file
 	Tasks = list()
 	TaskResources = list()
+	TaskResourceGroups = list()
+	TaskPulsResources = list()
 	for T in tasks :				
 		Tasks.append( (task_to_id[T],int(T.length)) )
 		for RA in T.resources_req :
-			if len(RA) != 1 :
-				raise Exception('ERROR: opl can only deal with single resource reqs')
 			for R in RA :
-				TaskResources.append( (task_to_id[T],resource_to_id[R]) )
-					
+				task_id = task_to_id[T]
+				resource_id = resource_to_id[R]
+				if R.size == 1 :
+					task_resource_group_id = T.resources_req.index(RA)
+					TaskResources.append( (task_id,resource_id,task_resource_group_id) )
+					if (task_id,task_resource_group_id) not in TaskResourceGroups :
+						TaskResourceGroups.append((task_id,task_resource_group_id))
+				else :
+					TaskPulsResources.append( (task_id,resource_id,T[R]) )
+					if T.resources is None :
+						T.resources = list()
+					T.resources.append(R)
+
+		if T.resources is not None :
+			pass
+			#TODO: accept fixed resources					
+	
 	Tasks = sorted(Tasks)
 	TaskResources = sorted(TaskResources)
+	TaskResourceGroups = sorted(TaskResourceGroups)
 
 	# Precedences for .dat-file
 	Precedences = list()
@@ -72,29 +85,32 @@ def solve(scenario,msg=0) :
 
 	TightPrecedences = list()
 	for P in S.precs_tight() :
-		Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
 
 	CondPrecedences = list()
 	for P in S.precs_cond() :
 		CondPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
 
 	LowerBounds = list()
-	for P in S.precs_up() :
-		UpperBounds.append((task_to_id[P.left],offset))
+	for P in S.precs_low() :
+		LowerBounds.append((task_to_id[P.left],P.right))
 
 	UpperBounds = list()
-	for P in S.precs_low() :
-		LowerBounds.append((task_to_id[P.right],-offset))
+	for P in S.precs_up() :
+		UpperBounds.append((task_to_id[P.left],P.right))
 
-	# TODO: support all other precedences. Support also tight upper and lower bounds
+	FixBounds = list()
+	for T in S.tasks() :
+		if T.start is not None :
+			FixBounds.append((task_to_id[T],T.start))
 
 	Precedences = sorted(Precedences)
 	CondPrecedences = sorted(CondPrecedences)
 
 	# add objective
-	Objectives = list()
-	for key in S.objective :
-		Objectives.append( (task_to_id[key],S.objective[key]) )
+	Objectives = [ (task_to_id[key],S.objective[key])  for key in S.objective if key != 1 ]
+	#for key in S.objective :
+	#	Objectives.append( (task_to_id[key],S.objective[key]) )
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists
@@ -110,12 +126,16 @@ def solve(scenario,msg=0) :
 	f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
 	f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
 	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
+	f.write('PulseResources={\n'+to_str(PulseResources)+'\n};\n\n')
 	f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
+	f.write('TaskResourceGroups={\n'+to_str(TaskResourceGroups)+'\n};\n\n')
+	f.write('TaskPulseResources={\n'+to_str(TaskPulsResources)+'\n};\n\n')
 	f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
 	f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
 	f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
 	f.write('UpperBounds={\n'+to_str(UpperBounds)+'\n};\n\n')
 	f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
+	f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
 	f.close()
 
 	# run cp-optimizer
@@ -124,37 +144,50 @@ def solve(scenario,msg=0) :
 	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
 
 	# parse output 
-	from pyparsing import Literal,Word,alphas,nums,printables,OneOrMore,ZeroOrMore,dblQuotedString,Group
+	from pyparsing import Keyword,Literal,Word,alphas,nums,printables,OneOrMore,ZeroOrMore,dblQuotedString,Group
 	
 	INT = Word( nums )
 
-	int_row = Group( Literal("<").suppress() + \
-	                    INT + INT + INT + INT + \
-                            Literal(">").suppress() )
+	int_row = Group( INT + \
+                         Literal("<").suppress() + \
+	                 INT + INT + INT + INT + \
+                         Literal(">").suppress() )
 
-	res_seq_row = Group( Literal("<").suppress()  + dblQuotedString + \
+	rint_row = Group( INT + INT +\
+                         Literal("<").suppress() + \
+	                 INT + INT + INT + INT + \
+                         Literal(">").suppress() )
+
+	res_seq_row = Group(Literal("<").suppress()  + dblQuotedString + \
 	                    INT + INT + INT + \
 	                    INT + INT + INT + \
                             Literal(">").suppress() )
-	res_seq = Group( Literal("{").suppress() + ZeroOrMore(res_seq_row) + Literal("}").suppress() )
 
-	plan = Group(ZeroOrMore(int_row)) + Group(ZeroOrMore(res_seq))
+	plan = Group( Keyword("INTERVALS").suppress() + Group( ZeroOrMore(int_row) ) +
+                      Keyword("RINTERVALS").suppress() + Group( ZeroOrMore(rint_row) ) )#+
 
 	opl_plan = plan.parseFile(solvers_path+'/tmp/cpoptimizer.out')
 
-	int_plan = opl_plan[0]
-	res_seq_plan = opl_plan[1]
+	int_plan = opl_plan[0][0]
+	rint_plan = opl_plan[0][1]
+	#res_seq_plan = opl_plan[0][2][0]
 
-	# get starts of tasks
-	starts = { i : int(int_plan[i][1]) for i in range(len(int_plan)) }
+	# get starts of tasks #TODO: merge with resource assignment
+	starts = { i : int(int_plan[i][2]) for i in range(len(int_plan)) }
 
-	assign = { int(row[2]) : id_to_resource[i] for i in range(len(res_seq_plan)) \
-                                  for row in res_seq_plan[i] if int(row[4]) == starts[int(row[2])] }
+	# get resource assignment
+	assign = { i : [ int(rint_plan[j][1]) for j in range(len(rint_plan)) \
+                         if int(rint_plan[j][0]) == i and int(rint_plan[j][2]) ] \
+                         for i in starts.keys() }
 
 	# add to scenario
 	for T in S.tasks() :
 		T.start = starts[task_to_id[T]] #second column is start
-		T.resources = [assign[task_to_id[T]]] #assume only one resource
+		if T.resources is None :
+			T.resources = list()
+		T.resources += [ id_to_resource[j] for j in assign[task_to_id[T]] ]
+
+
 
 
 
