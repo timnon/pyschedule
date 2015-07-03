@@ -20,12 +20,49 @@ specific language governing permissions and limitations
 under the License.
 '''
 
-import time, os
+import time, os, uuid
 
-def solve(scenario,msg=0) :
+
+def get_tmp_dir() :
+        """
+	returns a default temporary directory
+	"""
+	if os.name != 'nt':
+		# On unix use /tmp by default
+		tmp_dir = os.environ.get("TMPDIR", "/tmp")
+		tmp_dir = os.environ.get("TMP", tmp_dir)
+	else:
+		# On Windows use the current directory
+		tmp_dir = os.environ.get("TMPDIR", "")
+		tmp_dir = os.environ.get("TMP", tmp_dir)
+		tmp_dir = os.environ.get("TEMP", tmp_dir)
+	if not os.path.isdir(tmp_dir):
+		tmp_dir = ""
+	elif not os.access(tmp_dir, os.F_OK + os.W_OK):
+		tmp_dif = ""
+	return tmp_dir
+
+
+def _create_files(scenario,mod_filename_master=None,msg=0) :
 
 	S = scenario
 	solvers_path = os.path.dirname(os.path.realpath(__file__))
+	tmp_dir = get_tmp_dir()
+	
+	unique_suffix = uuid.uuid4()
+	mod_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.mod'
+	dat_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.dat'
+	out_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.out'
+
+	# get default master .mod file
+	if mod_filename_master is None :
+		mod_filename_master = solvers_path+'/cpoptimizer.mod'
+		
+	# create temporary .mod file with path to out-file
+	model = open(mod_filename_master).read().replace('##out_filename##','"'+out_filename+'"')
+	f = open(mod_filename,'w')
+	f.write(model)
+	f.close()
 
 	resources = S.resources()
 	tasks = S.tasks()
@@ -61,7 +98,7 @@ def solve(scenario,msg=0) :
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
 					task_resource_group_id = T.resources_req.index(RA)
-					TaskResources.append( (task_id,resource_id,task_resource_group_id) )
+					TaskResources.append( (task_id,resource_id,T.length,task_resource_group_id) )
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
@@ -118,11 +155,8 @@ def solve(scenario,msg=0) :
 		return '\n'.join([ '<'+' '.join([ str(x) for x in row ])+'>'  \
                                   for row in l ])
 
-	if not os.path.exists(solvers_path+'/tmp') :
-		os.makedirs(solvers_path+'/tmp')
-
 	# write .dat-file
-	f = open(solvers_path+'/tmp/cpoptimizer.dat','w')
+	f = open(dat_filename,'w')
 	f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
 	f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
 	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
@@ -138,47 +172,45 @@ def solve(scenario,msg=0) :
 	f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
 	f.close()
 
-	# run cp-optimizer
-	start_time = time.time()
-	os.system('oplrun '+solvers_path+'/cpoptimizer.mod '+solvers_path+'/tmp/cpoptimizer.dat')
-	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
+	# TODO: use real task and resource names in .mod-file
+	return mod_filename, dat_filename, out_filename, task_to_id, id_to_resource
+
+
+
+def _read_solution(scenario,log,task_to_id,id_to_resource) :
+	
+	S = scenario
 
 	# parse output 
 	from pyparsing import Keyword,Literal,Word,alphas,nums,printables,OneOrMore,ZeroOrMore,dblQuotedString,Group
-	
 	INT = Word( nums )
-
-	int_row = Group( INT + \
+	int_row = Group( INT + INT +\
                          Literal("<").suppress() + \
 	                 INT + INT + INT + INT + \
                          Literal(">").suppress() )
+	'''
+	plan = Group( Keyword("##START_INTERVALS##").suppress() + \
+                      Group( ZeroOrMore(int_row) ) + \
+                      Keyword("##END_INTERVALS##").suppress() )
+	'''
+	plan = Group( Group( ZeroOrMore(int_row) ) )
 
-	rint_row = Group( INT + INT +\
-                         Literal("<").suppress() + \
-	                 INT + INT + INT + INT + \
-                         Literal(">").suppress() )
-
-	res_seq_row = Group(Literal("<").suppress()  + dblQuotedString + \
-	                    INT + INT + INT + \
-	                    INT + INT + INT + \
-                            Literal(">").suppress() )
-
-	plan = Group( Keyword("INTERVALS").suppress() + Group( ZeroOrMore(int_row) ) +
-                      Keyword("RINTERVALS").suppress() + Group( ZeroOrMore(rint_row) ) )#+
-
-	opl_plan = plan.parseFile(solvers_path+'/tmp/cpoptimizer.out')
-
+	#opl_plan = plan.parseFile(out_filename)
+	start_str, end_str = '##START_INTERVALS##', '##END_INTERVALS##'
+	start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
+	opl_plan = plan.parseString(log[start_i:end_i])
 	int_plan = opl_plan[0][0]
-	rint_plan = opl_plan[0][1]
-	#res_seq_plan = opl_plan[0][2][0]
 
-	# get starts of tasks #TODO: merge with resource assignment
-	starts = { i : int(int_plan[i][2]) for i in range(len(int_plan)) }
-
-	# get resource assignment
-	assign = { i : [ int(rint_plan[j][1]) for j in range(len(rint_plan)) \
-                         if int(rint_plan[j][0]) == i and int(rint_plan[j][2]) ] \
-                         for i in starts.keys() }
+	# get starts and resource assignments
+	starts = dict()
+	assign = dict()
+	for row in int_plan :
+		if int(row[2]) : # is interval active
+			task_id = int(row[0])
+			starts[task_id] = int(row[3])
+			if task_id not in assign :
+				assign[task_id] = list()
+			assign[task_id].append(int(row[1]))
 
 	# add to scenario
 	for T in S.tasks() :
@@ -186,6 +218,35 @@ def solve(scenario,msg=0) :
 		if T.resources is None :
 			T.resources = list()
 		T.resources += [ id_to_resource[j] for j in assign[task_to_id[T]] ]
+	
+
+
+def solve(scenario,mod_filename_master=None,msg=0) :
+	""" solve using cpoptimzer, make sure that the executable oplrun is in your PATH """
+
+	S = scenario
+	mod_filename, dat_filename, out_filename, task_to_id, id_to_resource = _create_files(scenario,mod_filename_master,msg=msg)
+
+	# run cp-optimizer
+	start_time = time.time()
+	#os.system('oplrun '+mod_filename+' '+dat_filename)
+	log = os.popen('oplrun '+mod_filename+' '+dat_filename).read()
+	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
+
+	# read solution
+	_read_solution(S,log,task_to_id,id_to_resource)
+	if msg : print('INFO: finished reading solution')
+
+
+
+def solve_docloud(scenario,api_key,base_url='https://api-oaas.docloud.ibmcloud.com/job_manager/rest/v1/',mod_filename_master=None,msg=0) :
+	""" solve using DOCloud, api_key is required """
+	from docloud import DOcloud
+	S = scenario
+	mod_filename, dat_filename, out_filename, task_to_id, id_to_resource = _create_files(scenario,mod_filename_master,msg=msg)
+	doc = DOcloud(base_url, api_key, verbose=msg)
+	log = doc.solve(filenames=[mod_filename,dat_filename])
+	_read_solution(S,log,task_to_id,id_to_resource)
 
 
 

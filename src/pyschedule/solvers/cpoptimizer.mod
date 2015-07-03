@@ -1,5 +1,3 @@
-
-
 using CP;
 
 tuple Objective {
@@ -14,8 +12,8 @@ tuple Task {
 
 tuple Resource {
 	int id;
-    int capacity_low;
-    int capacity_up;
+    	int capacity_low;
+    	int capacity_up;
 }
 
 tuple PulseResource {
@@ -32,9 +30,11 @@ tuple TaskPulseResource {
 tuple TaskResource {
 	int task_id;
 	int resource_id;
+	int length;
 	int group_id;
 }
 
+// one group for every task-alternative
 tuple TaskResourceGroup {
   	int task_id;
   	int group_id;
@@ -73,26 +73,21 @@ tuple Bound {
 {Bound} FixBounds = ...;
 
 
+
 dvar interval Intervals[ T in Tasks ] size T.length;
-dvar interval RIntervals[ T in Tasks ][ R in Resources ] optional size T.length;
+dvar interval RIntervals[ TR in TaskResources ] optional size TR.length;
+
+dvar sequence Resource_Seq[R in Resources] in all(TR in TaskResources : TR.resource_id == R.id) RIntervals[TR] types all(TR in TaskResources  : TR.resource_id == R.id) TR.task_id;
+
+cumulFunction ResourceFunction[TPR in TaskPulseResources] = pulse(Intervals[<TPR.task_id>],TPR.resource_size_req) ;
 
 
-
-dvar sequence Resource_Seq[R in Resources] in all(T in Tasks) RIntervals[T][R] types all(T in Tasks) T.id;
-
-cumulFunction ResourceFunction[TPR in TaskPulseResources] = pulse(Intervals[<TPR.task_id>],TPR.resource_size_req);
-
-
-
-execute { cp.param.FailLimit = 10000; }
+execute { cp.param.FailLimit = 1000000; }
 
 
 minimize sum(T in Tasks ) sum( O in Objectives : O.task_id == T.id ) endOf(Intervals[T]) * O.coefficient;
-//minimize max(T in Tasks ) endOf(Intervals[T]);
-
 
 subject to {
-
 
   forall (R in Resources)
   {
@@ -101,20 +96,19 @@ subject to {
 
   forall( R in Resources )
   {
-  	sum(T in Tasks) presenceOf(RIntervals[T][R]) <= R.capacity_up;
-  	sum(T in Tasks) presenceOf(RIntervals[T][R]) >= R.capacity_low;
+  	sum(TR in TaskResources) presenceOf(RIntervals[TR]) <= R.capacity_up;
+  	sum(TR in TaskResources) presenceOf(RIntervals[TR]) >= R.capacity_low;
   } 
 
   forall (P in Precedences)
   {
      endOf(Intervals[ item(Tasks,P.left_task) ]) + P.offset <= startOf(Intervals[ item(Tasks,P.right_task) ]) ;
-  	 //endBeforeStart(Jobs_Intvs[prec.job_1], Jobs_Intvs[prec.job_2]);  
   }
 
   forall (P in TightPrecedences)
   {
-     endOf(Intervals[ item(Tasks,P.left_task) ]) + P.offset <= startOf(Intervals[ item(Tasks,P.right_task) ]) ;
-     endOf(Intervals[ item(Tasks,P.left_task) ]) + P.offset >= startOf(Intervals[ item(Tasks,P.right_task) ]) ;
+     endOf(Intervals[ item(Tasks,P.left_task) ]) + P.offset == startOf(Intervals[ item(Tasks,P.right_task) ]) ;
+     //endOf(Intervals[ item(Tasks,P.left_task) ]) + P.offset >= startOf(Intervals[ item(Tasks,P.right_task) ]) ;
   }
   
   forall (B in UpperBounds)
@@ -134,35 +128,25 @@ subject to {
   
   forall(T in Tasks){
         forall( TRG in TaskResourceGroups : TRG.task_id == T.id ){
-               		alternative(Intervals[T], all(R in Resources : <T.id,R.id,TRG.group_id> in TaskResources ) RIntervals[T][R]); // Resource Selection        
+               		alternative(Intervals[T], all(TR in TaskResources : ( TR.group_id == TRG.group_id ) && ( TR.task_id == T.id ) ) RIntervals[TR]); // Resource Selection        
         }
   }
   
   forall( PR in PulseResources ){
              sum( TPR in TaskPulseResources : TPR.pulse_resource_id == PR.id ) ResourceFunction[TPR] <= PR.resource_size; 
-  }  
-  
+  }
+
 };
 
-execute DISPLAY {
-	writeln("OBJECTIVE:"+cp.getObjValue());
-}
-
 execute {
-	var f = new IloOplOutputFile("tmp/cpoptimizer.out");
-	f.writeln("INTERVALS")
-	for (T in Tasks)
+	//var f = new IloOplOutputFile(##out_filename##);//"tmp/cpoptimizer.out");
+	write("##START_INTERVALS##")	
+	for ( TR in TaskResources)
 	{
-		 f.write(T.id);f.writeln(Intervals[T]);
+		//f.write(TR.task_id," ",TR.resource_id);f.writeln(RIntervals[TR]);
+		write(TR.task_id," ",TR.resource_id);write(RIntervals[TR]);
 	}
-	f.writeln("RINTERVALS")	
-	for ( T in Tasks)
-	{
-		for (R in Resources)
-		{
-			f.write(T.id," ",R.id);f.writeln(RIntervals[T][R]);
-		}
-	}
+	write("##END_INTERVALS##")	
 }
 
 
