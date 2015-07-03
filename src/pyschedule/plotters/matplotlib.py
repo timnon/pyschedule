@@ -24,7 +24,8 @@ under the License.
 '''
 
 
-def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,color_prec_groups=False,hide_tasks=[],task_colors=dict(),fig_size=(15,5)) :
+def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
+         color_prec_groups=False,hide_tasks=[],hide_resources=[],task_colors=dict(),fig_size=(15,5)) :
 	"""
 	Plot the given solved scenario using matplotlib
 
@@ -88,9 +89,10 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 
 	fig, ax = plt.subplots(1, 1, figsize=fig_size)
 	resource_sizes_count = 0
-	total_resource_sizes = sum([ R.size for R in S.resources() ])
+	visible_resources = set(S.resources()) - set(hide_resources)
+	total_resource_sizes = sum([ R.size for R in visible_resources ])
 	R_ticks = list()
-	for R in S.resources() :
+	for R in visible_resources :
 		if R.size is not None :
 			resource_size = R.size
 		else :
@@ -130,7 +132,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,co
 	#plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(resources)) ],resources)
 	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(R_ticks)) ],R_ticks[::-1])
 	plt.ylim(0,resource_sizes_count*resource_height)#resource_height*len(resources))
-	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution ]))
+	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution if R in visible_resources ]))
 	if img_filename :
 		fig.figsize=(1,1)
 		plt.savefig(img_filename,dpi=200,bbox_inches='tight')
