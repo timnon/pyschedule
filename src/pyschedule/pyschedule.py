@@ -428,11 +428,10 @@ class Task(_SchedElement) :
 		return [ R for RA in self for R in RA ]
 
 	def __getitem__(self,index) :
-		if isinstance(index,int) :
-			return self.resources_req[index]
-		elif isinstance(index,Resource) :
-			max_req = max([ RA[index] for RA in self.resources_req if index in RA ] + \
-                                      [ int(index in self.resources_req) ] ) #if contained a simple resource
+		if isinstance(index,Resource) :
+			max_req = max([ RA[index] for RA in self.resources_req if index in RA ] )
+			if index in self.resources_req : #if contained a simple resource
+				max_req = max(max_req,1) 
 			return max_req
 		else :
 			raise Exception('ERROR: tasks can only take integers and resources as index, not '+str(index))
