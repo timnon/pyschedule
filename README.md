@@ -60,6 +60,8 @@ pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 ```
 
+All solvers and their capabilities are listed in https://github.com/timnon/pyschedule/wiki/Overview
+
 For more details go to the examples folder above or have a look at the following example:
 
 #Alice and Bob optimize their bike paint shop with pyschedule
