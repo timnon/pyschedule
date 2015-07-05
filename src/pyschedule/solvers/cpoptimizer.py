@@ -43,26 +43,13 @@ def get_tmp_dir() :
 	return tmp_dir
 
 
-def _create_files(scenario,mod_filename_master=None,msg=0) :
+
+def _get_dat_filename(scenario,msg=0) :
 
 	S = scenario
-	solvers_path = os.path.dirname(os.path.realpath(__file__))
 	tmp_dir = get_tmp_dir()
-	
 	unique_suffix = uuid.uuid4()
-	mod_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.mod'
 	dat_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.dat'
-	out_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.out'
-
-	# get default master .mod file
-	if mod_filename_master is None :
-		mod_filename_master = solvers_path+'/cpoptimizer.mod'
-		
-	# create temporary .mod file with path to out-file
-	model = open(mod_filename_master).read().replace('##out_filename##','"'+out_filename+'"')
-	f = open(mod_filename,'w')
-	f.write(model)
-	f.close()
 
 	resources = S.resources()
 	tasks = S.tasks()
@@ -82,18 +69,24 @@ def _create_files(scenario,mod_filename_master=None,msg=0) :
                       if R.capacity == None and R.size == 1 ]
 	Resources = sorted(Resources)
 
-	PulseResources = [ (resource_to_id[R],R.size) for R in resources \
+	CumulResources = [ (resource_to_id[R],R.size) for R in resources \
                            if  R.size > 1 ]
 
 	# Tasks for .dat-file
 	Tasks = list()
 	TaskResources = list()
 	TaskResourceGroups = list()
-	TaskPulsResources = list()
+	TaskCumulResources = list()
 	for T in tasks :				
 		Tasks.append( (task_to_id[T],int(T.length)) )
 		for RA in T.resources_req :
-			for R in RA :
+			it_resources = RA
+			# check if one of resources in RA is fixed
+			if T.resources is not None :
+				fixed_resources = set(RA) & set(T.resources)
+				if fixed_resources :
+					it_resources = list(fixed_resources)[0]
+			for R in it_resources :
 				task_id = task_to_id[T]
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
@@ -102,7 +95,7 @@ def _create_files(scenario,mod_filename_master=None,msg=0) :
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
-					TaskPulsResources.append( (task_id,resource_id,T[R]) )
+					TaskCumulResources.append( (task_id,resource_id,T[R]) )
 					if T.resources is None :
 						T.resources = list()
 					T.resources.append(R)
@@ -146,8 +139,6 @@ def _create_files(scenario,mod_filename_master=None,msg=0) :
 
 	# add objective
 	Objectives = [ (task_to_id[key],S.objective[key])  for key in S.objective if key != 1 ]
-	#for key in S.objective :
-	#	Objectives.append( (task_to_id[key],S.objective[key]) )
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists
@@ -160,10 +151,10 @@ def _create_files(scenario,mod_filename_master=None,msg=0) :
 	f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
 	f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
 	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
-	f.write('PulseResources={\n'+to_str(PulseResources)+'\n};\n\n')
+	f.write('CumulResources={\n'+to_str(CumulResources)+'\n};\n\n')
 	f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
 	f.write('TaskResourceGroups={\n'+to_str(TaskResourceGroups)+'\n};\n\n')
-	f.write('TaskPulseResources={\n'+to_str(TaskPulsResources)+'\n};\n\n')
+	f.write('TaskCumulResources={\n'+to_str(TaskCumulResources)+'\n};\n\n')
 	f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
 	f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
 	f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
@@ -173,7 +164,7 @@ def _create_files(scenario,mod_filename_master=None,msg=0) :
 	f.close()
 
 	# TODO: use real task and resource names in .mod-file
-	return mod_filename, dat_filename, out_filename, task_to_id, id_to_resource
+	return dat_filename, task_to_id, id_to_resource
 
 
 
@@ -184,19 +175,12 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 	# parse output 
 	from pyparsing import Keyword,Literal,Word,alphas,nums,printables,OneOrMore,ZeroOrMore,dblQuotedString,Group
 	INT = Word( nums )
-	int_row = Group( INT + INT +\
-                         Literal("<").suppress() + \
-	                 INT + INT + INT + INT + \
-                         Literal(">").suppress() )
-	'''
-	plan = Group( Keyword("##START_INTERVALS##").suppress() + \
-                      Group( ZeroOrMore(int_row) ) + \
-                      Keyword("##END_INTERVALS##").suppress() )
-	'''
+	int_row = Group( INT + Literal(",").suppress() + \
+                         INT + Literal(",").suppress() + \
+			 INT + Literal(";").suppress() )
 	plan = Group( Group( ZeroOrMore(int_row) ) )
 
-	#opl_plan = plan.parseFile(out_filename)
-	start_str, end_str = '##START_INTERVALS##', '##END_INTERVALS##'
+	start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
 	start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
 	opl_plan = plan.parseString(log[start_i:end_i])
 	int_plan = opl_plan[0][0]
@@ -205,12 +189,11 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 	starts = dict()
 	assign = dict()
 	for row in int_plan :
-		if int(row[2]) : # is interval active
-			task_id = int(row[0])
-			starts[task_id] = int(row[3])
-			if task_id not in assign :
-				assign[task_id] = list()
-			assign[task_id].append(int(row[1]))
+		task_id = int(row[0])
+		starts[task_id] = int(row[2])
+		if task_id not in assign :
+			assign[task_id] = list()
+		assign[task_id].append(int(row[1]))
 
 	# add to scenario
 	for T in S.tasks() :
@@ -218,38 +201,46 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 		if T.resources is None :
 			T.resources = list()
 		T.resources += [ id_to_resource[j] for j in assign[task_to_id[T]] ]
-	
 
 
-def solve(scenario,mod_filename_master=None,msg=0) :
+
+def _get_mod_filename(mod_filename=None) :
+	if mod_filename is None :
+		solvers_path = os.path.dirname(os.path.realpath(__file__))
+		return solvers_path+'/cpoptimizer.mod'
+	return mod_filename
+
+
+
+def solve(scenario,mod_filename=None,msg=0) :
 	""" solve using cpoptimzer, make sure that the executable oplrun is in your PATH """
-
 	S = scenario
-	mod_filename, dat_filename, out_filename, task_to_id, id_to_resource = _create_files(scenario,mod_filename_master,msg=msg)
+	mod_filename = _get_mod_filename(mod_filename)
+	dat_filename, task_to_id, id_to_resource = _get_dat_filename(scenario,msg=msg)
 
 	# run cp-optimizer
 	start_time = time.time()
 	#os.system('oplrun '+mod_filename+' '+dat_filename)
-	log = os.popen('oplrun '+mod_filename+' '+dat_filename).read()
+	log = os.popen('oplrun %s %s' % (mod_filename, dat_filename) ).read()
 	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
 
 	# read solution
 	_read_solution(S,log,task_to_id,id_to_resource)
-	if msg : print('INFO: finished reading solution')
 
 
 
-def solve_docloud(scenario,api_key,base_url='https://api-oaas.docloud.ibmcloud.com/job_manager/rest/v1/',mod_filename_master=None,msg=0) :
+def solve_docloud(scenario,api_key,
+                  base_url='https://api-oaas.docloud.ibmcloud.com/job_manager/rest/v1/',
+                  mod_filename=None,msg=0) :
 	""" solve using DOCloud, api_key is required """
-	from docloud import DOcloud
 	S = scenario
-	mod_filename, dat_filename, out_filename, task_to_id, id_to_resource = _create_files(scenario,mod_filename_master,msg=msg)
+	mod_filename = _get_mod_filename(mod_filename)
+	dat_filename, task_to_id, id_to_resource = _get_dat_filename(scenario,msg=msg)
+
+	from docloud import DOcloud
 	doc = DOcloud(base_url, api_key, verbose=msg)
 	log = doc.solve(filenames=[mod_filename,dat_filename])
 	_read_solution(S,log,task_to_id,id_to_resource)
-
-
-
 
 
 
