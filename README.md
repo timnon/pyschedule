@@ -35,7 +35,7 @@ print(S.solution())
 The printout should look as follows:
 
 ```
-[('wash', 'Alice', 0.0, 2.0), ('cook', 'Alice', 2.0, 3.0), ('clean', 'Bob', 0.0, 3.0)]
+[(clean, Bob, 0, 3), (wash, Alice, 0, 2), (cook, Alice, 2, 3), (MakeSpan, Alice, 3, 4)]
 ```
 
 Here we use a makespan objective. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
@@ -54,15 +54,13 @@ This should show you the following gantt chart:
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
-pyschedule solves scheduling problems so far using either CPLEX, GLPK or CBC via <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you use CPLEX, then make sure that the "cplex" command is in your path and working. On the other hand, if you use GLPK, make sure that the "glpsol" command is working. If no solver is specified, then CBC is used which comes packaged as part of pulp. For instance, you can select CPLEX using:
+pyschedule supports different solvers, classical IP-based ones as well as CP-based ones. All solvers and their capabilities are listed <a href="https://github.com/timnon/pyschedule/wiki/Overview">here</a>. The default solver used above uses a standard IP-model in combination with CBC, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can switch to CPLEX using:
 
 ```
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 ```
 
-All solvers and their capabilities are listed in https://github.com/timnon/pyschedule/wiki/Overview
-
-For more details go to the examples folder above or have a look at the following example:
+You can also use GLPK (command "glpsol" must be running). For more details go to the examples folder above or have a look at the following example:
 
 #Alice and Bob optimize their bike paint shop with pyschedule
 
