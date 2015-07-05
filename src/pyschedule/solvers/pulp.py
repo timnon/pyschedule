@@ -367,8 +367,8 @@ class DiscreteMIP(object) :
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
 				for t in range(self.horizon) :
-					affine = pl.LpAffineExpression([ ( x[P.left,t], 1/left_size), (x[P.right,min(t+P.left.length,self.horizon-1)],-1/right_size)  ])
-					cons.append( pl.LpConstraint( affine, sense=0, rhs= -P.offset ) )
+					affine = pl.LpAffineExpression([ ( x[P.left,t], 1/left_size), (x[P.right,min(t+P.left.length+P.offset,self.horizon-1)],-1/right_size)  ])
+					cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
 
 		# conditional precedence constraints
 		for P in S.precs_cond() :
