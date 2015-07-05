@@ -108,11 +108,11 @@ red_paint += Alice | Bob
 red_post += Alice | Bob
 ```
 
-Now we have the first version of our scenario, lets solve and plot it. For the use of GLPK, replace "CPLEX" by "GLPK":
+Now we have the first version of our scenario, lets solve and plot it. 
 
 ```
 S.use_makespan_objective()
-pyschedule.solvers.pulp.solve(S,kind='CPLEX')
+pyschedule.solvers.pulp.solve(S)
 pyschedule.plotters.matplotlib.plot(S,color_prec_groups=True)  
 ```
 
