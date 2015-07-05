@@ -207,9 +207,7 @@ class Scenario(_SchedElement):
 		"""
 		solution = [ (T,R,T.start,T.start+T.length) \
                              for T in self.tasks() for R in T.resources ]
-		solution += [ (T,'',T.start,T.start+T.length) \
-                             for T in self.tasks() if not T.resources ]
-		solution = sorted(solution, key = lambda x : (x[2],x[0]) ) # sort according to start and name
+		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 
 	def use_makespan_objective(self) :
