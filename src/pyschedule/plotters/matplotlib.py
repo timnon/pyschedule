@@ -62,8 +62,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 		comps = { T : values.index(comps[T]) for T in comps }
 		return comps
 
-	tasks = [ T for T in S.tasks() if T not in hide_tasks ] #TODO: upload since hide_tasks might contain string
-	#tasks = S.tasks()
+	tasks = [ T for T in S.tasks() if T not in hide_tasks ]
 	
 	# get connected components dict for coloring
 	# each task is mapping to an integer number which corresponds
@@ -79,9 +78,10 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	colors = ['#7EA7D8','#A1D372','#EB4845','#7BCDC8','#FFF79A'] #pastel colors
 	#colors = ['red','green','blue','yellow','orange','black','purple'] #basic colors
 	colors += [ [ random.random() for i in range(3) ] for x in range(len(S.tasks())) ] #random colors
-	# replace colors with fixed task colors		
-	for T in task_colors : colors[comps[T]] = task_colors[T]
 	color_map = { T : colors[comps[T]] for T in comps }
+	# replace colors with fixed task colors		
+	for T in task_colors :
+		color_map[T] = task_colors[T]
 
 	solution = S.solution()
 	hide_tasks_str = [ T for T in hide_tasks ]
@@ -92,6 +92,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	visible_resources = set(S.resources()) - set(hide_resources)
 	total_resource_sizes = sum([ R.size for R in visible_resources ])
 	R_ticks = list()
+
 	for R in visible_resources :
 		if R.size is not None :
 			resource_size = R.size
@@ -125,7 +126,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 				)
 				if show_task_labels :
 					plt.text(x,y+0.1*resource_height,str(T),fontsize=14,color='black')
-		resource_sizes_count += resource_size	
+		resource_sizes_count += resource_size
 
 	# format graph
 	plt.title(str(S))	
