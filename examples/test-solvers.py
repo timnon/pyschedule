@@ -2,14 +2,19 @@
 import pyschedule
 import copy, collections, traceback
 
-
+# planning horizon for the planning which need it
 horizon = 10
+
+# cloud-substitute for cpoptimizer.solve, requires api_key in variable space
+def solve_docloud(scenario) :
+	pyschedule.solvers.cpoptimizer.solve(scenario,api_key=api_key,msg=1)
 
 solve_methods = [
 pyschedule.solvers.pulp.solve,
 pyschedule.solvers.pulp.solve_discrete,
 pyschedule.solvers.ortools.solve,
-pyschedule.solvers.cpoptimizer.solve
+#pyschedule.solvers.cpoptimizer.solve,
+solve_docloud
 ]
 
 def two_task_scenario() :
@@ -21,70 +26,70 @@ def two_task_scenario() :
 	S += T1*2 + T2
 	return S
 
-def zero_task() :
+def ZERO() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S.T['T1'].length = 0
 	sols = ['[(T1, R1, 0, 0), (T2, R1, 0, 1)]']
 	return S,sols
 
-def bound_low() :
+def BOUND() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] > 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
-def precedence() :
+def PREC() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] < S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
-def precedence_offset() :
+def PRECPLUS() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] + 1 < S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
 	return S,sols
 
-def precedence_tight() :
+def TIGHT() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] <= S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
-def precedence_tight_offset() :
+def TIGHTPLUS() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] + 1 <= S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
 	return S,sols
 
-def precedence_cond() :
+def COND() :
 	S = two_task_scenario()
 	S.R['R1'] += S.T['T1'],S.T['T2']
 	S += S.T['T1'] + 2 << S.T['T2']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
-def alt_resources() :
+def ALT() :
 	S = two_task_scenario()
 	S.T['T1'] += S.R['R1'] | S.R['R2']
 	S.T['T2'] += S.R['R1'] | S.R['R2']
 	sols = ['[(T1, R1, 0, 1), (T2, R2, 0, 1)]','[(T1, R2, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
-def alt_resources_two() :
+def MULT() :
 	S = two_task_scenario()
 	S.T['T1'] += S.R['R1'], S.R['R2']
 	S.T['T2'] += S.R['R1'], S.R['R2']
 	sols = ['[(T1, R1, 0, 1), (T1, R2, 0, 1), (T2, R1, 1, 2), (T2, R2, 1, 2)]']
 	return S,sols
 
-def cumul_resource() :
+def CUMUL() :
 	S = two_task_scenario()
 	S.R['R1'].size = 2
 	S.R['R1'] += S.T['T1'], S.T['T2']
@@ -93,16 +98,16 @@ def cumul_resource() :
 	
 
 scenario_methods = [
-zero_task,
-bound_low,
-precedence,
-precedence_offset,
-precedence_tight,
-precedence_tight_offset,
-precedence_cond,
-alt_resources,
-alt_resources_two,
-cumul_resource
+#ZERO,
+BOUND,
+PREC,
+PRECPLUS,
+TIGHT,
+TIGHTPLUS,
+COND,
+ALT,
+MULT,
+CUMUL
 ]
 
 
@@ -116,6 +121,8 @@ for scenario_method in scenario_methods :
 	S,sols = scenario_method()
 	row = [scenario_name]
 	for solve_method_name in solve_method_names :
+		print('###############################################')
+		print('%s / %s' % (solve_method_name,scenario_name))
 		solve_method = solve_method_names[solve_method_name]
 		S_ = copy.deepcopy(S)
 		try :
@@ -126,8 +133,6 @@ for scenario_method in scenario_methods :
 			sol = str(S_.solution())
 			valid = ( sol in sols )
 			row.append(valid)
-			print('###############################################')
-			print('%s / %s' % (solve_method_name,scenario_name))
 			print(sol)
 		except :
 			row.append('na')

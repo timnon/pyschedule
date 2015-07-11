@@ -116,6 +116,7 @@ class _DOcloud:
 	
 	def solve(self, filenames) :
 		""" send files with names in filenames to DOcloud and solve """
+
 		job = self.execute(filenames)
 		result = self.get_result(job)
 		log = self.get_log(job)
@@ -132,6 +133,11 @@ def solve(base_url,api_key,filenames,msg=0) :
 		api_key:	 api key, get at https://developer.ibm.com/docloud/
 		msg:		 0 means no feedback (default) during computation, 1 means feedback		
 	"""
+	try :
+		import OpenSSL
+	except :
+		raise Exception('ERROR: pyOpenSSL needs to be installed to use docloud (or python 2.7.9 above). \
+                                        Also install ndg-httpsclient and pyasn1')
 	doc = _DOcloud(base_url, api_key, msg=msg)
 	log = doc.solve(filenames=filenames)
 	return log

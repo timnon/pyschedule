@@ -158,7 +158,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	# get last solution
 	for T in S.tasks() :
 		if T.start is None :
-			T.start = solution.StartMin(task_to_interval[T]) #collector.StartValue(0, task_to_interval[T])
+			T.start = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
 		if not T.resources :
 			T.resources = [ R \
 		                        for RA in T for R in RA \
