@@ -7,7 +7,7 @@ horizon = 10
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
-	pyschedule.solvers.cpoptimizer.solve(scenario,api_key=api_key,msg=1)
+	pyschedule.solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=1)
 
 solve_methods = [
 pyschedule.solvers.pulp.solve,

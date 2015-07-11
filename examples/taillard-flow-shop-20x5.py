@@ -27,5 +27,5 @@ for i in range(n) :
 		T[(i,j)] += R[j]
 
 S.use_makespan_objective()
-pyschedule.solvers.pulp.solve(S,time_limit=120,horizon=200,msg=1)
+pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)
 pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
