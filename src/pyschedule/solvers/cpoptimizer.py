@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import absolute_import
 '''
 Copyright 2015 Tim Nonner
 
@@ -23,8 +24,8 @@ under the License.
 import time, os, uuid
 
 
-def get_tmp_dir() :
-        """
+def _get_tmp_dir() :
+	"""
 	returns a default temporary directory
 	"""
 	if os.name != 'nt':
@@ -47,7 +48,7 @@ def get_tmp_dir() :
 def _get_dat_filename(scenario,msg=0) :
 
 	S = scenario
-	tmp_dir = get_tmp_dir()
+	tmp_dir = _get_tmp_dir()
 	unique_suffix = uuid.uuid4()
 	dat_filename = tmp_dir+'/pyschedule_'+str(unique_suffix)+'.dat'
 
@@ -91,18 +92,12 @@ def _get_dat_filename(scenario,msg=0) :
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
 					task_resource_group_id = T.resources_req.index(RA)
-					TaskResources.append( (task_id,resource_id,T.length,task_resource_group_id) )
+					TaskResources.append( (task_id,resource_id,
+                                                              T.length,task_resource_group_id) )
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
-					TaskCumulResources.append( (task_id,resource_id,T[R]) )
-					if T.resources is None :
-						T.resources = list()
-					T.resources.append(R)
-
-		if T.resources is not None :
-			pass
-			#TODO: accept fixed resources					
+					TaskCumulResources.append( (task_id,resource_id,T[R]) )				
 	
 	Tasks = sorted(Tasks)
 	TaskResources = sorted(TaskResources)
@@ -147,29 +142,27 @@ def _get_dat_filename(scenario,msg=0) :
                                   for row in l ])
 
 	# write .dat-file
-	f = open(dat_filename,'w')
-	f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
-	f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
-	f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
-	f.write('CumulResources={\n'+to_str(CumulResources)+'\n};\n\n')
-	f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
-	f.write('TaskResourceGroups={\n'+to_str(TaskResourceGroups)+'\n};\n\n')
-	f.write('TaskCumulResources={\n'+to_str(TaskCumulResources)+'\n};\n\n')
-	f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
-	f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
-	f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
-	f.write('UpperBounds={\n'+to_str(UpperBounds)+'\n};\n\n')
-	f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
-	f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
-	f.close()
+	with open(dat_filename,'w') as f :
+		f.write('Objectives={\n'+to_str(Objectives)+'\n};\n\n')
+		f.write('Tasks={\n'+to_str(Tasks)+'\n};\n\n')
+		f.write('Resources={\n'+to_str(Resources)+'\n};\n\n')
+		f.write('CumulResources={\n'+to_str(CumulResources)+'\n};\n\n')
+		f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
+		f.write('TaskResourceGroups={\n'+to_str(TaskResourceGroups)+'\n};\n\n')
+		f.write('TaskCumulResources={\n'+to_str(TaskCumulResources)+'\n};\n\n')
+		f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
+		f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
+		f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
+		f.write('UpperBounds={\n'+to_str(UpperBounds)+'\n};\n\n')
+		f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
+		f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
+		f.close()
 
-	# TODO: use real task and resource names in .mod-file
 	return dat_filename, task_to_id, id_to_resource
 
 
 
 def _read_solution(scenario,log,task_to_id,id_to_resource) :
-	
 	S = scenario
 
 	# parse output 
@@ -179,7 +172,7 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
                          INT + Literal(",").suppress() + \
 			 INT + Literal(";").suppress() )
 	plan = Group( Group( ZeroOrMore(int_row) ) )
-
+	
 	start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
 	start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
 	opl_plan = plan.parseString(log[start_i:end_i])
@@ -197,10 +190,10 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 
 	# add to scenario
 	for T in S.tasks() :
-		T.start = starts[task_to_id[T]] #second column is start
+		T.start = starts[task_to_id[T]]
 		if T.resources is None :
 			T.resources = list()
-		T.resources += [ id_to_resource[j] for j in assign[task_to_id[T]] ]
+		T.resources = [ id_to_resource[j] for j in assign[task_to_id[T]] ]
 
 
 
@@ -220,7 +213,6 @@ def solve(scenario,mod_filename=None,msg=0) :
 
 	# run cp-optimizer
 	start_time = time.time()
-	#os.system('oplrun '+mod_filename+' '+dat_filename)
 	log = os.popen('oplrun %s %s' % (mod_filename, dat_filename) ).read()
 	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
 
@@ -237,9 +229,9 @@ def solve_docloud(scenario,api_key,
 	mod_filename = _get_mod_filename(mod_filename)
 	dat_filename, task_to_id, id_to_resource = _get_dat_filename(scenario,msg=msg)
 
-	from docloud import DOcloud
-	doc = DOcloud(base_url, api_key, verbose=msg)
-	log = doc.solve(filenames=[mod_filename,dat_filename])
+	# solve and read solution
+	from . import docloud
+	log = docloud.solve(base_url=base_url,api_key=api_key,filenames=[mod_filename,dat_filename],msg=msg)
 	_read_solution(S,log,task_to_id,id_to_resource)
 
 

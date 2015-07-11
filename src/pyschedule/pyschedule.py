@@ -40,7 +40,8 @@ except AttributeError:
 
 def OR(L) :
 	"""
-	method to iterate the or-operator over a list to allow lists of alternative resources, e.g. OR([R1,R2,R3]) = R1 | R2 | R3
+	method to iterate the or-operator over a list to allow lists of alternative resources,
+        e.g. OR([R1,R2,R3]) = R1 | R2 | R3
 	"""
 	x = None
 	if L :
@@ -164,7 +165,6 @@ class Scenario(_SchedElement):
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
 		self.constraints = list()
-		#self.objective_price = _ResourceAffine() #TODO: add more complex objective
 
 		# parameters
 		self.is_same_resource_precs_lax = False
@@ -210,10 +210,18 @@ class Scenario(_SchedElement):
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 
+	def objective_value(self) :
+		"""
+		Returns the value of the objective
+		"""
+		return sum([ self.objective[T]*(T.start+T.length) for T in self.objective ])
+
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks without a fixed start
 		"""
+		if 'MakeSpan' in self.T :
+			del self.T['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
 		makespan = self.Task('MakeSpan',cost=1)
 		makespan += self.resources()[0] # add some random resource, every task needs one
@@ -284,7 +292,8 @@ class Scenario(_SchedElement):
 					shared_resources = list( set(left.resources_req_list()) & set(right.resources_req_list()) )
 					prec = Precedence(left=left,right=right,offset=offset,kind='cond')
 					if not shared_resources :
-						raise Exception('ERROR: tried to add precedence '+str(prec)+' but tasks dont compete for resources')
+						raise Exception('ERROR: tried to add precedence '+str(prec)+\
+                                                                ' but tasks dont compete for resources')
 					self.constraints.append(prec)
 				return self
 			elif pos_tasks and not neg_tasks :
@@ -319,12 +328,6 @@ class Scenario(_SchedElement):
 			self.R[other.name] = other
 			return self
 
-		'''
-		elif isinstance(other,_ResourceAffine) :
-			self.objective_price += other
-			return self
-		'''
-
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
 
 	def __isub__(self,other) :
@@ -332,7 +335,8 @@ class Scenario(_SchedElement):
 			if other.name in self.T :
 				del self.T[other.name]
 			else :
-				raise Exception('ERROR: task with name '+str(other.name)+' is not contained in scenario '+str(self))
+				raise Exception('ERROR: task with name '+str(other.name)+\
+                                                ' is not contained in scenario '+str(self))
 		return self
 
 	def __repr__(self) :
@@ -624,15 +628,6 @@ class Resource(_SchedElement) :
 		if isinstance(other,Task) :
 			other += self
 			return self
-		elif isinstance(other,Precedence) :
-			# check if each task in prec requires resource
-			wrong_tasks = [ T for T in other.tasks() if not self in T.resources_req_list()]
-			if not wrong_tasks :
-				self.precs.add(other)
-			else :
-				raise Exception('ERROR: Precedence '+str(other)+' includes task(s) '+\
-                                                 ','.join([str(T) for T in wrong_tasks])+\
-                                                 ' that do(es) not require resource '+str(self))
 		elif _isiterable(other) :
 			for x in other : self += x	
 		else :
