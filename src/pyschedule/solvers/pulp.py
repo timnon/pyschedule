@@ -1,5 +1,6 @@
 #! /usr/bin/python
 from __future__ import absolute_import as _absolute_import
+from __future__ import print_function
 
 '''
 Copyright 2015 Tim Nonner
@@ -57,6 +58,7 @@ def _solve_mip(mip,kind='CBC',params=dict(),msg=0) :
 		print('INFO: objective = '+str(pl.value(mip.objective)))
 
 
+
 def solve(scenario,big_m=10000,kind='CBC',time_limit=None,msg=0,return_copy=False) :
 	"""
 	Shortcut to continuous mip
@@ -65,6 +67,8 @@ def solve(scenario,big_m=10000,kind='CBC',time_limit=None,msg=0,return_copy=Fals
 		scenario = copy.deepcopy(scenario)
 	ContinuousMIP().solve(scenario,big_m=big_m,kind=kind,time_limit=time_limit,msg=msg)
 	return scenario
+
+
 
 
 def solve_discrete(scenario,horizon,kind='CBC',time_limit=None,task_groups=None,msg=0,return_copy=False) :
@@ -92,14 +96,14 @@ class ContinuousMIP(object) :
 	def build_mip_from_scenario(self,task_groups=None,msg=0) :
 
 		S = self.scenario
-		BIG_M = self.big_m #TODO: GLPK has problems with large number
+		BIG_M = self.big_m
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# task variables
 		x = dict()
 
 		for T in S.tasks() :
-			x[T] = pl.LpVariable(T,0)
+			x[T] = pl.LpVariable(str(T),0)
 
 			# fix variables if start is given (0.0 is also False!)
 			if T.start is not None :
@@ -107,13 +111,13 @@ class ContinuousMIP(object) :
 
 			# add assignment variable for each possible resource
 			# if resources are fixed take only these
-			if T.resources :
+			if T.resources is not None :
 				for R in T.resources :
-					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
+					x[(T,R)] = pl.LpVariable(str((T,R)),0,1,cat=pl.LpBinary)
 					mip += x[(T,R)] == 1
 			else :
 				for R in T.resources_req_list() :
-					x[(T,R)] = pl.LpVariable((T,R),0,1,cat=pl.LpBinary)
+					x[(T,R)] = pl.LpVariable(str((T,R)),0,1,cat=pl.LpBinary)
 				# everybody is required on one resource from each or clause
 				for RA in T :
 					mip += sum([ x[(T,R)] for R in RA ]) == 1
@@ -123,7 +127,7 @@ class ContinuousMIP(object) :
 
 		# resource capacity constraints
 		for R in S.resources() :
-			if R.capacity :
+			if R.capacity is not None :
 				mip += sum([ x[(T,R)]*T[R] for T in S.tasks() \
 		                              if R in T.resources_req_list() ]) <= R.capacity
 
@@ -141,18 +145,22 @@ class ContinuousMIP(object) :
 			shared_resources = list( set(resources) & set(resources_) )
 			# TODO: restrict the number of variables
 			if shared_resources and (T.start is None or T_.start is None ) :
-				x[(T,T_,'SameResource')] = pl.LpVariable((T,T_,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
-				x[(T_,T,'SameResource')] = pl.LpVariable((T_,T,'SameResource'),lowBound=0)#,cat=pl.LpInteger)
+				x[(T,T_,'SameResource')] = \
+                                   pl.LpVariable(str((T,T_,'SameResource')),lowBound=0)#,cat=pl.LpInteger)
+				x[(T_,T,'SameResource')] = \
+                                   pl.LpVariable(str((T_,T,'SameResource')),lowBound=0)#,cat=pl.LpInteger)
 				mip += x[(T,T_,'SameResource')] == x[(T_,T,'SameResource')]
 				for R in shared_resources :
 					mip += x[(T,R)] + x[(T_,R)] - 1 <= x[(T,T_,'SameResource')]
 				# ordering variables
-				x[(T,T_)] = pl.LpVariable((T,T_),0,1,cat=pl.LpBinary)
-				x[(T_,T)] = pl.LpVariable((T_,T),0,1,cat=pl.LpBinary)
+				x[(T,T_)] = pl.LpVariable(str((T,T_)),0,1,cat=pl.LpBinary)
+				x[(T_,T)] = pl.LpVariable(str((T_,T)),0,1,cat=pl.LpBinary)
 				mip += x[(T,T_)] + x[(T_,T)] == 1
 
-				mip += x[T] + T.length <= x[T_] + (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
-				mip += x[T_] + T_.length <= x[T] + x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
+				mip += x[T] + T.length <= x[T_] + \
+                                       (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
+				mip += x[T_] + T_.length <= x[T] + \
+                                       x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
 			
 		
 		# precedence constraints
@@ -266,7 +274,7 @@ class DiscreteMIP(object) :
 
 				# base time-indexed variables for task group
 				for t in range(self.horizon) :
-					x[T,t] = pl.LpVariable((T,t),0,task_group_size)#,cat=pl.LpInteger) # continous variables
+					x[T,t] = pl.LpVariable(str((T,t)),0,task_group_size)#,cat=pl.LpInteger) # continous variables
 				# lower and upper boundary conditions
 				cons.append( pl.LpConstraint( x[T,0], sense=0, rhs=task_group_size ) )
 				cons.append( pl.LpConstraint( x[T,self.horizon-1], sense=0, rhs=0 ) ) #required for no solution feedback
@@ -275,7 +283,8 @@ class DiscreteMIP(object) :
 				for R in T.resources_req_list() :
 					# resource base variables
 					for t in range(self.horizon) :
-						x[T,R,t] = pl.LpVariable((T,R,t),0,task_group_size,cat=pl.LpInteger) #binary or not?
+						x[T,R,t] = pl.LpVariable(str((T,R,t)),0,
+                                                           task_group_size,cat=pl.LpInteger)
 					# monotonicity (base variables should inherit this)
 					for t in range(self.horizon-1) :
 						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,t],1), (x[T,R,t+1],-1) ]), sense=1, rhs=0 ) )
