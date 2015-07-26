@@ -8,7 +8,7 @@ pyschedule is the easiest way to match tasks with resources, period. It covers p
 pip install pyschedule
 ```
 
-This is how it works:
+This is how it works, for a technical overview go to <a href="https://github.com/timnon/pyschedule/wiki/Overview">here</a>:
 
 ```python
 # load pyschedule and create a scenario
