@@ -50,7 +50,7 @@ R = { j : S.Resource(j) for j in range(n) }
 S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(n-1) ]
 for i in range(n) :
 	for j in range(n) :
-		T[i,j] += R[mach_table[i][j] % n]
+		S += T[i,j] % R[mach_table[i][j] % n]
 
 S.use_makespan_objective()
 pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)

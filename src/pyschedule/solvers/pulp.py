@@ -109,18 +109,22 @@ class ContinuousMIP(object) :
 			if T.start is not None :
 				mip += x[T] == T.start
 
-			# add assignment variable for each possible resource
-			# if resources are fixed take only these
+			# add task vs resource variabls
+			for R in S.resources(task=T) :
+				x[(T,R)] = pl.LpVariable(str((T,R)),0,1,cat=pl.LpBinary)
+			# fix some TODO: restrict variables to the non-fixed ones
 			if T.resources is not None :
 				for R in T.resources :
-					x[(T,R)] = pl.LpVariable(str((T,R)),0,1,cat=pl.LpBinary)
 					mip += x[(T,R)] == 1
-			else :
-				for R in T.resources_req_list() :
-					x[(T,R)] = pl.LpVariable(str((T,R)),0,1,cat=pl.LpBinary)
-				# everybody is required on one resource from each or clause
-				for RA in T :
-					mip += sum([ x[(T,R)] for R in RA ]) == 1
+
+		# resources req
+		for RA in S.resources_req() :
+			tasks =  RA.tasks()
+			T = tasks[0]
+			mip += sum([ x[(T,R)] for R in RA ]) == 1
+			for T_ in tasks[1:] :
+				for R in RA :
+						mip += x[(T,R)] == x[(T_,R)]
 
 		# objective
 		mip += sum([ x[T]*S.objective[T] for T in S.objective if T in x ])
@@ -128,8 +132,7 @@ class ContinuousMIP(object) :
 		# resource capacity constraints
 		for R in S.resources() :
 			if R.capacity is not None :
-				mip += sum([ x[(T,R)]*T[R] for T in S.tasks() \
-		                              if R in T.resources_req_list() ]) <= R.capacity
+				mip += sum([ x[(T,R)]*RA[R] for RA in S.resources_req(resource=R) for T in RA.tasks() ]) <= R.capacity
 
 		# same resource variable
 		task_pairs = [ (T,T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_) ]
@@ -137,12 +140,13 @@ class ContinuousMIP(object) :
 			if T.resources :
 				resources = T.resources
 			else :
-				resources = T.resources_req_list()
+				resources = S.resources(task=T)
 			if T_.resources :
 				resources_ = T_.resources
 			else :
-				resources_ = T_.resources_req_list()
+				resources_ = S.resources(task=T_)
 			shared_resources = list( set(resources) & set(resources_) )
+
 			# TODO: restrict the number of variables
 			if shared_resources and (T.start is None or T_.start is None ) :
 				x[(T,T_,'SameResource')] = \
@@ -161,15 +165,13 @@ class ContinuousMIP(object) :
                                        (1-x[(T,T_)])*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M 
 				mip += x[T_] + T_.length <= x[T] + \
                                        x[(T,T_)]*BIG_M + (1-x[(T,T_,'SameResource')])*BIG_M
-			
-		
+
 		# precedence constraints
 		for P in S.precs_lax() :
 			# if at least one of the tasks is not fixed
 			if P.left.start is None or P.right.start is None :
 				mip += x[P.left] + P.left.length + P.offset <= x[P.right] 
-	
-	
+
 		# tight precedence constraints
 		for P in S.precs_tight() :
 			# if at least one of the tasks is not fixed
@@ -206,7 +208,7 @@ class ContinuousMIP(object) :
 			if T.resources :
 				resources = T.resources
 			else :
-				resources = T.resources_req_list()
+				resources = self.scenario.resources(task=T)
 			T.resources = [ R for R in resources if self.x[(T,R)].varValue > 0 ]
 
 
@@ -280,39 +282,58 @@ class DiscreteMIP(object) :
 				cons.append( pl.LpConstraint( x[T,self.horizon-1], sense=0, rhs=0 ) ) #required for no solution feedback
 
 				# generate variabels for task resources
-				for R in T.resources_req_list() :
+				resources = S.resources(task=T)
+				for R in resources :
 					# resource base variables
 					for t in range(self.horizon) :
 						x[T,R,t] = pl.LpVariable(str((T,R,t)),0,
-                                                           task_group_size,cat=pl.LpInteger)
+                                                 task_group_size,cat=pl.LpInteger)
 					# monotonicity (base variables should inherit this)
 					for t in range(self.horizon-1) :
-						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,t],1), (x[T,R,t+1],-1) ]), sense=1, rhs=0 ) )
-
+						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,t],1), (x[T,R,t+1],-1) ]),
+													  sense=1, rhs=0 ) )
+				'''
 				# consider each resource selection
-				for RA in T :
+				RAs = S.resources_req(task=T)
+				for RA in RAs :
 					# resource base variables should match base variables in each time step
 					for t in range(self.horizon) :
-						affine = pl.LpAffineExpression([ (x[T,R,t],1) for R in RA ] + [(x[T,t],-1)])
+						affine = pl.LpAffineExpression([ (x[T,R,t],1) for R in RA.req ] + [(x[T,t],-1)])
 						cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
+				'''
 
 				# fix variables if start is given
 				starts = [ T_.start for T_ in self.task_groups[T] if T_.start is not None ]
 				if starts and max(starts) > self.horizon :
-						raise Exception('ERROR: fixed start of task '+str(T)+' larger than max time step '+str(horizon))
+						raise Exception('ERROR: fixed start of task '+str(T)+' larger than max time step '+str(self.horizon))
 				for t in starts : 
 					starts_after_t = [ t_ for t_ in starts if t_ >= t ]
 					cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,t],1), (x[T,t+1],-1) ]), sense=1, rhs=len(starts_after_t) ) )
 
 				# fix resources if they are given
 				# TODO: fixed resources not really tested
-				resources = [ R for T_ in self.task_groups[T] if T_.resources for R in T_.resources ]
+				resources = [ R for T_ in self.task_groups[T] if T_.resources is not None for R in T_.resources ]
 				for R in resources :
-					if R in T.resources_req_list() :
+					if R in S.resources(task=T) :
 						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,0],1) ]), sense=1, rhs=resources.count(R) ) )
 					else :
 						raise Exception('ERROR: resource '+str(R)+' is not part of the requirements for task '+str(T))
-				
+
+		# consider each resource selection
+		for RA in S.resources_req() :
+			tasks = RA.tasks()
+			# resource base variables should match base variables in each time step
+			for T in tasks :
+				for t in range(self.horizon) :
+					affine = pl.LpAffineExpression([ (x[T,R,t],1) for R in RA ] + [(x[T,t],-1)])
+					cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
+			# same distribution on resources
+			T = tasks[0]
+			for T_ in tasks[1:] :
+				for R in RA :
+					affine = pl.LpAffineExpression([ (x[T,R,0],1), (x[T_,R,0],-1) ])
+					cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
+
 		# respect fixed tasks, they can block free tasks
 		# TODO: all precs need to get translated into relations between fixed and free tasks
 		# TODO: currently fixed tasks are only blockers, not suitable for list scheduling
@@ -320,7 +341,7 @@ class DiscreteMIP(object) :
 			t_start = T.start
 			t_end = min(T.start+T.length,self.horizon-1)
 			for R in T.resources :
-				resource_tasks = [ T_ for T_ in self.task_groups_free if R in T_.resources_req_list() ]
+				resource_tasks = S.tasks(resource=R) #all tasks are blocked on this resource
 				affine = pl.LpAffineExpression([ (x[T_,R,max(t_start-T_.length,0)],1) for T_ in resource_tasks ]+\
                                                                [ (x[T_,R,t_end],-1) for T_ in resource_tasks ])
 				cons.append( pl.LpConstraint( affine, sense=0, rhs=0 ) )
@@ -331,20 +352,19 @@ class DiscreteMIP(object) :
 
 		# resource non-overlapping constraints 
 		for R in S.resources() :
-			resource_tasks = [ T for T in self.task_groups_free if R in T.resources_req_list() ]
+			resource_tasks = [ T for T in self.task_groups_free if R in S.resources(task=T) ]
 			if R.size is not None :
 				resource_size = R.size
 			else :
 				resource_size = 1.0
 			# TODO: fix the capacity stuff
 			for t in range(self.horizon) :
-				affine = pl.LpAffineExpression([ (x[T,R,max(t-T.length,0)], T[R]) for T in resource_tasks ] + \
-                                                               [ (x[T,R,t], -T[R]) for T in resource_tasks ])
+				affine = pl.LpAffineExpression([ (x[T,R,max(t-T.length,0)], S.resources_req_coeff(task=T,resource=R)) for T in resource_tasks ] + \
+                                                              [ (x[T,R,t], -S.resources_req_coeff(task=T,resource=R)) for T in resource_tasks ])
 				cons.append( pl.LpConstraint( affine, sense=-1, rhs=resource_size ) )
 			# resource capacity
 			if R.capacity :
-				resource_tasks = [ T for T in self.task_groups_free \
-                                                   if R in T.resources_req_list() ]
+				resource_tasks = [ T for T in S.tasks(resource=R) if T in self.task_groups_free ]
 				# get lower and upper capacity bound
 				if _isnumeric(R.capacity) :
 					min_capacity = 0
@@ -384,11 +404,12 @@ class DiscreteMIP(object) :
 			if P.left in self.task_groups_free and P.right in self.task_groups_free :
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
-				shared_resources = list( set(P.left.resources_req_list()) & set(P.right.resources_req_list()) )
-				for R in shared_resources :	
+				S.resources(task=T)
+				shared_resources = list( set(S.resources(task=P.left)) & set(S.resources(task=P.right)) )
+				for r in shared_resources :
 					for t in range(self.horizon) :
-						affine = pl.LpAffineExpression([ ( x[P.left,R,max(t-P.left.length,0)],1 ), (x[P.left,R,t],-1),\
-				                                                 ( x[P.right,R,max(t-P.left.length,0)], 1), (x[P.right,R,min(t+P.offset,self.horizon-1)],-1) ])
+						affine = pl.LpAffineExpression([ ( x[P.left,r,max(t-P.left.length,0)],1 ), (x[P.left,r,t],-1),\
+				                                                 ( x[P.right,r,max(t-P.left.length,0)], 1), (x[P.right,r,min(t+P.offset,self.horizon-1)],-1) ])
 						cons.append( pl.LpConstraint( affine, sense=-1, rhs=1 ) )
 
 		# lower bounds
@@ -400,7 +421,8 @@ class DiscreteMIP(object) :
 		for P in S.precs_up() :
 			if P.left in self.task_groups_free :
 				cons.append( x[P.left,P.right] == 0 )
-		
+
+		'''
 		# first task on resource
 		for P in S.precs_first() :
 			if P.left in self.task_groups_free :
@@ -413,7 +435,9 @@ class DiscreteMIP(object) :
                                                                        [ (x[T,P.right,min(t+P.left.length,self.horizon-1)],-1/float(len(self.task_groups[T]))) for T in resource_tasks ] + \
                                                                        [ (x[T,P.right,0],1/float(len(self.task_groups[T]))) for T in resource_tasks ] )
 					cons.append( pl.LpConstraint( affine, sense=-1, rhs=len(resource_tasks) ) )	
+		'''
 
+		'''
 		# last task on resource
 		for P in S.precs_last() :
 			if P.left in self.task_groups_free :
@@ -424,7 +448,9 @@ class DiscreteMIP(object) :
                                                                         [ (x[T,P.right,max(t-T.length,0)],-1/float(len(self.task_groups[T]))) \
                                                                           for T in resource_tasks ])
 					cons.append( pl.LpConstraint( affine, sense=1, rhs=0 ) )
-	
+		'''
+
+		'''
 		# ensure that tasks with similar precedences are run on the same resources
 		same_resource_precs = list()
 		if self.scenario.is_same_resource_precs_lax :
@@ -439,6 +465,7 @@ class DiscreteMIP(object) :
 						affine = pl.LpAffineExpression([ ( x[(P.left,R,t)],1 ), (x[(P.right,R,t)],-1) ])
 						con = pl.LpConstraint( affine, sense=-1, rhs=0 )
 						cons.append(con)
+		'''
 
 		for con in cons :
 			mip.addConstraint(con)
@@ -450,39 +477,64 @@ class DiscreteMIP(object) :
 	def read_solution_from_mip(self,msg=0) :
 				
 		for T in self.task_groups_free :
+			# get all possible starts
+			#starts = [ max([ t for t in range(self.horizon) if self.x[(T,t)].varValue >= z-0.5 ]) \
+            #                       for z in range(int(self.x[(T,0)].varValue),0,-1) ]
 
-			starts = [ max([ t for t in range(self.horizon) if self.x[(T,t)].varValue >= z-0.5 ]) \
-                                   for z in range(int(self.x[(T,0)].varValue),0,-1) ]
+			# get all possible starts with combined resources
+			RAs = self.scenario.resources_req(task=T)
 			RA_resources = collections.OrderedDict()
-			for RA in T :
-				RA_starts = list()
+			R_starts = list()
+			for RA in RAs:
+				#RA_starts = list()
 				for R in RA :
-					R_starts = [ max([ t for t in range(self.horizon) if self.x[(T,R,t)].varValue >= z-0.5 ]) \
+					R_starts_ = [ max([ t for t in range(self.horizon) if self.x[(T,R,t)].varValue >= z-0.5 ]) \
 		                                     for z in range(int(self.x[(T,R,0)].varValue),0,-1) ]
-					RA_starts.extend( [ (t,R) for t in R_starts ] )
-				RA_starts = sorted(RA_starts, key=lambda x : x[0])
-				RA_resources[RA] = [ (t,R) for t,R in RA_starts ]
+					R_starts.extend([ (t,R) for t in R_starts_])
+					#RA_starts.extend( [ (t,R) for t in R_starts ] )
+				#RA_starts = sorted(RA_starts, key=lambda x : x[0])
+				#RA_resources[RA] = [ (t,R) for t,R in RA_starts ]
 
-			# check for predefined starts
+			R_starts = list(set(R_starts))
+
+			# check for predefined starts and resources
 			for T_ in self.task_groups[T] :
-				if T_.start is not None :
-					starts.remove(T_.start)
 				if T_.resources is not None :
 					for R in T_.resources :
-						for RA in T :
-							RA_resources[RA].remove(R)
+						if T_.start is not None :
+							R_starts.remove((T_.start,R))
+						else :
+							(t,R) = [ (t_,R_) for (t_,R_) in R_starts if R_ == R ][0]
+							T_.start = t
+							R_starts.remove((t,R))
+				elif T_.start is not None :
+					T_.resources = list()
+					for RA in RAs :
+						(t,R) = [ (t_,R_) for (t_,R_) in R_starts if R_ in RA and t_==T_.start ][0]
+						R_starts.remove((t,R))
+						T_.resources.append(R)
 
-			start_count = 0
-			resource_count = 0		
+			#start_count = 0
+			#resource_count = 0
 			for T_ in self.task_groups[T] :
-				if T_.start is None :
+				if T_.start is None and T_.resources is None :
+					T_.start = [ t for (t,R) in R_starts ][0]
+					T_.resources = list()
+					for RA in RAs :
+						(t,R) = [ (t_,R_) for (t_,R_) in R_starts if R_ in RA and t_==T_.start ][0]
+						R_starts.remove((t,R))
+						T_.resources.append(R)
+
+
+			'''
 					T_.start = int(starts[start_count])
 					start_count += 1
 				if T_.resources is None :
 					T_.resources = []
-					for RA in T :
+					for RA in self.scenario.resources_req(task=T) :
 						T_.resources.append(RA_resources[RA][resource_count][1])
 					resource_count += 1
+			'''
 
 
 	def solve(self,scenario,horizon='100',kind='CBC',time_limit=None,task_groups=None,msg=0) :

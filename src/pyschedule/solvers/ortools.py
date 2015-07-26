@@ -59,6 +59,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 				resource_to_intervals[R].append(I)
 
 		# alternative resources #TODO: resources could be in multiple clauses
+		'''
 		else :
 			for RA in T :
 				ra_tasks = list()
@@ -70,6 +71,32 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 					ort_solver.Add( I.StaysInSync(I_) )
 				# one resource needs to get selected
 				ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
+		'''
+
+	# resourcee requirements
+	for RA in S.resources_req() :
+		tasks = RA.tasks()
+		for T in tasks :
+			I = task_to_interval[T]
+			ra_tasks = list()
+			for R in RA :
+				I_ = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,True,T.name+'_'+R.name)
+				resource_to_intervals[R].append(I_)
+				ra_tasks.append(I_)
+				resource_task_to_interval[(R,T)] = I_
+				ort_solver.Add( I.StaysInSync(I_) )
+				# if resources are fixed
+				if T.resources is not None and R in T.resources :
+					ort_solver.Add( I_.PerformedExpr() == 1 )
+			# one resource needs to get selected
+			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
+		# same resources for tasks
+		T = tasks[0]
+		for T_ in tasks[1:] :
+			for R in RA :
+				I  = resource_task_to_interval[(R,T)]
+				I_ = resource_task_to_interval[(R,T_)]
+				ort_solver.Add( I.PerformedExpr() == I_.PerformedExpr() )
 
 	# resources
 	sequences = collections.OrderedDict()
@@ -102,6 +129,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	for P in S.precs_up() :
 		ort_solver.Add( task_to_interval[P.left].StartsBefore(P.right) )
 
+	'''
 	# ensure that tasks with similar precedences are run on the same resources
 	same_resource_precs = list()
 	if S.is_same_resource_precs_lax :
@@ -114,6 +142,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			I_left = resource_task_to_interval[(R,P.left)]
 			I_right = resource_task_to_interval[(R,P.right)]
 			ort_solver.Add( I_left.PerformedExpr() == I_right.PerformedExpr() )
+	'''
 
 	# creates search phases.
 	vars_phase = ort_solver.Phase([ort_objective_var],
@@ -160,9 +189,10 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		if T.start is None :
 			T.start = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
 		if not T.resources :
+			RAs = S.resources_req(task=T)
 			T.resources = [ R \
-		                        for RA in T for R in RA \
-		                        if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
+		                    for RA in RAs for R in RA \
+		                    if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
 	
 
 

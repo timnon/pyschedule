@@ -286,7 +286,7 @@ def eucl_dist(orig,dest) :
 # get cities table
 cities_table = [ row.split(' ') for row in cities.split('\n') ]
 cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
-n = 6# use only ten cities to test, more cities take a lone time #len(cities_table)
+n = 14 # use only few cities to test, more cities take a lone time #len(cities_table)
 capacity = n/2 # each vehicle can visit half of the cities
 coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
 cities = list(coords)
@@ -294,8 +294,7 @@ cities = list(coords)
 # add coordinates of vitual start and end at the first city in list
 start_city = cities_table[0][0]
 coords['start'] = coords[start_city]
-coords['end_red'] = coords[start_city]
-coords['end_blue'] = coords[start_city]
+coords['end'] = coords[start_city]
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
 S = pyschedule.Scenario('VRP Germany')
@@ -307,35 +306,28 @@ R_blue, R_red = S.Resource('blue',capacity=capacity+2), S.Resource('red',capacit
 
 # tasks
 T['start'] = S.Task('start')
-T['end_red'], T['end_blue'] = S.Task('end_red'), S.Task('end_blue')
+T['end'] = S.Task('end')
 
 # precedences
-S += T['start'] < { T[city] for city in cities }
-S += T['end_blue'] > R_blue
-S += T['end_red'] > R_red
-S += T['start'] < T['end_red'], T['start'] < T['end_blue']
+S += T['start'] < { T[city] for city in cities if city != 'start' }
+S += T['end'] > { T[city] for city in cities if city != 'end' }
 
 # resource assignement
-T['start'] += [ R_blue, R_red ]
-T['end_red'] += R_red
-T['end_blue'] += R_blue
-for city in cities : T[city] += R_blue | R_red
+S += T['start'] % [ R_blue, R_red ]
+S += T['end'] % [ R_blue, R_red ]
+for city in cities :
+	S += T[city] % R_blue | R_red
 
 # distances
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in cities for city_ in cities if city != city_ ]
 S += [ T['start'] + int(eucl_dist(coords['start'],coords[city_])) << T[city] for city in cities ]
-S += [ T[city] + int(eucl_dist(coords[city],coords['end_blue'])) << T['end_blue'] for city in cities ]
-S += [ T[city] + int(eucl_dist(coords[city],coords['end_red'])) << T['end_red'] for city in cities ]
+S += [ T[city] + int(eucl_dist(coords['start'],coords[city_])) << T['start'] for city in cities ]
 
 # objective
-S += T['end_red'] + T['end_blue']
+S += T['end']*1
 
-S.is_same_resource_precs_lax = False
-S.is_same_resource_precs_tight = False
-
-#pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
-pyschedule.solvers.pulp.solve_discrete(S,horizon=30,kind='CBC',time_limit=120,msg=1)
+pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
 pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,)
 
 # plot tours

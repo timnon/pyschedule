@@ -21,10 +21,10 @@ Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
 # create three tasks with lengths 1,2 and 3
 cook, wash, clean = S.Task('cook',1), S.Task('wash',2), S.Task('clean',3)
 
-# assign tasks to resources, either Alice or Bob
-cook += Alice | Bob
-wash += Alice | Bob
-clean += Alice | Bob
+# assign tasks to resources, either Alice or Bob. The %-operator connects tasks and resource
+S += cook % Alice | Bob
+S += wash % Alice | Bob
+S += clean % Alice | Bob
 
 # solve and print solution
 S.use_makespan_objective()
@@ -32,13 +32,13 @@ pyschedule.solvers.pulp.solve(S)
 print(S.solution())
 ```
 
-The printout should look as follows:
+The printout should look as follows (without the additional makespan task):
 
 ```python
 [(clean, Bob, 0, 3), (wash, Alice, 0, 2), (cook, Alice, 2, 3), (MakeSpan, Alice, 3, 4)]
 ```
 
-Here we use a makespan objective. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
+Here we use a makespan objective which means that we want to minimize the completion time of the last task. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
 
 ```python
 pip install matplotlib
@@ -99,13 +99,13 @@ S += red_pre < red_paint, red_paint < red_post
 Since they are equally qualified, each task can be done by either Alice or Bob:
 
 ```python
-green_pre += Alice | Bob
-green_paint += Alice | Bob
-green_post += Alice | Bob
+S += green_pre % Alice | Bob
+S += green_paint % Alice | Bob
+S += green_post % Alice | Bob
 
-red_pre += Alice | Bob
-red_paint += Alice | Bob
-red_post += Alice | Bob
+S += red_pre % Alice | Bob
+S += red_paint % Alice | Bob
+S += red_post % Alice | Bob
 ```
 
 Now we have the first version of our scenario, lets solve and plot it. 
@@ -122,8 +122,8 @@ This schedule completes after four hours and suggests to paint both bikes at the
 
 ```python
 Paint_Shop = S.Resource('Paint Shop')
-red_paint += Paint_Shop
-green_paint += Paint_Shop
+S += red_paint % Paint_Shop
+S += green_paint % Paint_Shop
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-paint-shop.png)
@@ -148,7 +148,7 @@ To avoid the cleaning, the red painting is now scheduled after the green paintin
 ```python
 Lunch = S.Task('Lunch')
 S += Lunch > 3, Lunch < 5
-Lunch += Alice, Bob
+S += Lunch % [Alice, Bob]
 ```
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/bike-shop-lunch.png)

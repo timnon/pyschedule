@@ -2,8 +2,13 @@
 import pyschedule
 import copy, collections, traceback
 
+api_key = 'api_4899c1db-8088-4448-a0e4-735b77673295'
+
 # planning horizon for the planning which need it
 horizon = 10
+
+# solver feedback
+msg = 1
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
@@ -11,10 +16,10 @@ def solve_docloud(scenario) :
 
 solve_methods = [
 pyschedule.solvers.pulp.solve,
-pyschedule.solvers.pulp.solve_discrete,
-pyschedule.solvers.ortools.solve,
+#pyschedule.solvers.pulp.solve_discrete,
+#pyschedule.solvers.ortools.solve,
 #pyschedule.solvers.cpoptimizer.solve,
-solve_docloud
+#solve_docloud
 ]
 
 def two_task_scenario() :
@@ -23,91 +28,117 @@ def two_task_scenario() :
 	T2 = S.Task('T2')
 	R1 = S.Resource('R1')
 	R2 = S.Resource('R2')
-	S += T1*2 + T2
+	S += T1*2 + T2 #T1 has priority to break ties
 	return S
 
 def ZERO() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S.T['T1'].length = 0
 	sols = ['[(T1, R1, 0, 0), (T2, R1, 0, 1)]']
 	return S,sols
 
-def BOUND() :
+def FIX() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.T['T1'] % S.R['R1'] | S.R['R2']
+	S += S.T['T2'] % S.R['R1'] | S.R['R2']
+	S.T['T1'].resources = [ S.R['R1'] ]
+	S.T['T1'].start = 1
+	S.T['T2'].resources = [ S.R['R1'] ]
+	S.T['T2'].start = 0
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
+	return S,sols
+
+def FIXSTART() :
+	S = two_task_scenario()
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
+	S.T['T1'].start = 3
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
+	return S,sols
+
+def BOUND() : # only test lower bound, upper bound is similar
+	S = two_task_scenario()
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] > 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
 def PREC() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] < S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
 def PRECPLUS() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] + 1 < S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
 	return S,sols
 
 def TIGHT() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] <= S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
 def TIGHTPLUS() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] + 1 <= S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
 	return S,sols
 
 def COND() :
 	S = two_task_scenario()
-	S.R['R1'] += S.T['T1'],S.T['T2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] + 2 << S.T['T2']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def ALT() :
 	S = two_task_scenario()
-	S.T['T1'] += S.R['R1'] | S.R['R2']
-	S.T['T2'] += S.R['R1'] | S.R['R2']
+	S += S.R['R1'] | S.R['R2'] % S.T['T1']
+	S += S.R['R1'] | S.R['R2'] % S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R2, 0, 1)]','[(T1, R2, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
 def MULT() :
 	S = two_task_scenario()
-	S.T['T1'] += S.R['R1'], S.R['R2']
-	S.T['T2'] += S.R['R1'], S.R['R2']
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
+	S += S.R['R2'] % (S.T['T1'],S.T['T2'])
 	sols = ['[(T1, R1, 0, 1), (T1, R2, 0, 1), (T2, R1, 1, 2), (T2, R2, 1, 2)]']
+	return S,sols
+
+def ALTMULT() :
+	S = two_task_scenario()
+	S += S.R['R1'] | S.R['R2'] % (S.T['T1'],S.T['T2'])
+	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]','[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
 
 def CUMUL() :
 	S = two_task_scenario()
 	S.R['R1'].size = 2
-	S.R['R1'] += S.T['T1'], S.T['T2']
+	S += S.R['R1'] % (S.T['T1'], S.T['T2'])
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
-	
+
 
 scenario_methods = [
 #ZERO,
-BOUND,
-PREC,
-PRECPLUS,
-TIGHT,
-TIGHTPLUS,
-COND,
-ALT,
-MULT,
-CUMUL
+#FIX,
+#BOUND,
+#PREC,
+#PRECPLUS,
+#TIGHT,
+#TIGHTPLUS,
+#COND,
+ALT#,
+#MULT,
+#ALTMULT,
+#CUMUL
 ]
 
 
@@ -127,7 +158,7 @@ for scenario_method in scenario_methods :
 		S_ = copy.deepcopy(S)
 		try :
 			if 'horizon' in solve_method.__code__.co_varnames :
-				solve_method(S_,horizon=horizon)
+				solve_method(S_,horizon=horizon,msg=msg)
 			else :
 				solve_method(S_)
 			sol = str(S_.solution())
@@ -135,7 +166,7 @@ for scenario_method in scenario_methods :
 			row.append(valid)
 			print(sol)
 		except :
-			row.append('na')
+			row.append('Error')
 			traceback.print_exc()
 	table.append(row)
 
@@ -153,13 +184,12 @@ try :
 	import pandas as pd
 	df = pd.DataFrame(table[1:])
 	# take last two elements in method name
-	df.columns = ['scenario'] + [ '.'.join(x.split('.')[-2:]) for x in table[0][1:] ] 
+	df.columns = ['scenario'] + [ '.'.join(x.split('.')[-2:]) for x in table[0][1:] ]
 	df = df.set_index('scenario')
 	print(df)
 except :
 	print('INFO: install pandas to get nicer table plot')
 	print(s)
-
 
 
 

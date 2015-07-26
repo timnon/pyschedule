@@ -167,8 +167,8 @@ class Scenario(_SchedElement):
 		self.constraints = list()
 
 		# parameters
-		self.is_same_resource_precs_lax = False
-		self.is_same_resource_precs_tight = False
+		#self.is_same_resource_precs_lax = False
+		#self.is_same_resource_precs_tight = False
 
 	def Task(self,name,length=1,start=None,resources=None,cost=None,capacity_req=None) :
 		"""
@@ -181,8 +181,11 @@ class Scenario(_SchedElement):
 			raise Exception('ERROR: task with name '+str(T)+' already contained in scenario '+str(self))
 		return T
 
-	def tasks(self) :
-		return list(self.T.values())
+	def tasks(self,resource=None) :
+		if resource is None :
+			return list(self.T.values())
+		else :
+			return list({ T for RA in self.resources_req(resource=resource) for T in RA.tasks() })
 
 	def Resource(self,name,size=1,capacity=None,cost=None) :
 		"""
@@ -195,11 +198,11 @@ class Scenario(_SchedElement):
 			raise Exception('ERROR: resource with name '+str(R)+' already contained in scenario '+str(self))
 		return R
 
-	def resources(self) :
-		return list(self.R.values())
-
-	def R(self,name) :
-		return self._resources[name]
+	def resources(self,task=None) :
+		if task is None :
+			return list(self.R.values())
+		else :
+			return list({ R for RA in self.resources_req(task=task) for R in RA })
 
 	def solution(self) :
 		"""
@@ -223,8 +226,8 @@ class Scenario(_SchedElement):
 		if 'MakeSpan' in self.T :
 			del self.T['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
-		makespan = self.Task('MakeSpan',cost=1)
-		makespan += self.resources()[0] # add some random resource, every task needs one
+		makespan = self.Task('MakeSpan')
+		self += makespan % self.resources()[0] # add some random resource, every task needs one
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
@@ -246,97 +249,90 @@ class Scenario(_SchedElement):
 			T.start = None
 
 	def precs_lax(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'lax' ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceLax) ]
 
 	def precs_tight(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'tight' ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceTight)  ]
 		
 	def precs_cond(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'cond' ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
 
 	def precs_low(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'low' ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
 
 	def precs_up(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'up' ]
+		return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
 
+	#TODO: add again last and first constraints
+	'''
 	def precs_first(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'first' ]
+		return [ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'first' ]
 
 	def precs_last(self) :
-		return [ C for C in self.constraints if isinstance(C,Precedence) and C.kind == 'last' ]
+		return []#[ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'last' ]
+	'''
+
+	def resources_req(self,task=None,resource=None):
+		"""
+		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
+		"""
+		Cs = [ C for C in self.constraints if isinstance(C,ResourcesReq) ]
+		if task is not None :
+			Cs = [ C for C in Cs if task in C.tasks() ]
+		if resource is not None :
+			Cs = [ C for C in Cs if resource in C.resources() ]
+		return Cs
+
+	def resources_req_coeff(self,task,resource):
+		"""
+		Returns the maximum resource requirement of the given task on the given resource
+		"""
+		return max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
+
+	def add_constraint(self,constraint):
+		self.constraints.append(constraint)
+		return self
+
+	def add_task(self,task):
+		if task.name in self.T :
+			raise Exception('ERROR: task '+str(resource)+' already contained in scenario '+str(self))
+		self.T[task.name] = resource
+
+	def add_task_affine(self,task_affine):
+		self.objective += task_affine
+
+	def add_resource(self,resource):
+		if resource.name in self.R :
+			raise Exception('ERROR: resource '+str(resource)+' already contained in scenario '+str(self))
+		self.R[resource.name] = resource
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
-			for x in other : self += x
+			for x in other :
+				self += x
 			return self
-
-		elif isinstance(other,_TaskAffineConstraint) :
-			pos_tasks = [ T for T in other if isinstance(T,Task) and other[T] >= 0 ]
-			neg_tasks = [ T for T in other if isinstance(T,Task) and other[T] < 0 ]
-			if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
-				raise Exception('ERROR: can only deal with simple precedences of \
-		                                 the form T1 + 3 < T2 or T1 < 3 and not '+str(other) )
-			# get offset
-			offset = 0
-			if 1 in other : offset = other[1]
-
-			if pos_tasks and neg_tasks :
-				left = pos_tasks[0]
-				right = neg_tasks[0]
-				if other.comp_operator == '<' :
-					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='lax'))
-				elif other.comp_operator == '<=' :
-					self.constraints.append(Precedence(left=left,right=right,offset=offset,kind='tight'))
-				elif other.comp_operator == '<<' :
-					shared_resources = list( set(left.resources_req_list()) & set(right.resources_req_list()) )
-					prec = Precedence(left=left,right=right,offset=offset,kind='cond')
-					if not shared_resources :
-						raise Exception('ERROR: tried to add precedence '+str(prec)+\
-                                                                ' but tasks dont compete for resources')
-					self.constraints.append(prec)
-				return self
-			elif pos_tasks and not neg_tasks :
-				left = pos_tasks[0]
-				right = -offset
-				self.constraints.append(Precedence(left=left,right=right,kind='up'))
-				return self
-			elif not pos_tasks and neg_tasks :
-				left = neg_tasks[0]
-				right = offset
-				self.constraints.append(Precedence(left=left,right=right,kind='low'))
-				return self
-			raise Exception('ERROR: cannot add constraint '+str(other)+' to scenario')
-
-		elif isinstance(other,Precedence) :
-			self.constraints.append(other)
+		elif isinstance(other,_Constraint) :
+			self.add_constraint(other)
 			return self
-
 		elif isinstance(other,Task) :
-			if other.name in self.T :
-				raise Exception('ERROR: task with name '+str(other.name)+' already contained in scenario '+str(self))
-			self.T[other.name] = other
+			self.add_task(other)
 			return self
-
 		elif isinstance(other,_TaskAffine) :
-			self.objective += other
+			self.add_task_affine(other)
 			return self
-
 		elif isinstance(other,Resource) :
-			if other.name in self.R :
-				raise Exception('ERROR: resource with name '+str(T)+' already contained in scenario '+str(self))
-			self.R[other.name] = other
+			self.add_resource(self,other)
 			return self
-
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
 
+	# TODO: create more complete removal method
 	def __isub__(self,other) :
 		if isinstance(other,Task) :
 			if other.name in self.T :
 				del self.T[other.name]
 			else :
 				raise Exception('ERROR: task with name '+str(other.name)+\
-                                                ' is not contained in scenario '+str(self))
+                                ' is not contained in scenario '+str(self))
 		return self
 
 	def __repr__(self) :
@@ -357,7 +353,7 @@ class Scenario(_SchedElement):
 				s += ' at ' + str(T.start)
 			if T.resources :
 				s += ' on ' + str(T.resources)
-			s += ' : ' + str(list(T)) + '\n'
+			s += ' : ' + str(self.resources_req(task=T)) + '\n'
 		s += '\n'
 		#s += '\n'.join([ str(T)+' : '+ str(T.resources_req) for T in sorted(self.tasks()) ]) + '\n\n'
 		# print resources
@@ -392,6 +388,7 @@ class Scenario(_SchedElement):
 			s += '\n'.join([ P.__repr__() for P in self.precs_up() ]) + '\n'
 			s += '\n'
 
+		'''
 		if self.precs_first() :
 			# print precedences
 			s += 'FIRST TASKS:\n'
@@ -403,6 +400,7 @@ class Scenario(_SchedElement):
 			s += 'LAST TASKS:\n'
 			s += '\n'.join([ P.__repr__() for P in self.precs_last() ]) + '\n'
 			s += '\n'
+		'''
 
 		s += '##############################################\n'
 		return s
@@ -417,55 +415,28 @@ class Task(_SchedElement) :
 	def __init__(self,name,length=1,cost=None,start=None,resources=None,resources_req=None,capacity_req=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
 		self.length = length
-		self.cost = cost #TODO: remove cost???
 		self.start = start
-		self.resources_req = resources_req
 		self.resources = resources
 		if capacity_req is not None :
 			self.capacity_req = capacity_req
 		else :
 			self.capacity_req = self.length
 
-	def resources_req_list(self) :
-		return [ R for RA in self for R in RA ]
-
-	def __getitem__(self,index) :
-		if isinstance(index,Resource) :
-			max_req = max([ RA[index] for RA in self.resources_req if index in RA ] )
-			if index in self.resources_req : #if contained a simple resource
-				max_req = max(max_req,1) 
-			return max_req
-		else :
-			raise Exception('ERROR: tasks can only take integers and resources as index, not '+str(index))
-		return self
-
-	def __iter__(self) :
-		if self.resources_req is None :
-			raise Exception('ERROR: task '+str(self)+' does not have any resource requirements')
-		return self.resources_req.__iter__()
-		
 	def __len__(self) :
 		return self.length
 
-	def __iadd__(self,other) :
-		if _isiterable(other) :
-			for x in other : self += x		
-		elif isinstance(other,(Resource,_ResourceAffine)) :
-			if self.resources_req is None :
-				self.resources_req = list()
-			self.resources_req.append(other)
-		else :
-			raise Exception('ERROR: cant add '+str(other)+' to task '+str(self))
-		return self
-
 	def __lt__(self,other) :
+		'''
 		if isinstance(other,Resource) :
 			return Precedence(left=self,right=other,kind='first')
+		'''
 		return _TaskAffine(self) < other
 
 	def __gt__(self,other) :
+		'''
 		if isinstance(other,Resource) :
-			return Precedence(left=self,right=other,kind='last')
+			return _Precedence(left=self,right=other,kind='last')
+		'''
 		return _TaskAffine(self) > other
 
 	def __le__(self,other) :
@@ -495,6 +466,16 @@ class Task(_SchedElement) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
+	def __mod__(self,other) :
+		if _isiterable(other) :
+			return [ x % self for x in other ]
+		return other % self
+
+
+
+
+
+
 
 
 class _TaskAffine(_SchedElementAffine) :
@@ -502,12 +483,41 @@ class _TaskAffine(_SchedElementAffine) :
 	def __init__(self,unknown=None) :
 		_SchedElementAffine.__init__(self,unknown=unknown,element_class=_SchedElement)
 
+	def _get_prec(self,TA,comp_operator) :
+		pos_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] >= 0 ]
+		neg_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] < 0 ]
+		if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
+			raise Exception('ERROR: can only deal with simple precedences of \
+									the form T1 + 3 < T2 or T1 < 3 and not '+str(TA) )
+		# get offset
+		offset = 0
+		if 1 in TA : offset = TA[1]
+
+		if pos_tasks and neg_tasks :
+			left = pos_tasks[0]
+			right = neg_tasks[0]
+			if comp_operator == '<' :
+				return PrecedenceLax(left=left,right=right,offset=offset)
+			elif comp_operator == '<=' :
+				return PrecedenceTight(left=left,right=right,offset=offset)
+			elif comp_operator == '<<' :
+				return PrecedenceCond(left=left,right=right,offset=offset)
+		elif pos_tasks and not neg_tasks :
+			left = pos_tasks[0]
+			right = -offset
+			return PrecedenceUp(left=left,right=right)
+			return self
+		elif not pos_tasks and neg_tasks :
+			left = neg_tasks[0]
+			right = offset
+			return PrecedenceLow(left=left,right=right)
+
 	def __lt__(self,other) :
 		if _isiterable(other) :
 			return [ self < x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self < _TaskAffine(other)
-		return _TaskAffineConstraint(self-other,'<')
+		return self._get_prec(self-other,'<')
 
 	def __gt__(self,other) :
 		if _isiterable(other) :
@@ -521,7 +531,7 @@ class _TaskAffine(_SchedElementAffine) :
 			return [ self <= x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self <= _TaskAffine(other)
-		return _TaskAffineConstraint(self-other,'<=')
+		return self._get_prec(self-other,'<=')
 
 	def __ge__(self,other) :
 		if _isiterable(other) :
@@ -535,7 +545,7 @@ class _TaskAffine(_SchedElementAffine) :
 			return [ self << x for x in other ]
 		if not isinstance(other,type(self)) :
 			return self << _TaskAffine(other)
-		return _TaskAffineConstraint(self-other,'<<')
+		return self._get_prec(self-other,'<<')
 
 	def __rshift__(self,other) :
 		if _isiterable(other) :
@@ -545,11 +555,11 @@ class _TaskAffine(_SchedElementAffine) :
 		return _TaskAffine(other) << self
 
 
-
+'''
 class _TaskAffineConstraint(_TaskAffine) :
 	"""
 	A representation of some inequality of e.g. the form T1 + T2*3 + 2 < 0
-	The inquality sign is determined by parameter comp_operator. 
+	The inequality sign is determined by parameter comp_operator.
 	"""
 	def __init__(self,task_affine,comp_operator) :
 		_TaskAffine.__init__(self)
@@ -558,8 +568,8 @@ class _TaskAffineConstraint(_TaskAffine) :
 
 	def __repr__(self) :
 		s = self.__repr__()
-		s += ' ' + str(sign) + ' 0'
-
+		s += ' ' + str(self.comp_operator) + ' 0'
+'''
 
 
 class _Constraint(_SchedElement) :
@@ -569,35 +579,38 @@ class _Constraint(_SchedElement) :
 	def __init__(self) :
 		_SchedElement.__init__(self,name='',numeric_name_prefix='C')
 
+	def tasks(self):
+		return []
+
+	def resources(self):
+		return []
 
 
-class Precedence(_Constraint) :
+
+class _Precedence(_Constraint) :
 	"""
 	A precedence constraint of two tasks, left and right, and an offset.
-	right might also be a number. The kinds of precedenceds are:
-
-	lax :  e.g. T1 + 3 < T2
-	tight : e.g. T1 + 3 <= T2
-	cond : e.g. T1 + 3 << T2
-	low : e.g. T1 > 3
-	up : e.g. T1 < 3
+	right might also be a number.
 	"""
-	def __init__(self,left,right,offset=0,kind='lax') :
+	def __init__(self,left=None,right=None,offset=0,TA=None) :
 		_Constraint.__init__(self)
-		self.left = left
-		self.right = right
-		self.offset = offset
-		self.kind = kind
+		if left is not None and right is not None :
+			self.left = left
+			self.right = right
+			self.offset = offset
+			self.comp_operator = '<'
+		elif TA is not None :
+			self.format(TA)
 
 	def tasks(self) :
 		return [self.left,self.right]
 
 	def __repr__(self) :
-		kind_to_comp_operator = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<', 'first':'<', 'last':'>' }
+		#kind_to_comp_operator = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<', 'first':'<', 'last':'>' }
 		s = str(self.left) + ' '
 		if self.offset != 0 :
 			s += '+ ' + str(self.offset) + ' '
-		s += str(kind_to_comp_operator[self.kind]) + ' ' + str(self.right)
+		s += str(self.comp_operator) + ' ' + str(self.right)
 		return s
 
 	def __str__(self) :
@@ -605,7 +618,58 @@ class Precedence(_Constraint) :
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
-		
+
+
+
+class PrecedenceLow(_Precedence) :
+	"""
+	A precedence of the form T1 + 3 < T2
+	"""
+	def __init__(self,left,right,offset=0) :
+		_Precedence.__init__(self,left,right,offset)
+		self.comp_operator = '>'
+
+
+
+class PrecedenceUp(_Precedence) :
+	"""
+	A precedence of the form T1 + 3 < T2
+	"""
+	def __init__(self,left,right,offset=0) :
+		_Precedence.__init__(self,left,right,offset)
+		self.comp_operator = '<'
+
+
+
+class PrecedenceLax(_Precedence) :
+	"""
+	A precedence of the form T1 + 3 < T2
+	"""
+	def __init__(self,left,right,offset=0) :
+		_Precedence.__init__(self,left,right,offset)
+		self.comp_operator = '<'
+
+
+
+class PrecedenceTight(_Precedence) :
+	"""
+	A precedence of the form T1 + 3 <= T2
+	"""
+	def __init__(self,left,right,offset=0) :
+		_Precedence.__init__(self,left,right,offset)
+		self.comp_operator = '<='
+
+
+
+class PrecedenceCond(_Precedence) :
+	"""
+	A precedence of the form T1 + 3 <= T2
+	"""
+	def __init__(self,left,right,offset=0) :
+		_Precedence.__init__(self,left,right,offset)
+		self.comp_operator = '<='
+
+
 
 
 class Resource(_SchedElement) :
@@ -638,7 +702,13 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self) * other
 
 	def __or__(self,other) :
+		if isinstance(other,ResourcesReq) :
+			other._req = self | other._req
+			return other
 		return _ResourceAffine(self) | other
+
+	def __mod__(self,other) :
+		return _ResourceAffine(self) % other
 	
 	# iteration over resource gives the resource to simplify
 	# the construction of solvers
@@ -653,7 +723,7 @@ class Resource(_SchedElement) :
 		else :
 			raise Exception('ERROR: resource '+str(self)+' can only return its own capacity')
 
-	
+
 
 class _ResourceAffine(_SchedElementAffine) :
 
@@ -663,15 +733,64 @@ class _ResourceAffine(_SchedElementAffine) :
 	def __or__(self,other) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
+	def __mod__(self,other) :
+		RA = ResourcesReq(tasks=[],req=self)
+		return RA % other
 
 
-		
-			
-			
-		
-		
 
+class ResourcesReq(_Constraint) :
+	"""
+	A resource requirement of one or multiple tasks
+	"""
+	def __init__(self,tasks=[],req=dict()):
+		_Constraint.__init__(self)
+		self._req = req
+		self._tasks = tasks
 
+	def tasks(self) :
+		return self._tasks
+
+	def resources(self):
+		return list(self)
+
+	def __getitem__(self, resource):
+		return self._req.__getitem__(resource)
+
+	def __iter__(self):
+		return self._req.__iter__()
+
+	def __or__(self,other) :
+		if _isiterable(other) :
+			for x in other :
+				self = self | other
+		if isinstance(other,Resource) or isinstance(other,_ResourceAffine) :
+			self._req = self._req | other
+		else :
+			Exception('ERROR: cannot take or of %s with resource requirement %s' % (str(other),str(self)))
+		return self
+
+	def __mod__(self,other) :
+		if not _isiterable(other):
+			other = [other]
+		for x in other :
+			if isinstance(x,Task) :
+				self._tasks.append(x)
+			else :
+				raise Exception('ERROR: cannot add %s to resource requirement %s' % (str(x),str(self)))
+		return self
+
+	def __repr__(self):
+		s = str(self._req) + ' % '
+		if len(self.tasks()) > 1 :
+			s += '('
+		s += ','.join([ str(T) for T in self.tasks() ])
+		if len(self.tasks()) > 1 :
+			s += ')'
+		return s
+
+	def __str__(self):
+		return self.__repr__()
 
 
 

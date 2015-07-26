@@ -28,13 +28,13 @@ red_post = S.Task('red post')
 S += green_pre < green_paint, green_paint + 1 < green_post
 S += red_pre <= red_paint, red_paint < red_post
 
-green_pre += Alice | Bob
-green_paint += Alice | Bob
-green_post += Alice | Bob
+S += green_pre % Alice | Bob
+S += green_paint % Alice | Bob
+S += green_post % Alice | Bob
 
-red_pre += Alice | Bob
-red_paint += Alice | Bob
-red_post += Alice | Bob
+S += red_pre % Alice | Bob
+S += red_paint % Alice | Bob
+S += red_post % Alice | Bob
 
 task_colors = {red_pre: '#EB4845', red_paint:'#EB4845', red_post: '#EB4845', 
                green_pre: '#A1D372', green_paint: '#A1D372', green_post: '#A1D372'}
@@ -52,8 +52,8 @@ run(img_filename='/pics/bike-shop-first.png')
 # STEP 1
 
 Paint_Shop = S.Resource('Paint Shop')
-red_paint += Paint_Shop
-green_paint += Paint_Shop
+S += red_paint % Paint_Shop
+S += green_paint % Paint_Shop
 run(img_filename='/pics/bike-shop-paint-shop.png')
 # STEP 2 (added paint shop increases length by one
 
@@ -67,7 +67,7 @@ run(img_filename='/pics/bike-shop-changeover.png')
 
 lunch = S.Task('lunch')
 S += lunch > 3, lunch < 5
-lunch += Alice, Bob
+S += lunch % (Alice, Bob)
 task_colors[lunch] = '#7EA7D8'
 run(img_filename='/pics/bike-shop-lunch.png')
 # STEP 6 (add lunch)

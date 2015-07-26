@@ -24,7 +24,7 @@ R = { j : S.Resource(j) for j in range(m) }
 S += [ T[(i,j)] < T[(i,j+1)] for i in range(n) for j in range(m-1) ]
 for i in range(n) :
 	for j in range(m) :
-		T[(i,j)] += R[j]
+		S += T[(i,j)] % R[j]
 
 S.use_makespan_objective()
 pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)

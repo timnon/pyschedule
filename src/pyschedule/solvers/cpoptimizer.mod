@@ -12,8 +12,8 @@ tuple Task {
 
 tuple Resource {
 	key int id;
-    	int capacity_low;
-    	int capacity_up;
+    int capacity_low;
+    int capacity_up;
 }
 
 tuple CumulResource {
@@ -40,6 +40,12 @@ tuple TaskResourceGroup {
   	key int group_id;
 }
 
+tuple TaskTaskResource {
+    int task_id_1;
+    int task_id_2;
+    int resource_id;
+}
+
 tuple Precedence {
 	int left_task;
 	int right_task;
@@ -59,6 +65,7 @@ tuple Bound {
 {TaskCumulResource} TaskCumulResources = ...;
 {TaskResource} TaskResources = ...;
 {TaskResourceGroup} TaskResourceGroups = ...;
+{TaskTaskResource} TaskTaskResources = ...;
 {Precedence} Precedences = ...;
 {Precedence} TightPrecedences = ...;
 {Precedence} CondPrecedences = ...;
@@ -123,6 +130,15 @@ subject to {
                		alternative(Intervals[T], all(TR in TaskResources : ( TR.group_id == TRG.group_id ) && ( TR.task_id == T.id ) ) RIntervals[TR]); // Resource Selection        
         }
   }
+
+  forall(TR_1 in TaskResources){
+        forall(TR_2 in TaskResources){
+            forall(TTR in TaskTaskResources : ( TTR.task_id_1 == TR_1.task_id ) && ( TTR.task_id_2 == TR_2.task_id ) &&
+                                              ( TTR.resource_id == TR_1.resource_id ) && ( TTR.resource_id == TR_2.resource_id ) ){
+                presenceOf(RIntervals[TR_1]) >= presenceOf(RIntervals[TR_2]);
+            }
+        }
+  }
   
   forall( PR in CumulResources ){
              sum( TCR in TaskCumulResources : TCR.resource_id == PR.id ) ResourceFunction[TCR] <= PR.resource_size; 
@@ -133,7 +149,7 @@ subject to {
 // plot solution to log file
 execute {
 	write("##START_SOLUTION##");
-	for ( TR in TaskResources )
+	for ( var TR in TaskResources )
 	{
 		if ( RIntervals[TR].present == 1 )
 		{
@@ -144,7 +160,7 @@ execute {
 	{
 			write(TCR.task_id,",",TCR.resource_id,",",Intervals[ Tasks.get(TCR.task_id) ].start,";");
 	}
-	write("##END_SOLUTION##");
+	writeln("##END_SOLUTION##");
 }
 
 

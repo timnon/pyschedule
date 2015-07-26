@@ -286,7 +286,7 @@ def eucl_dist(orig,dest) :
 # get cities table
 cities_table = [ row.split(' ') for row in cities.split('\n') ]
 cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
-n = 10 # use only ten cities to test, more cities take a lone time #len(cities_table)
+n = 10 # use only few cities to test, more cities take a lone time #len(cities_table)
 coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
 cities = list(coords)
 
@@ -298,10 +298,10 @@ coords['end'] = coords[start_city]
 # scenario and city tasks
 S = pyschedule.Scenario('TSP Germany')
 T = { city : S.Task(city) for city in coords  }
-R = S.Resource('car')
+Car = S.Resource('Car')
 
-for city in coords :
-	T[city] += R
+# the car has to pass every city
+S += Car % [ T[city] for city in coords ]
 
 # make sure that the tour start and ends at start_city
 S += T['start'] < { T[city] for city in coords if city != 'start' }
@@ -311,14 +311,17 @@ S += T['end'] > { T[city] for city in coords if city != 'end' }
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in coords for city_ in coords if city != city_ ]
 
+# objective: minimze the end of the trip (multiply with 1 to turn into affine combination of tasks)
+S += T['end']*1
+
 pyschedule.solvers.pulp.solve(S,time_limit=30,msg=1)
 pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
 # plot tours
 import pylab
 sol = S.solution()
-blue_tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords ]
-pylab.plot([ x for x,y in blue_tour ],[ y for x,y in blue_tour],linewidth=2.0,color='blue')
+tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords ]
+pylab.plot([ x for x,y in tour ],[ y for x,y in tour],linewidth=2.0,color='blue')
 
 # plot city names
 for city in cities : pylab.text(coords[city][0], coords[city][1], city,color='black',fontsize=10)

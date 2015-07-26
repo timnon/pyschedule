@@ -78,30 +78,49 @@ def _get_dat_filename(scenario,msg=0) :
 	TaskResources = list()
 	TaskResourceGroups = list()
 	TaskCumulResources = list()
+	TaskTaskResources = list()
 	for T in tasks :				
 		Tasks.append( (task_to_id[T],int(T.length)) )
-		for RA in T.resources_req :
-			it_resources = RA
+
+	# resource requirements
+	for RA in S.resources_req() :
+		tasks = RA.tasks()
+
+		#TODO: allow fixed resources of different tasks
+		it_resources = list(RA)
+		# check if one of resources in RA is fixed
+		for T in tasks :
 			# check if one of resources in RA is fixed
 			if T.resources is not None :
 				fixed_resources = set(RA) & set(T.resources)
 				if fixed_resources :
-					it_resources = list(fixed_resources)[0]
+					it_resources = list(fixed_resources)[:1]
 			for R in it_resources :
 				task_id = task_to_id[T]
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
-					task_resource_group_id = T.resources_req.index(RA)
+					T_RAs = S.resources_req(task=T)
+					task_resource_group_id = T_RAs.index(RA) #T.resources_req.index(RA)
 					TaskResources.append( (task_id,resource_id,
-                                                              T.length,task_resource_group_id) )
+										   T.length,task_resource_group_id) )
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
-					TaskCumulResources.append( (task_id,resource_id,T[R]) )				
-	
+					TaskCumulResources.append( (task_id,resource_id,RA[R]) )
+
+		# fixing similar tasks to resources
+		T = tasks[0]
+		for T_ in tasks[1:] :
+			task_id_1 = task_to_id[T]
+			task_id_2 = task_to_id[T_]
+			for R in RA :
+				resource_id = resource_to_id[R]
+				TaskTaskResources.append((task_id_1,task_id_2,resource_id))
+
 	Tasks = sorted(Tasks)
 	TaskResources = sorted(TaskResources)
 	TaskResourceGroups = sorted(TaskResourceGroups)
+	TaskTaskResources = sorted(TaskTaskResources)
 
 	# Precedences for .dat-file
 	Precedences = list()
@@ -133,7 +152,7 @@ def _get_dat_filename(scenario,msg=0) :
 	CondPrecedences = sorted(CondPrecedences)
 
 	# add objective
-	Objectives = [ (task_to_id[key],S.objective[key])  for key in S.objective if key != 1 ]
+	Objectives = [ (task_to_id[key],S.objective[key]) for key in S.objective if key != 1 ]
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists
@@ -150,6 +169,7 @@ def _get_dat_filename(scenario,msg=0) :
 		f.write('TaskResources={\n'+to_str(TaskResources)+'\n};\n\n')
 		f.write('TaskResourceGroups={\n'+to_str(TaskResourceGroups)+'\n};\n\n')
 		f.write('TaskCumulResources={\n'+to_str(TaskCumulResources)+'\n};\n\n')
+		f.write('TaskTaskResources={\n'+to_str(TaskTaskResources)+'\n};\n\n')
 		f.write('Precedences={\n'+to_str(Precedences)+'\n};\n\n')
 		f.write('TightPrecedences={\n'+to_str(TightPrecedences)+'\n};\n\n')
 		f.write('CondPrecedences={\n'+to_str(CondPrecedences)+'\n};\n\n')
@@ -172,7 +192,7 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
                          INT + Literal(",").suppress() + \
 			 INT + Literal(";").suppress() )
 	plan = Group( Group( ZeroOrMore(int_row) ) )
-	
+
 	start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
 	start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
 	opl_plan = plan.parseString(log[start_i:end_i])
