@@ -2,24 +2,22 @@
 import pyschedule
 import copy, collections, traceback
 
-api_key = 'api_4899c1db-8088-4448-a0e4-735b77673295'
-
 # planning horizon for the planning which need it
 horizon = 10
 
 # solver feedback
-msg = 1
+msg = 0
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
-	pyschedule.solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=1)
+	pyschedule.solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
 pyschedule.solvers.pulp.solve,
-#pyschedule.solvers.pulp.solve_discrete,
-#pyschedule.solvers.ortools.solve,
+pyschedule.solvers.pulp.solve_discrete,
+pyschedule.solvers.ortools.solve,
 #pyschedule.solvers.cpoptimizer.solve,
-#solve_docloud
+solve_docloud
 ]
 
 def two_task_scenario() :
@@ -63,14 +61,14 @@ def BOUND() : # only test lower bound, upper bound is similar
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
-def PREC() :
+def LAX() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] < S.T['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
-def PRECPLUS() :
+def LAXPLUS() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] + 1 < S.T['T2']
@@ -128,19 +126,18 @@ def CUMUL() :
 
 scenario_methods = [
 #ZERO,
-#FIX,
-#BOUND,
-#PREC,
-#PRECPLUS,
-#TIGHT,
-#TIGHTPLUS,
-#COND,
-ALT#,
-#MULT,
-#ALTMULT,
-#CUMUL
+FIX,
+BOUND,
+LAX,
+LAXPLUS,
+TIGHT,
+TIGHTPLUS,
+COND,
+ALT,
+MULT,
+ALTMULT,
+CUMUL
 ]
-
 
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)

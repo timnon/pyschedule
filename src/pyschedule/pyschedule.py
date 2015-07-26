@@ -276,7 +276,7 @@ class Scenario(_SchedElement):
 		"""
 		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
 		"""
-		Cs = [ C for C in self.constraints if isinstance(C,ResourcesReq) ]
+		Cs = [ C for C in self.constraints if isinstance(C,ResourceReq) ]
 		if task is not None :
 			Cs = [ C for C in Cs if task in C.tasks() ]
 		if resource is not None :
@@ -295,8 +295,8 @@ class Scenario(_SchedElement):
 
 	def add_task(self,task):
 		if task.name in self.T :
-			raise Exception('ERROR: task '+str(resource)+' already contained in scenario '+str(self))
-		self.T[task.name] = resource
+			raise Exception('ERROR: task '+str(task)+' already contained in scenario '+str(self))
+		self.T[task.name] = task
 
 	def add_task_affine(self,task_affine):
 		self.objective += task_affine
@@ -473,11 +473,6 @@ class Task(_SchedElement) :
 
 
 
-
-
-
-
-
 class _TaskAffine(_SchedElementAffine) :
 
 	def __init__(self,unknown=None) :
@@ -554,22 +549,6 @@ class _TaskAffine(_SchedElementAffine) :
 			return self >> _TaskAffine(other)
 		return _TaskAffine(other) << self
 
-
-'''
-class _TaskAffineConstraint(_TaskAffine) :
-	"""
-	A representation of some inequality of e.g. the form T1 + T2*3 + 2 < 0
-	The inequality sign is determined by parameter comp_operator.
-	"""
-	def __init__(self,task_affine,comp_operator) :
-		_TaskAffine.__init__(self)
-		self.update(_DICT_TYPE(task_affine))
-		self.comp_operator = comp_operator
-
-	def __repr__(self) :
-		s = self.__repr__()
-		s += ' ' + str(self.comp_operator) + ' 0'
-'''
 
 
 class _Constraint(_SchedElement) :
@@ -702,14 +681,15 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self) * other
 
 	def __or__(self,other) :
-		if isinstance(other,ResourcesReq) :
-			other._req = self | other._req
+		if isinstance(other,ResourceReq) :
+			other._resources = self | other._resources
 			return other
 		return _ResourceAffine(self) | other
 
 	def __mod__(self,other) :
 		return _ResourceAffine(self) % other
-	
+
+	'''
 	# iteration over resource gives the resource to simplify
 	# the construction of solvers
 	def __iter__(self) :
@@ -722,6 +702,7 @@ class Resource(_SchedElement) :
 			return 1
 		else :
 			raise Exception('ERROR: resource '+str(self)+' can only return its own capacity')
+	'''
 
 
 
@@ -734,19 +715,19 @@ class _ResourceAffine(_SchedElementAffine) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
 	def __mod__(self,other) :
-		RA = ResourcesReq(tasks=[],req=self)
+		RA = ResourceReq(tasks=[], resources=self)
 		return RA % other
 
 
 
-class ResourcesReq(_Constraint) :
+class ResourceReq(_Constraint) :
 	"""
 	A resource requirement of one or multiple tasks
 	"""
-	def __init__(self,tasks=[],req=dict()):
+	def __init__(self,tasks,resources):
 		_Constraint.__init__(self)
-		self._req = req
 		self._tasks = tasks
+		self._resources = resources
 
 	def tasks(self) :
 		return self._tasks
@@ -755,17 +736,22 @@ class ResourcesReq(_Constraint) :
 		return list(self)
 
 	def __getitem__(self, resource):
-		return self._req.__getitem__(resource)
+		if resource in self._resources :
+			try :
+				return self._resources.__getitem__(resource)
+			except :
+				return 1
+		raise Exception('ERROR: %s not contained in %s' % (str(resource),str(self)))
 
 	def __iter__(self):
-		return self._req.__iter__()
+		return self._resources.__iter__()
 
 	def __or__(self,other) :
 		if _isiterable(other) :
 			for x in other :
 				self = self | other
 		if isinstance(other,Resource) or isinstance(other,_ResourceAffine) :
-			self._req = self._req | other
+			self._resources = self._resources | other
 		else :
 			Exception('ERROR: cannot take or of %s with resource requirement %s' % (str(other),str(self)))
 		return self
@@ -781,7 +767,7 @@ class ResourcesReq(_Constraint) :
 		return self
 
 	def __repr__(self):
-		s = str(self._req) + ' % '
+		s = str(self._resources) + ' % '
 		if len(self.tasks()) > 1 :
 			s += '('
 		s += ','.join([ str(T) for T in self.tasks() ])

@@ -53,43 +53,23 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 		if T.start is not None :
 			ort_solver.Add(I.StartsAt(T.start))
 
-		# fix resources 
-		if T.resources :
-			for R in T.resources :
-				resource_to_intervals[R].append(I)
-
-		# alternative resources #TODO: resources could be in multiple clauses
-		'''
-		else :
-			for RA in T :
-				ra_tasks = list()
-				for R in RA :
-					I_ = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,True,T.name+'_'+R.name)
-					resource_to_intervals[R].append(I_)
-					ra_tasks.append(I_)
-					resource_task_to_interval[(R,T)] = I_
-					ort_solver.Add( I.StaysInSync(I_) )
-				# one resource needs to get selected
-				ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
-		'''
-
 	# resourcee requirements
 	for RA in S.resources_req() :
 		tasks = RA.tasks()
 		for T in tasks :
 			I = task_to_interval[T]
-			ra_tasks = list()
+			RA_tasks = list()
 			for R in RA :
 				I_ = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,True,T.name+'_'+R.name)
 				resource_to_intervals[R].append(I_)
-				ra_tasks.append(I_)
+				RA_tasks.append(I_)
 				resource_task_to_interval[(R,T)] = I_
 				ort_solver.Add( I.StaysInSync(I_) )
 				# if resources are fixed
 				if T.resources is not None and R in T.resources :
 					ort_solver.Add( I_.PerformedExpr() == 1 )
 			# one resource needs to get selected
-			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in ra_tasks ]) == 1)
+			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in RA_tasks ]) == 1)
 		# same resources for tasks
 		T = tasks[0]
 		for T_ in tasks[1:] :
