@@ -21,7 +21,8 @@ Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
 # create three tasks with lengths 1,2 and 3
 cook, wash, clean = S.Task('cook',1), S.Task('wash',2), S.Task('clean',3)
 
-# assign tasks to resources, either Alice or Bob. The %-operator connects tasks and resource
+# assign tasks to resources, either Alice or Bob,
+# the %-operator connects tasks and resource
 S += cook % Alice | Bob
 S += wash % Alice | Bob
 S += clean % Alice | Bob
