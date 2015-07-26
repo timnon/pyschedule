@@ -35,7 +35,7 @@ print(S.solution())
 The printout should look as follows (without the additional makespan task):
 
 ```python
-[(clean, Bob, 0, 3), (wash, Alice, 0, 2), (cook, Alice, 2, 3), (MakeSpan, Alice, 3, 4)]
+[(clean, Bob, 0, 3), (wash, Alice, 0, 2), (cook, Alice, 2, 3)]
 ```
 
 Here we use a makespan objective which means that we want to minimize the completion time of the last task. Hence, Alice should do the washing from 0 to 2 and then do the cooking from 2 to 3, whereas Bob will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, if you want a visualization, first install matplotlib:
