@@ -67,7 +67,7 @@ run(img_filename='/pics/bike-shop-changeover.png')
 
 lunch = S.Task('lunch')
 S += lunch > 3, lunch < 5
-S += lunch % (Alice, Bob)
+S += lunch % {Alice, Bob}
 task_colors[lunch] = '#7EA7D8'
 run(img_filename='/pics/bike-shop-lunch.png')
 # STEP 6 (add lunch)
