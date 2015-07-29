@@ -79,7 +79,8 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	#colors = ['red','green','blue','yellow','orange','black','purple'] #basic colors
 	colors += [ [ random.random() for i in range(3) ] for x in range(len(S.tasks())) ] #random colors
 	color_map = { T : colors[comps[T]] for T in comps }
-	# replace colors with fixed task colors		
+	# replace colors with fixed task colors
+
 	for T in task_colors :
 		color_map[T] = task_colors[T]
 

@@ -1,5 +1,5 @@
 #! /usr/bin/python
-import pyschedule
+from pyschedule import Scenario, Task, Resource, solvers, plotters
 import math
 
 cities = '\
@@ -286,7 +286,7 @@ def eucl_dist(orig,dest) :
 # get cities table
 cities_table = [ row.split(' ') for row in cities.split('\n') ]
 cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
-n = 14 # use only few cities to test, more cities take a lone time #len(cities_table)
+n = 10 # use only few cities to test, more cities take a lone time #len(cities_table)
 capacity = n/2 # each vehicle can visit half of the cities
 coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
 cities = list(coords)
@@ -297,12 +297,12 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
-S = pyschedule.Scenario('VRP Germany')
-T = { city : S.Task(city) for city in cities }
+S = Scenario('VRP Germany')
+T = { city : Task(city) for city in cities }
 
 # resources
 # capacity + 2 to include start and end task
-R_blue, R_red = S.Resource('blue',capacity=capacity+2), S.Resource('red',capacity=capacity+2)
+R_blue, R_red = Resource('blue',capacity=capacity+2), Resource('red',capacity=capacity+2)
 
 # tasks
 T['start'] = S.Task('start')
@@ -321,14 +321,14 @@ for city in cities :
 # distances
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in cities for city_ in cities if city != city_ ]
-S += [ T['start'] + int(eucl_dist(coords['start'],coords[city_])) << T[city] for city in cities ]
-S += [ T[city] + int(eucl_dist(coords['start'],coords[city_])) << T['start'] for city in cities ]
+S += [ T['start'] + int(eucl_dist(coords['start'],coords[city])) << T[city] for city in cities ]
+S += [ T[city] + int(eucl_dist(coords['start'],coords[city])) << T['start'] for city in cities ]
 
 # objective
 S += T['end']*1
 
-pyschedule.solvers.pulp.solve(S,kind='CBC',time_limit=30,msg=1)
-pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,)
+solvers.pulp.solve(S,kind='CBC',time_limit=180,msg=1)
+plotters.matplotlib.plot(S,resource_height=1.0,)
 
 # plot tours
 import pylab

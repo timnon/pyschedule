@@ -312,7 +312,10 @@ class DiscreteMIP(object) :
 
 				# fix resources if they are given
 				# TODO: fixed resources not really tested
-				resources = [ R for T_ in self.task_groups[T] if T_.resources is not None for R in T_.resources ]
+				try :
+					resources = [ R for T_ in self.task_groups[T] if T_.resources is not None for R in T_.resources ]
+				except:
+					import pdb;pdb.set_trace()
 				for R in resources :
 					if R in S.resources(task=T) :
 						cons.append( pl.LpConstraint( pl.LpAffineExpression([ (x[T,R,0],1) ]), sense=1, rhs=resources.count(R) ) )

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import pyschedule
+from pyschedule import Scenario, Task, Resource, solvers, plotters
 import copy, collections, traceback
 
 # planning horizon for the planning which need it
@@ -10,18 +10,18 @@ msg = 0
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
-	pyschedule.solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
+	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
-pyschedule.solvers.pulp.solve,
-pyschedule.solvers.pulp.solve_discrete,
-pyschedule.solvers.ortools.solve,
+solvers.pulp.solve,
+solvers.pulp.solve_discrete,
+solvers.ortools.solve,
 #pyschedule.solvers.cpoptimizer.solve,
 solve_docloud
 ]
 
 def two_task_scenario() :
-	S = pyschedule.Scenario('Scenario_1')
+	S = Scenario('Scenario_1')
 	T1 = S.Task('T1')
 	T2 = S.Task('T2')
 	R1 = S.Resource('R1')

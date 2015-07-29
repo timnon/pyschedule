@@ -1,5 +1,6 @@
 #! /usr/bin/python
-import pyschedule, math
+from pyschedule import Scenario, Task, Resource, solvers, plotters
+import math
 
 # Taillards 15x15 job-shop instance downloaded from
 # http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/jobshop.dir/tai15_15.txt
@@ -43,9 +44,9 @@ proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').st
 mach_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in mach.split('\n') ]
 n = 6 #len(proc_table)
 
-S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
-T = { (i,j) : S.Task((i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
-R = { j : S.Resource(j) for j in range(n) }
+S = Scenario('Taillards Flow-Shop 15x15')
+T = { (i,j) : Task((i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
+R = { j : Resource(j) for j in range(n) }
 
 S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(n-1) ]
 for i in range(n) :
@@ -53,8 +54,8 @@ for i in range(n) :
 		S += T[i,j] % R[mach_table[i][j] % n]
 
 S.use_makespan_objective()
-pyschedule.solvers.pulp.solve(S,time_limit=120,msg=1)
-pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+solvers.pulp.solve(S,time_limit=120,msg=1)
+plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
 
 
 

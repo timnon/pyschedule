@@ -1,5 +1,5 @@
 #! /usr/bin/python
-import pyschedule
+from pyschedule import Scenario, Task, Resource, solvers, plotters
 import math
 
 cities = '\
@@ -296,9 +296,9 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # scenario and city tasks
-S = pyschedule.Scenario('TSP Germany')
-T = { city : S.Task(city) for city in coords  }
-Car = S.Resource('Car')
+S = Scenario('TSP Germany')
+T = { city : Task(city) for city in coords  }
+Car = Resource('Car')
 
 # the car has to pass every city
 S += Car % [ T[city] for city in coords ]
@@ -314,8 +314,8 @@ S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
 # objective: minimze the end of the trip (multiply with 1 to turn into affine combination of tasks)
 S += T['end']*1
 
-pyschedule.solvers.pulp.solve(S,time_limit=30,msg=1)
-pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
+solvers.pulp.solve(S,time_limit=30,msg=1)
+plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
 
 # plot tours
 import pylab

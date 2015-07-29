@@ -28,6 +28,7 @@ red_post = S.Task('red post')
 S += green_pre < green_paint, green_paint + 1 < green_post
 S += red_pre <= red_paint, red_paint < red_post
 
+'''
 S += green_pre % Alice | Bob
 S += green_paint % Alice | Bob
 S += green_post % Alice | Bob
@@ -35,6 +36,11 @@ S += green_post % Alice | Bob
 S += red_pre % Alice | Bob
 S += red_paint % Alice | Bob
 S += red_post % Alice | Bob
+'''
+
+S += Alice|Bob % {green_pre,green_paint,green_post}
+S += Alice|Bob % {red_pre,red_paint,red_post}
+
 
 task_colors = {red_pre: '#EB4845', red_paint:'#EB4845', red_post: '#EB4845', 
                green_pre: '#A1D372', green_paint: '#A1D372', green_post: '#A1D372'}
