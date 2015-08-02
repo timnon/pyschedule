@@ -193,8 +193,12 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 			 INT + Literal(";").suppress() )
 	plan = Group( Group( ZeroOrMore(int_row) ) )
 
-	start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
-	start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
+	try:
+		start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
+		start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
+	except:
+		raise Exception('ERROR: no solution found')
+
 	opl_plan = plan.parseString(log[start_i:end_i])
 	int_plan = opl_plan[0][0]
 
@@ -252,6 +256,8 @@ def solve_docloud(scenario,api_key,
 	# solve and read solution
 	from . import docloud
 	log = docloud.solve(base_url=base_url,api_key=api_key,filenames=[mod_filename,dat_filename],msg=msg)
+	if msg :
+		print(log)
 	_read_solution(S,log,task_to_id,id_to_resource)
 
 

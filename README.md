@@ -8,7 +8,7 @@ pyschedule is the easiest way to match tasks with resources, period. It covers p
 pip install pyschedule
 ```
 
-This is how it works, for a technical overview go to <a href="https://github.com/timnon/pyschedule/wiki/Overview">here</a>:
+Here is a hello world example, for a more detailed example go to the <a href="https://github.com/timnon/pyschedule/blob/master/examples/bike-shop.ipynb">bike shop notebook</a> and for a technical overview go to the <a href="https://github.com/timnon/pyschedule/wiki/Overview">overview wiki</a>:
 
 ```python
 # load pyschedule and create a scenario
@@ -55,13 +55,10 @@ This should show you the following gantt chart:
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
-pyschedule supports different solvers, classical MIP-based ones as well as CP. All solvers and their capabilities are listed <a href="https://github.com/timnon/pyschedule/wiki/Overview">here</a>. The default solver used above uses a standard IP-model in combination with CBC, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can switch to CPLEX using:
+pyschedule supports different solvers, classical MIP-based ones as well as CP. All solvers and their capabilities are listed <a href="https://github.com/timnon/pyschedule/wiki/Overview">here</a>. The default solver used above uses a standard MIP-model in combination with CBC, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can switch to CPLEX using:
 
 ```python
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 ```
-
-For more details have a look at the <a href="https://github.com/timnon/pyschedule/blob/master/examples/bike-shop.ipynb">bike shop notebook</a> or one of the other scenarios in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>.
-
 
 

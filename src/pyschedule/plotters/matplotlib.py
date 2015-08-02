@@ -90,7 +90,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 
 	fig, ax = plt.subplots(1, 1, figsize=fig_size)
 	resource_sizes_count = 0
-	visible_resources = set(S.resources()) - set(hide_resources)
+	visible_resources = [ R for R in S.resources() if R not in hide_resources ]
 	total_resource_sizes = sum([ R.size for R in visible_resources ])
 	R_ticks = list()
 
@@ -99,7 +99,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 			resource_size = R.size
 		else :
 			resource_size = 1.0
-		R_ticks += [str(R)]*int(resource_size)
+		R_ticks += [str(R.name)]*int(resource_size)
 		# compute the levels of the tasks on one resource
 		task_levels = dict()
 		# get solution on resource sorted according to start time
@@ -128,12 +128,11 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 				    )
 				)
 				if show_task_labels :
-					plt.text(x,y+0.1*resource_height,str(T),fontsize=14,color='black')
+					plt.text(x,y+0.1*resource_height,str(T.name),fontsize=14,color='black')
 		resource_sizes_count += resource_size
 
 	# format graph
-	plt.title(str(S))	
-	#plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(resources)) ],resources)
+	plt.title(str(S.name))
 	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(R_ticks)) ],R_ticks[::-1])
 	plt.ylim(0,resource_sizes_count*resource_height)#resource_height*len(resources))
 	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution if R in visible_resources ]))
