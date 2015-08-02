@@ -13,11 +13,12 @@ def solve_docloud(scenario) :
 	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
-solvers.pulp.solve,
+#solvers.pulp.solve,
 solvers.pulp.solve_discrete,
-solvers.ortools.solve,
-#pyschedule.solvers.cpoptimizer.solve,
-solve_docloud
+solvers.pulp.solve_discrete_hop,
+#solvers.ortools.solve,
+#solvers.cpoptimizer.solve,
+#solve_docloud
 ]
 
 def two_task_scenario() :
@@ -34,6 +35,13 @@ def ZERO() :
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S.T['T1'].length = 0
 	sols = ['[(T1, R1, 0, 0), (T2, R1, 0, 1)]']
+	return S,sols
+
+def NONUNIT():
+	S = two_task_scenario()
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
+	S.T['T1'].length = 5
+	sols = ['[(T2, R1, 0, 1), (T2, R1, 1, 6)]']
 	return S,sols
 
 def FIX() :
@@ -64,29 +72,29 @@ def BOUND() : # only test lower bound, upper bound is similar
 def LAX() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] < S.T['T2']
-	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
+	S += S.T['T2'] < S.T['T1']
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def LAXPLUS() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] + 1 < S.T['T2']
-	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
+	S += S.T['T2'] + 1 < S.T['T1']
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def TIGHT() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] <= S.T['T2']
-	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
+	S += S.T['T2'] <= S.T['T1']
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def TIGHTPLUS() :
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] + 1 <= S.T['T2']
-	sols = ['[(T1, R1, 0, 1), (T2, R1, 2, 3)]']
+	S += S.T['T2'] + 1 <= S.T['T1']
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def COND() :
@@ -123,20 +131,39 @@ def CUMUL() :
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
+def CAP():
+	S = two_task_scenario()
+	S += S.R['R1']|S.R['R2'] % S.T['T1']
+	S += S.R['R1']|S.R['R2'] % S.T['T2']
+	S += S.R['R2']['length'] <= 0
+	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
+	return S,sols
+
+def CAPSLICE():
+	S = two_task_scenario()
+	S += S.R['R1'] % {S.T['T1'],S.T['T2']}
+	S += S.R['R1']['length'][:3] <= 1
+	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
+	return S,sols
+
+
 
 scenario_methods = [
 #ZERO,
-FIX,
-BOUND,
-LAX,
-LAXPLUS,
-TIGHT,
-TIGHTPLUS,
-COND,
-ALT,
-MULT,
-ALTMULT,
-CUMUL
+NONUNIT,
+#FIX,
+#BOUND,
+#LAX,
+#LAXPLUS,
+#TIGHT,
+#TIGHTPLUS,
+#COND,
+#ALT,
+#MULT,
+#ALTMULT,
+#CUMUL,
+#CAP,
+#CAPSLICE
 ]
 
 
@@ -147,6 +174,7 @@ table = [[''] + list(solve_method_names.keys()) ]
 for scenario_method in scenario_methods :
 	scenario_name = scenario_method.__name__
 	S,sols = scenario_method()
+	print(S)
 	row = [scenario_name]
 	for solve_method_name in solve_method_names :
 		print('###############################################')

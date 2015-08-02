@@ -32,6 +32,7 @@ python package to formulate and solve resource-constrained scheduling problems
 
 
 from collections import OrderedDict as _DICT_TYPE
+import sys
 
 try: # allow Python 2 vs 3 compatibility
 	_maketrans = str.maketrans
@@ -94,9 +95,9 @@ class _SchedElementAffine(_DICT_TYPE) :
 		elif isinstance(unknown,type(self)) :
 			self.update(unknown)
 		elif isinstance(unknown,list) :
-			self.update(_DICT_TYPE(unknown))	
+			self.update(_DICT_TYPE(unknown))
 		else :
-			raise Exception('ERROR: cant init '+str(self)+' from '+str(unknown))
+			raise Exception('ERROR: cant init %s from %s' % (str(self),str(unknown)))
 
 	def __add__(self,other) :
 		if _isiterable(other) :
@@ -109,9 +110,10 @@ class _SchedElementAffine(_DICT_TYPE) :
 				else :
 					new[key] = other[key]
 			return new
-		else :
-			new = type(self)(other)
-			return self + new
+		elif isinstance(other,self.element_class) or _isnumeric(other):
+			return self + type(self)(other)
+		raise Exception('ERROR: you cannot add %s to %s' % (str(other),str(self)))
+
 
 	def __sub__(self,other) :
 		if _isiterable(other) :
@@ -170,40 +172,41 @@ class Scenario(_SchedElement):
 		#self.is_same_resource_precs_lax = False
 		#self.is_same_resource_precs_tight = False
 
-	def Task(self,name,length=1,start=None,resources=None,cost=None,capacity_req=None) :
+	def Task(self,name,length=1,start=None,resources=None) :
 		"""
 		Adds a task with the given name to the scenario. Task names need to be unique.
 		"""
-		task = Task(name,length=length,cost=cost,start=start,resources=resources,capacity_req=capacity_req)
+		task = Task(name,length=length,start=start,resources=resources)
 		self.add_task(task)
 		return task
 
-	def tasks(self,resource=None) :
+	def tasks(self,resource=None,single_resource=False) :
 		if resource is None :
 			return list(self.T.values())
 		else :
-			return list({ T for RA in self.resources_req(resource=resource) for T in RA.tasks() })
+			return list({ T for RA in self.resources_req(resource=resource,single_resource=single_resource)
+						    for T in RA.tasks() })
 
 	def Resource(self,name,size=1,capacity=None,cost=None) :
 		"""
 		Adds a resource with the given name to the scenario. Resource names need to be unique.
 		"""
-		resource = Resource(name,size=size,capacity=capacity,cost=cost)
+		resource = Resource(name,size=size)
 		self.add_resource(resource)
 		return resource
 
-	def resources(self,task=None) :
+	def resources(self,task=None,single_resource=False) :
 		if task is None :
 			return list(self.R.values())
 		else :
-			return list({ R for RA in self.resources_req(task=task) for R in RA })
+			return list({ R for RA in self.resources_req(task=task,single_resource=single_resource) for R in RA })
 
 	def solution(self) :
 		"""
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
 		solution = [ (T,R,T.start,T.start+T.length) \
-                             for T in self.tasks() for R in T.resources ]
+                      for T in self.tasks() for R in T.resources ]
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 
@@ -275,7 +278,7 @@ class Scenario(_SchedElement):
 		return []#[ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'last' ]
 	'''
 
-	def resources_req(self,task=None,resource=None):
+	def resources_req(self,task=None,resource=None,single_resource=False):
 		"""
 		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
 		"""
@@ -284,13 +287,25 @@ class Scenario(_SchedElement):
 			Cs = [ C for C in Cs if task in C.tasks() ]
 		if resource is not None :
 			Cs = [ C for C in Cs if resource in C.resources() ]
+		if single_resource:
+			Cs = [ C for C in Cs if len(C.resources()) == 1 ]
 		return Cs
 
 	def resources_req_coeff(self,task,resource):
 		"""
 		Returns the maximum resource requirement of the given task on the given resource
 		"""
-		return max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
+		try:
+			coeff = max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
+		except:
+			import pdb;pdb.set_trace()
+		return coeff
+
+	def capacity_low(self):
+		return [ C for C in self.constraints if isinstance(C,CapacityLow) ]
+
+	def capacity_up(self):
+		return [ C for C in self.constraints if isinstance(C,CapacityUp) ]
 
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
@@ -302,7 +317,7 @@ class Scenario(_SchedElement):
 
 	def add_task(self,task):
 		if task.name in self.T and task is not self.T[task.name]:
-			raise Exception('ERROR: task with name %s already contained in scenario %s' % (str(task.name),str(self)))
+			raise Exception('ERROR: task with name %s already contained in scenario %s' % (str(task.name),str(self.name)))
 		elif task not in self.tasks():
 			self.T[task.name] = task
 
@@ -319,7 +334,7 @@ class Scenario(_SchedElement):
 
 	def add_resource(self,resource):
 		if resource.name in self.R and resource is not self.R[resource.name]:
-			raise Exception('ERROR: resource with name %s already contained in scenario %s' % (str(resource.name),str(self)))
+			raise Exception('ERROR: resource with name %s already contained in scenario %s' % (str(resource.name),str(self.name)))
 		elif resource not in self.resources():
 			self.R[resource.name] = resource
 
@@ -345,7 +360,7 @@ class Scenario(_SchedElement):
 		elif isinstance(other,Resource) :
 			self.add_resource(self,other)
 			return self
-		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self))
+		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self.name))
 
 	# TODO: create more complete removal method
 	def __isub__(self,other) :
@@ -355,23 +370,30 @@ class Scenario(_SchedElement):
 			self.remove_resource(other)
 		else :
 			raise Exception('ERROR: task with name '+str(other.name)+\
-                            ' is not contained in scenario '+str(self))
+                            ' is not contained in scenario '+str(self.name))
 		return self
 
-	def __repr__(self) :
-		s = '\n##############################################\n\n'
-		s += 'SCENARIO: '+str(self)+'\n\n'
+	def __iter__(self):
+			return self.T.values().__iter__()
+
+	def __getitem__(self, item):
+			return self.T[item]
+
+	def __str__(self) :
+		s = '###############################################\n'
+		s += '\n'
+		s += 'SCENARIO: '+self.name+'\n\n'
 		#print objective
 		s += 'OBJECTIVE: '+str(self.objective)+'\n\n'
 
 		s += 'RESOURCES:\n'
 		for R in self.resources() :
-			s += str(R)+'\n'
+			s += str(R.name)+'\n'
 		s += '\n'
 		# print tasks
 		s += 'TASKS:\n'
 		for T in self.tasks() :
-			s += str(T)
+			s += str(T.name)
 			if T.start is not None :
 				s += ' at ' + str(T.start)
 			if T.resources :
@@ -411,6 +433,18 @@ class Scenario(_SchedElement):
 			s += '\n'.join([ P.__repr__() for P in self.precs_up() ]) + '\n'
 			s += '\n'
 
+		if self.capacity_low() :
+			# print precedences
+			s += 'CAPACITY LOWER BOUNDS:\n'
+			s += '\n'.join([ C.__repr__() for C in self.capacity_low() ]) + '\n'
+			s += '\n'
+
+		if self.capacity_up() :
+			# print precedences
+			s += 'CAPACITY UPPER BOUNDS:\n'
+			s += '\n'.join([ C.__repr__() for C in self.capacity_up() ]) + '\n'
+			s += '\n'
+
 		'''
 		if self.precs_first() :
 			# print precedences
@@ -422,10 +456,8 @@ class Scenario(_SchedElement):
 			# print precedences
 			s += 'LAST TASKS:\n'
 			s += '\n'.join([ P.__repr__() for P in self.precs_last() ]) + '\n'
-			s += '\n'
 		'''
-
-		s += '##############################################\n'
+		s += '###############################################'
 		return s
 
 
@@ -435,15 +467,12 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,cost=None,start=None,resources=None,resources_req=None,capacity_req=None) :
+	def __init__(self,name,length=1,cost=None,start=None,resources=None) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='T')
 		self.length = length
 		self.start = start
 		self.resources = resources
-		if capacity_req is not None :
-			self.capacity_req = capacity_req
-		else :
-			self.capacity_req = self.length
+		self.params = dict()
 
 	def __len__(self) :
 		return self.length
@@ -494,12 +523,27 @@ class Task(_SchedElement) :
 			return [ x % self for x in other ]
 		return other % self
 
+	def __getitem__(self,key):
+		if key == 'length':
+			return self.length
+		return self.params[key]
+
+	def __setitem__(self,key,value):
+		if key == 'length':
+			self.length = value
+		self.params[key] = value
+
+	def __contains__(self,key):
+		if key == 'length':
+			return True
+		return key in self.params
+
 
 
 class _TaskAffine(_SchedElementAffine) :
 
 	def __init__(self,unknown=None) :
-		_SchedElementAffine.__init__(self,unknown=unknown,element_class=_SchedElement)
+		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Task)
 
 	def _get_prec(self,TA,comp_operator) :
 		pos_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] >= 0 ]
@@ -690,11 +734,9 @@ class Resource(_SchedElement) :
 	cost : the cost of using this resource in the solution
 	"""
 
-	def __init__(self,name=None,size=1,capacity=None,cost=None) :
+	def __init__(self,name=None,size=1) :
 		_SchedElement.__init__(self,name,numeric_name_prefix='R')
 		self.size = size
-		self.capacity = capacity
-		self.cost = cost
 
 	def __iadd__(self,other) :
 		if isinstance(other,Task) :
@@ -717,6 +759,10 @@ class Resource(_SchedElement) :
 
 	def __mod__(self,other) :
 		return _ResourceAffine(self) % other
+
+	def __getitem__(self, item):
+		return Capacity(resource=self,param=item)
+
 
 	'''
 	# iteration over resource gives the resource to simplify
@@ -807,6 +853,77 @@ class ResourceReq(_Constraint) :
 
 	def __str__(self):
 		return self.__repr__()
+
+
+
+class Capacity(_Constraint):
+	"""
+	A capacity bound on one resource in an interval
+	"""
+	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint,comp_operator=None):
+		_Constraint.__init__(self)
+		self.resource = resource
+		self.param = param
+		self.start = start
+		self.end = end
+		self.bound = bound
+		self.comp_operator = comp_operator
+
+	def __ge__(self, other):
+		if _isnumeric(other):
+			self.__class__ = CapacityLow
+			self.comp_operator = '>='
+			self.bound = other
+			return self
+		raise Exception('ERROR: % >= %s does not work' % (str(self.resource),str(other)) )
+
+	def __le__(self, other):
+		if _isnumeric(other):
+			self.__class__ = CapacityUp
+			self.comp_operator = '<='
+			self.bound = other
+			return self
+		raise Exception('ERROR: % <= %s does not work' % (str(self.resource),str(other)) )
+
+	def __getslice__(self,start,end):
+		self.start = start
+		self.end = end
+		return self
+
+	def __str__(self):
+		slice = ''
+		if self.start != 0 or self.end != sys.maxint:
+			slice = '['
+			if self.start != 0:
+				slice += str(self.start)
+			slice += ':'
+			if self.end < sys.maxint: #large number
+				slice += str(self.end)
+			slice += ']'
+		return '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
+
+	def __repr__(self):
+		return self.__str__()
+
+
+
+class CapacityLow(Capacity):
+
+	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint):
+		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
+
+
+
+class CapacityUp(Capacity):
+
+	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint):
+		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
+
+
+
+
+
+
 
 
 
