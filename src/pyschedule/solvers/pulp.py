@@ -543,10 +543,11 @@ class DiscreteMIPUnit(object):
 
 		# respect fixed tasks, they can block free tasks
 		for T in S.tasks():
-			if T.start:
-				for R in T.resources:
-					affine =  pl.LpAffineExpression([(x[T, R, t], 1)])
-					cons.append(pl.LpConstraint(affine, sense=0, rhs=1))
+			if not T.start:
+				continue
+			for R in T.resources:
+				affine =  pl.LpAffineExpression([(x[T, R, t], 1)])
+				cons.append(pl.LpConstraint(affine, sense=0, rhs=1))
 
 		# resource non-overlapping constraints
 		for R in S.resources():
@@ -594,9 +595,10 @@ class DiscreteMIPUnit(object):
 			param = C.param
 			start, end = max(C.start,0), min(C.end,self.horizon-1)
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
-			if tasks:
-				affine = pl.LpAffineExpression([(x[T, R, t],  T[param]) for T in tasks for t in range(start,end)] )
-				cons.append(pl.LpConstraint(affine, sense=1, rhs=C.bound))
+			if not tasks:
+				continue
+			affine = pl.LpAffineExpression([(x[T, R, t],  T[param]) for T in tasks for t in range(start,end)] )
+			cons.append(pl.LpConstraint(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
 		for C in S.capacity_up():
@@ -604,9 +606,10 @@ class DiscreteMIPUnit(object):
 			param = C.param
 			start, end = max(C.start,0), min(C.end,self.horizon)
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
-			if tasks:
-				affine = pl.LpAffineExpression([(x[T, R, t], T[param]) for T in tasks for t in range(start,end)] )
-				cons.append(pl.LpConstraint(affine, sense=-1, rhs=C.bound))
+			if not tasks:
+				continue
+			affine = pl.LpAffineExpression([(x[T, R, t], T[param]) for T in tasks for t in range(start,end)] )
+			cons.append(pl.LpConstraint(affine, sense=-1, rhs=C.bound))
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]*t) for T in S.objective for t in range(self.horizon)])
