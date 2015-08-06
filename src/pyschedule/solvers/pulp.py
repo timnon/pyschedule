@@ -297,13 +297,15 @@ class DiscreteMIP(object):
 				for R in S.resources(task=T):
 					# resource base variables
 					for t in range(self.horizon+1):
-						x[T, R, t] = pl.LpVariable(str((T, R, t)), 0,
-												   task_group_size, cat=pl.LpInteger)
+						if t >= 0:
+							x[T, R, t] = pl.LpVariable(str((T, R, t)), 0,task_group_size, cat=pl.LpInteger)
+						else:
+							x[T, R, t] = pl.LpVariable(str((T, R, t)), 0,task_group_size)
 					# monotonicity (base variables should inherit this)
 					for t in range(self.horizon):
 						cons.append(pl.LpConstraint(pl.LpAffineExpression([(x[T, R, t], 1), (x[T, R, t + 1], -1)]),
 													sense=1, rhs=0))
-
+				'''
 				# fix variables if start is given
 				starts = [T_.start for T_ in self.task_groups[T] if T_.start is not None]
 				if starts and max(starts) > self.horizon+1:
@@ -324,6 +326,7 @@ class DiscreteMIP(object):
 					else:
 						raise Exception(
 							'ERROR: resource ' + str(R) + ' is not part of the requirements for task ' + str(T))
+				'''
 
 		# consider each resource selection
 		for RA in S.resources_req():
@@ -343,14 +346,15 @@ class DiscreteMIP(object):
 
 		# respect fixed tasks, they can block free tasks
 		# TODO: currently fixed tasks are only blockers, not suitable for list scheduling
-		for T in set(self.task_groups) - set(self.task_groups_free):
-			t_start = T.start
-			t_end = min(T.start + T.length, self.horizon)
-			for R in T.resources:
-				resource_tasks = [ T_ for T_ in S.tasks(resource=R) if T_ in self.task_groups_free ] # all tasks are blocked on this resource
-				affine = pl.LpAffineExpression([(x[T_, R, max(t_start - T_.length, 0)], 1) for T_ in resource_tasks] + \
-											   [(x[T_, R, t_end], -1) for T_ in resource_tasks])
-				cons.append(pl.LpConstraint(affine, sense=0, rhs=0))
+		for T in S.tasks():
+			if T.start:
+				for R in T.resources:
+					resource_tasks = [ T_ for T_ in S.tasks(resource=R) if T_ in self.task_groups_free ] # all tasks are blocked on this resource
+					affine = pl.LpAffineExpression([(x[T_, R, max(T.start+1-T_.length, 0)], 1) for T_ in resource_tasks] + \
+				                                       [(x[T_, R, T.start+1], -1) for T_ in resource_tasks])
+					cons.append(pl.LpConstraint(affine, sense=0, rhs=0))
+
+	
 
 		# resource non-overlapping constraints 
 		for R in S.resources():
@@ -365,6 +369,7 @@ class DiscreteMIP(object):
 					 resource_tasks] + \
 					[(x[T, R, t], -S.resources_req_coeff(task=T, resource=R)) for T in resource_tasks])
 				cons.append(pl.LpConstraint(affine, sense=-1, rhs=resource_size))
+
 
 		# lax precedence constraints
 		for P in S.precs_lax():
@@ -420,7 +425,7 @@ class DiscreteMIP(object):
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
 			if tasks:
 				affine = pl.LpAffineExpression([(x[T, R, start],  T[param]) for T in tasks]+
-											   [(x[T, R, end], -T[param]) for T in tasks] )
+	                                                       [(x[T, R, end], -T[param]) for T in tasks] )
 				cons.append(pl.LpConstraint(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
@@ -431,8 +436,9 @@ class DiscreteMIP(object):
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
 			if tasks:
 				affine = pl.LpAffineExpression([(x[T, R, start], T[param]) for T in tasks]+
-											   [(x[T, R, end], -T[param]) for T in tasks] )
+					                        [(x[T, R, end], -T[param]) for T in tasks] )
 				cons.append(pl.LpConstraint(affine, sense=-1, rhs=C.bound))
+
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]) for T in S.objective if T in self.task_groups_free
@@ -663,9 +669,9 @@ class DiscreteMIPHop(object):
 			single_resources = self.scenario.resources(task=T,single_resource=True)
 			for R in self.scenario.resources(task=T):
 				if R not in single_resources:
-					starts_ = [ t for t in range(self.horizon) if self.x[(T, R, t)].varValue == 1.0 ]
+					starts_ = [ t for t in range(self.horizon) if self.x[(T, R, t)].varValue > 0.5 ]
 				else:
-					starts_ = [ t for t in range(self.horizon) if self.x[(T, t)].varValue == 1.0 ]
+					starts_ = [ t for t in range(self.horizon) if self.x[(T, t)].varValue > 0.5 ]
 				starts.extend([(t, R) for t in starts_])
 
 			# iteratively assign starts and resources

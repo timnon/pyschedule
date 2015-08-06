@@ -64,10 +64,7 @@ def _get_dat_filename(scenario,msg=0) :
 	LARGE_NUMBER = 1000
 
 	# TODO: only upper capacity constraints
-	Resources = [ (resource_to_id[R],R.capacity[0],R.capacity[1]) for R in resources \
-                      if R.capacity != None and R.size == 1 ]
-	Resources += [ (resource_to_id[R],0,LARGE_NUMBER) for R in resources \
-                      if R.capacity == None and R.size == 1 ]
+	Resources = [ (resource_to_id[R],0,LARGE_NUMBER) for R in resources if R.size == 1 ]
 	Resources = sorted(Resources)
 
 	CumulResources = [ (resource_to_id[R],R.size) for R in resources \
@@ -148,8 +145,16 @@ def _get_dat_filename(scenario,msg=0) :
 		if T.start is not None :
 			FixBounds.append((task_to_id[T],T.start))
 
-	Precedences = sorted(Precedences)
-	CondPrecedences = sorted(CondPrecedences)
+	# upper capacity bounds
+	CapacityUps = list()
+	CapacityUpTasks = list()
+	count = 0
+	for C in S.capacity_up() :
+		CapacityUps.append((count,resource_to_id[C.resource],C.bound,C.start,C.end))
+		for T in S.tasks() :
+			if C.param in T:
+				CapacityUpTasks.append((count,task_to_id[T],T[C.param]))
+		count += 1
 
 	# add objective
 	Objectives = [ (task_to_id[key],S.objective[key]) for key in S.objective if key != 1 ]
@@ -176,6 +181,8 @@ def _get_dat_filename(scenario,msg=0) :
 		f.write('UpperBounds={\n'+to_str(UpperBounds)+'\n};\n\n')
 		f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
 		f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
+		f.write('CapacityUps={\n'+to_str(CapacityUps)+'\n};\n\n')
+		f.write('CapacityUpTasks={\n'+to_str(CapacityUpTasks)+'\n};\n\n')
 		f.close()
 
 	return dat_filename, task_to_id, id_to_resource
@@ -197,6 +204,7 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 		start_str, end_str = '##START_SOLUTION##', '##END_SOLUTION##'
 		start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
 	except:
+		print(log)
 		raise Exception('ERROR: no solution found')
 
 	opl_plan = plan.parseString(log[start_i:end_i])

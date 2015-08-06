@@ -57,6 +57,20 @@ tuple Bound {
 	int bound;
 }
 
+tuple CapacityUp {
+	key int capacity_up_id;
+	int resource_id;
+	int bound;
+	int start;
+	int end;
+}
+
+tuple CapacityUpTask {
+	key int capacity_up_id;
+	key int task_id;
+	int req;
+}
+
 
 {Objective} Objectives = ...;
 {Task} Tasks = ...;
@@ -72,6 +86,8 @@ tuple Bound {
 {Bound} UpperBounds = ...;
 {Bound} LowerBounds = ...;
 {Bound} FixBounds = ...;
+{CapacityUp} CapacityUps = ...;
+{CapacityUpTask} CapacityUpTasks = ...;
 
 
 
@@ -144,6 +160,11 @@ subject to {
              sum( TCR in TaskCumulResources : TCR.resource_id == PR.id ) ResourceFunction[TCR] <= PR.resource_size; 
   }
 
+  forall( CU in CapacityUps ){
+        sum( CUT in CapacityUpTasks : CUT.capacity_up_id == CU.capacity_up_id, 
+            TR in TaskResources : (TR.resource_id == CU.resource_id) && (TR.task_id == CUT.task_id) )
+                          CUT.req*presenceOf(RIntervals[TR])*(startOf(RIntervals[TR])>=CU.start)*(endOf(RIntervals[TR])<=CU.end) <= CU.bound;
+  }
 };
 
 // plot solution to log file

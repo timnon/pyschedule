@@ -70,9 +70,6 @@ def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,
 	if copy_scenario :
 		S = copy.deepcopy(scenario)
 
-	if not S.objective :
-		S.use_makespan_objective()
-
 	if not task_list :
 		task_list = sort_with_precs(S)
 		task_list = [ T for T in task_list if T.start is None ]
@@ -93,13 +90,12 @@ def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,
 		for T in batch :
 			S += T
 		S.constraints = [ C for C in constraints if set(C.tasks()).issubset(set(S.tasks())) ]
-		#S.T['MakeSpan'].start = None #remove objective
-
 		solve_method(S)
 		'''
 		import pyschedule
 		pyschedule.plotters.matplotlib.plot(S)
 		'''
+		
 		
 		
 

@@ -237,7 +237,9 @@ class Scenario(_SchedElement):
 		Sets the objective a uniform flow-time objective
 		"""
 		self.objective.clear()
-		self += sum([ T*1 for T in self.tasks() if T.start is None ])
+		A = sum([ T*1 for T in self.tasks() if T.start is None ])
+		del A[1] #remove 1 due to sum
+		self += A
 
 	def clear_task_starts(self) :
 		"""
