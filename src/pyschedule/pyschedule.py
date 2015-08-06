@@ -180,7 +180,7 @@ class Scenario(_SchedElement):
 		self.add_task(task)
 		return task
 
-	def tasks(self,resource=None,single_resource=False) :
+	def tasks(self,resource=None,single_resource=None) :
 		if resource is None :
 			return list(self.T.values())
 		else :
@@ -195,7 +195,7 @@ class Scenario(_SchedElement):
 		self.add_resource(resource)
 		return resource
 
-	def resources(self,task=None,single_resource=False) :
+	def resources(self,task=None,single_resource=None) :
 		if task is None :
 			return list(self.R.values())
 		else :
@@ -280,18 +280,25 @@ class Scenario(_SchedElement):
 		return []#[ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'last' ]
 	'''
 
-	def resources_req(self,task=None,resource=None,single_resource=False):
+	def resources_req(self,task=None,resource=None,single_resource=None):
 		"""
 		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
 		"""
-		Cs = [ C for C in self.constraints if isinstance(C,ResourceReq) ]
+		constraints = [ C for C in self.constraints if isinstance(C,ResourceReq) ]
 		if task is not None :
-			Cs = [ C for C in Cs if task in C.tasks() ]
+			constraints = [ C for C in constraints 
+                                        if task in C.tasks() ]
 		if resource is not None :
-			Cs = [ C for C in Cs if resource in C.resources() ]
-		if single_resource:
-			Cs = [ C for C in Cs if len(C.resources()) == 1 ]
-		return Cs
+			constraints = [ C for C in constraints
+                                        if resource in C.resources() ]
+		if single_resource is not None:
+			if single_resource:
+				constraints = [ C for C in constraints
+                                                if len(C.resources()) == 1 ]
+			else:
+				constraints = [ C for C in constraints 
+                                                if len(C.resources()) > 1 ]
+		return constraints
 
 	def resources_req_coeff(self,task,resource):
 		"""
@@ -764,22 +771,6 @@ class Resource(_SchedElement) :
 
 	def __getitem__(self, item):
 		return Capacity(resource=self,param=item)
-
-
-	'''
-	# iteration over resource gives the resource to simplify
-	# the construction of solvers
-	def __iter__(self) :
-		return _ResourceAffine(self).__iter__()
-
-	# necessary to allow capacity check to simplify
-	# the construction of solvers
-	def __getitem__(self,index) :
-		if index == self :
-			return 1
-		else :
-			raise Exception('ERROR: resource '+str(self)+' can only return its own capacity')
-	'''
 
 
 

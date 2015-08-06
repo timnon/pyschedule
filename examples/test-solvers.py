@@ -15,7 +15,7 @@ def solve_docloud(scenario) :
 solve_methods = [
 #solvers.pulp.solve,
 solvers.pulp.solve_discrete,
-solvers.pulp.solve_discrete_hop,
+solvers.pulp.solve_discrete_unit,
 #solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
 #solve_docloud
@@ -41,7 +41,7 @@ def NONUNIT():
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S.T['T1'].length = 5
-	sols = ['[(T2, R1, 0, 1), (T2, R1, 1, 6)]']
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 6)]']
 	return S,sols
 
 def FIX() :
@@ -133,8 +133,8 @@ def CUMUL() :
 
 def CAP():
 	S = two_task_scenario()
-	S += S.R['R1']|S.R['R2'] % S.T['T1']
-	S += S.R['R1']|S.R['R2'] % S.T['T2']
+	S += S.T['T1'] % S.R['R1']|S.R['R2']
+	S += S.T['T2'] % S.R['R1']|S.R['R2']
 	S += S.R['R2']['length'] <= 0
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
@@ -149,21 +149,21 @@ def CAPSLICE():
 
 
 scenario_methods = [
-#ZERO,
+ZERO,
 NONUNIT,
-#FIX,
-#BOUND,
-#LAX,
-#LAXPLUS,
-#TIGHT,
-#TIGHTPLUS,
-#COND,
-#ALT,
-#MULT,
-#ALTMULT,
-#CUMUL,
-#CAP,
-#CAPSLICE
+FIX,
+BOUND,
+LAX,
+LAXPLUS,
+TIGHT,
+TIGHTPLUS,
+COND,
+ALT,
+MULT,
+ALTMULT,
+CUMUL,
+CAP,
+CAPSLICE
 ]
 
 
