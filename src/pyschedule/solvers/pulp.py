@@ -59,34 +59,25 @@ def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 		print('INFO: objective = ' + str(pl.value(mip.objective)))
 
 
-def solve(scenario, big_m=10000, kind='CBC', time_limit=None, msg=0, return_copy=False):
+def solve(scenario, big_m=10000, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
-	if return_copy:
-		scenario = copy.deepcopy(scenario)
-	ContinuousMIP().solve(scenario, big_m=big_m, kind=kind, time_limit=time_limit, msg=msg)
-	return scenario
+	return ContinuousMIP().solve(scenario, big_m=big_m, kind=kind, time_limit=time_limit, msg=msg)
 
 
-def solve_discrete(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0, return_copy=False):
+def solve_discrete(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0):
 	"""
 	Shortcut to discrete mip
 	"""
-	if return_copy:
-		scenario = copy.deepcopy(scenario)
-	DiscreteMIP().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
-	return scenario
+	return DiscreteMIP().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
 
 
-def solve_discrete_unit(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0, return_copy=False):
+def solve_discrete_unit(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0):
 	"""
 	Shortcut to discrete mip
 	"""
-	if return_copy:
-		scenario = copy.deepcopy(scenario)
-	DiscreteMIPUnit().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
-	return scenario
+	return DiscreteMIPUnit().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
 
 
 class ContinuousMIP(object):
@@ -244,10 +235,9 @@ class ContinuousMIP(object):
 
 		if self.mip.status != 1:
 			if msg: print('ERROR: no solution found')
-		# return None #TODO: problem sometimes still returned 0 when solution found
 
 		self.read_solution_from_mip(msg=msg)
-		return self.scenario
+		return self.mip.status
 
 
 
@@ -485,12 +475,12 @@ class DiscreteMIP(object):
 		params['ratioGap'] = str(0.1)
 		_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
-		if self.mip.status != 1:
-			if msg: print('ERROR: no solution found')
-		#return None #TODO: problem sometimes still returned 0 when solution found
-
-		self.read_solution_from_mip(msg=msg)
-		return self.scenario  ##TODO: check what to return
+		if self.mip.status == 1:
+			self.read_solution_from_mip(msg=msg)
+			return 1
+		if msg:
+			print('ERROR: no solution found')
+		return 0
 
 
 
@@ -546,7 +536,7 @@ class DiscreteMIPUnit(object):
 			if not T.start:
 				continue
 			for R in T.resources:
-				affine =  pl.LpAffineExpression([(x[T, R, t], 1)])
+				affine =  pl.LpAffineExpression([(x[T, R, T.start], 1)])
 				cons.append(pl.LpConstraint(affine, sense=0, rhs=1))
 
 		# resource non-overlapping constraints
