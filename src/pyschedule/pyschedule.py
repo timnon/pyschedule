@@ -57,6 +57,7 @@ def _isnumeric(var) :
 def _isiterable(var) :
 	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
 
+LARGE_NUMBER = 1000000
 
 
 class _SchedElement(object) : # extend string object
@@ -216,6 +217,9 @@ class Scenario(_SchedElement):
 		"""
 		return sum([ self.objective[T]*(T.start+T.length) for T in self.objective ])
 
+	def clear_objective(self):
+		self.objective.clear()
+
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks without a fixed start
@@ -229,14 +233,14 @@ class Scenario(_SchedElement):
 		for T in tasks :
 			#TODO: what for T.start is not None???
 			self += T < makespan
-		self.objective.clear()
+		self.clear_objective()
 		self += makespan*1
 
 	def use_flowtime_objective(self) :
 		"""
 		Sets the objective a uniform flow-time objective
 		"""
-		self.objective.clear()
+		self.clear_objective()
 		A = sum([ T*1 for T in self.tasks() if T.start is None ])
 		del A[1] #remove 1 due to sum
 		self += A
@@ -317,11 +321,17 @@ class Scenario(_SchedElement):
 		return [ C for C in self.constraints if isinstance(C,CapacityUp) ]
 
 	def add_constraint(self,constraint):
+		if str(constraint) in [ str(C) for C in self.constraints ]:
+			return self
 		for task in constraint.tasks():
 			self.add_task(task)
 		for resource in constraint.resources():
 			self.add_resource(resource)
 		self.constraints.append(constraint)
+		return self
+
+	def remove_constraint(self,constraint):
+		self.constraints = [ C for C in self.constraints if str(C) != str(constraint) ]
 		return self
 
 	def add_task(self,task):
@@ -371,12 +381,16 @@ class Scenario(_SchedElement):
 			return self
 		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self.name))
 
-	# TODO: create more complete removal method
 	def __isub__(self,other) :
-		if isinstance(other,Task) :
+		if _isiterable(other):
+			for x in other:
+				self -= x
+		elif isinstance(other,Task) :
 			self.remove_task(other)
 		elif isinstance(other,Resource):
 			self.remove_resource(other)
+		elif isinstance(other,_Constraint):
+			self.remove_constraint(other)
 		else :
 			raise Exception('ERROR: task with name '+str(other.name)+\
                             ' is not contained in scenario '+str(self.name))
@@ -853,7 +867,7 @@ class Capacity(_Constraint):
 	"""
 	A capacity bound on one resource in an interval
 	"""
-	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint,comp_operator=None):
+	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER,comp_operator=None):
 		_Constraint.__init__(self)
 		self.resource = resource
 		self.param = param
@@ -868,7 +882,7 @@ class Capacity(_Constraint):
 			self.comp_operator = '>='
 			self.bound = other
 			return self
-		raise Exception('ERROR: % >= %s does not work' % (str(self.resource),str(other)) )
+		raise Exception('ERROR: %s >= %s does not work' % (str(self.resource),str(other)) )
 
 	def __le__(self, other):
 		if _isnumeric(other):
@@ -876,21 +890,27 @@ class Capacity(_Constraint):
 			self.comp_operator = '<='
 			self.bound = other
 			return self
-		raise Exception('ERROR: % <= %s does not work' % (str(self.resource),str(other)) )
+		raise Exception('ERROR: %s <= %s does not work' % (str(self.resource),str(other)) )
 
-	def __getslice__(self,start,end):
-		self.start = start
-		self.end = end
+	def __getitem__(self,slice):
+		if slice.start is not None:
+			self.start = slice.start
+		else:
+			self.start = 0
+		if slice.stop is not None:
+			self.end = slice.stop
+		else:
+			self.end = LARGE_NUMBER
 		return self
 
 	def __str__(self):
 		slice = ''
-		if self.start != 0 or self.end != sys.maxint:
+		if self.start != 0 or self.end != LARGE_NUMBER:
 			slice = '['
 			if self.start != 0:
 				slice += str(self.start)
 			slice += ':'
-			if self.end < sys.maxint: #large number
+			if self.end < LARGE_NUMBER: #large number
 				slice += str(self.end)
 			slice += ']'
 		return '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
@@ -902,14 +922,14 @@ class Capacity(_Constraint):
 
 class CapacityLow(Capacity):
 
-	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint):
+	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
 
 
 
 class CapacityUp(Capacity):
 
-	def __init__(self,resource,param='length',bound=None,start=0,end=sys.maxint):
+	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
 
 

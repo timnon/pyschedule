@@ -14,7 +14,7 @@ def solve_docloud(scenario) :
 
 solve_methods = [
 #solvers.pulp.solve,
-solvers.pulp.solve_discrete,
+#solvers.pulp.solve_discrete,
 solvers.pulp.solve_discrete_unit,
 #solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
@@ -48,18 +48,11 @@ def FIX() :
 	S = two_task_scenario()
 	S += S.T['T1'] % S.R['R1'] | S.R['R2']
 	S += S.T['T2'] % S.R['R1'] | S.R['R2']
-	S.T['T1'].resources = [ S.R['R1'] ]
 	S.T['T1'].start = 1
-	S.T['T2'].resources = [ S.R['R1'] ]
+	S.T['T1'].resources = [ S.R['R1'] ]
 	S.T['T2'].start = 0
+	S.T['T2'].resources = [ S.R['R1'] ]
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
-	return S,sols
-
-def FIXSTART() :
-	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S.T['T1'].start = 3
-	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
 def BOUND() : # only test lower bound, upper bound is similar
@@ -165,6 +158,8 @@ CUMUL,
 CAP,
 CAPSLICE
 ]
+
+#scenario_methods = [FIX]
 
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)

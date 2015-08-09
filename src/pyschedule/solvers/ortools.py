@@ -162,9 +162,14 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	# solves the problem.
 	ort_solver.Solve(main_phase,search_params)
 
+	# check for a solution
+	if not collector.SolutionCount():
+		if msg:
+			print('ERROR: no solution found')
+		return 0
 	solution = collector.Solution(0)
 
-	# get last solution
+	# read last solution
 	for T in S.tasks() :
 		if T.start is None :
 			T.start = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
@@ -173,6 +178,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			T.resources = [ R \
 		                    for RA in RAs for R in RA \
 		                    if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
+	return 1
 	
 
 
