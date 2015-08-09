@@ -67,14 +67,22 @@ class _SchedElement(object) : # extend string object
 		if _isnumeric(name) :
 			name = numeric_name_prefix+str(name)
 		# remove illegal characters
+		'''
 		trans = _maketrans("-+[] ->/","________")
-		self.name = str(name).translate(trans)
+		if type(name) != str:
+			name = str(name)
+
+		name = str(name)
+		if name.translate(trans) != name:
+			raise Exception('ERROR: name %s contains one of the following characters: -+[] ->/'%name)
+		'''
+		self.name = name
 
 	def __repr__(self) :
-		return self.name
+		return self.__str__()
 
 	def __str__(self) :
-		return self.name
+		return str(self.name)
 
 	def __hash__(self) :
 		return self.name.__hash__()
@@ -162,21 +170,21 @@ class _SchedElementAffine(_DICT_TYPE) :
 	
 class Scenario(_SchedElement):
 	
-	def __init__(self,name='scenario not named') :
+	def __init__(self,name='scenario not named',horizon=None):
 		_SchedElement.__init__(self,name,numeric_name_prefix='S')
 		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
 		self.constraints = list()
-
-		# parameters
-		#self.is_same_resource_precs_lax = False
-		#self.is_same_resource_precs_tight = False
+		self.horizon = horizon
 
 	def Task(self,name,length=1,start=None,resources=None) :
 		"""
-		Adds a task with the given name to the scenario. Task names need to be unique.
+		Adds a task with the given name to the scenario. Task names need to be unique. If task already exists
+		then it is returned.
 		"""
+		if name in self.T:
+			return self.T[name]
 		task = Task(name,length=length,start=start,resources=resources)
 		self.add_task(task)
 		return task
@@ -188,10 +196,13 @@ class Scenario(_SchedElement):
 			return list({ T for RA in self.resources_req(resource=resource,single_resource=single_resource)
 						    for T in RA.tasks() })
 
-	def Resource(self,name,size=1,capacity=None,cost=None) :
+	def Resource(self,name,size=1) :
 		"""
-		Adds a resource with the given name to the scenario. Resource names need to be unique.
+		Adds a resource with the given name to the scenario. Resource names need to be unique. If resource already
+		exists then it is returned.
 		"""
+		if name in self.R:
+			return self.R[name]
 		resource = Resource(name,size=size)
 		self.add_resource(resource)
 		return resource
@@ -397,15 +408,23 @@ class Scenario(_SchedElement):
 		return self
 
 	def __iter__(self):
-			return self.T.values().__iter__()
+		return self.T.values().__iter__()
 
 	def __getitem__(self, item):
-			return self.T[item]
+		if item not in self.T:
+			raise Exception('ERROR: task with name '+str(item)+\
+                            ' is not contained in scenario '+str(self.name))
+		return self.T[item]
 
 	def __str__(self) :
 		s = '###############################################\n'
 		s += '\n'
-		s += 'SCENARIO: '+self.name+'\n\n'
+		s += 'SCENARIO: '+self.name
+		if self.horizon is not None:
+			s += ' / horizon: %i\n\n'%self.horizon
+		else:
+			s += ' / no horizon set\n\n'
+
 		#print objective
 		s += 'OBJECTIVE: '+str(self.objective)+'\n\n'
 
@@ -877,20 +896,18 @@ class Capacity(_Constraint):
 		self.comp_operator = comp_operator
 
 	def __ge__(self, other):
-		if _isnumeric(other):
-			self.__class__ = CapacityLow
-			self.comp_operator = '>='
-			self.bound = other
-			return self
-		raise Exception('ERROR: %s >= %s does not work' % (str(self.resource),str(other)) )
+		assert _isnumeric(other), 'ERROR: %s is not an integer, only integers are allowed'%str(other)
+		self.__class__ = CapacityLow
+		self.comp_operator = '>='
+		self.bound = other
+		return self
 
 	def __le__(self, other):
-		if _isnumeric(other):
-			self.__class__ = CapacityUp
-			self.comp_operator = '<='
-			self.bound = other
-			return self
-		raise Exception('ERROR: %s <= %s does not work' % (str(self.resource),str(other)) )
+		assert _isnumeric(other), 'ERROR: %s is not an integer, only integers are allowed'%str(other)
+		self.__class__ = CapacityUp
+		self.comp_operator = '<='
+		self.bound = other
+		return self
 
 	def __getitem__(self,slice):
 		if slice.start is not None:

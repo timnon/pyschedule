@@ -59,25 +59,26 @@ def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 		print('INFO: objective = ' + str(pl.value(mip.objective)))
 
 
-def solve(scenario, big_m=10000, kind='CBC', time_limit=None, msg=0):
+def solve(scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
+	"""
+	Shortcut to discrete mip
+	"""
+	return DiscreteMIP().solve(scenario, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
+
+def solve_unit(scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
+	"""
+	Shortcut to discrete mip
+	"""
+	return DiscreteMIPUnit().solve(scenario, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
+
+def solve_bigm(scenario, big_m=10000, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
 	return ContinuousMIP().solve(scenario, big_m=big_m, kind=kind, time_limit=time_limit, msg=msg)
 
 
-def solve_discrete(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0):
-	"""
-	Shortcut to discrete mip
-	"""
-	return DiscreteMIP().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
 
-
-def solve_discrete_unit(scenario, horizon, kind='CBC', time_limit=None, task_groups=None, msg=0):
-	"""
-	Shortcut to discrete mip
-	"""
-	return DiscreteMIPUnit().solve(scenario, horizon, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
 
 
 class ContinuousMIP(object):
@@ -192,6 +193,24 @@ class ContinuousMIP(object):
 			# if start is not fixed
 			if P.left.start is None:
 				mip += x[P.left] >= P.right
+
+		# capacity lower bounds
+		for C in S.capacity_low():
+			R = C.resource
+			param = C.param
+			tasks = [ T for T in S.tasks(resource=R) if param in T ]
+			if not tasks:
+				continue
+			mip += sum([ x[(T,R)]*T[param] for T in tasks ]) >= C.bound
+
+		# capacity upper bounds
+		for C in S.capacity_up():
+			R = C.resource
+			param = C.param
+			tasks = [ T for T in S.tasks(resource=R) if param in T ]
+			if not tasks:
+				continue
+			mip += sum([ x[(T,R)]*T[param] for T in tasks ]) <= C.bound
 
 		self.mip = mip
 		self.x = x
@@ -398,10 +417,11 @@ class DiscreteMIP(object):
 			param = C.param
 			start, end = max(0,C.start), min(self.horizon,C.end)
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
-			if tasks:
-				affine = [(x[T, R, start],  T[param]) for T in tasks]+\
-						 [(x[T, R, end], -T[param]) for T in tasks]
-				pulp_cons(affine, sense=1, rhs=C.bound)
+			if not tasks:
+				continue
+			affine = [(x[T, R, start],  T[param]) for T in tasks]+\
+					 [(x[T, R, end], -T[param]) for T in tasks]
+			pulp_cons(affine, sense=1, rhs=C.bound)
 
 		# capacity upper bounds
 		for C in S.capacity_up():
@@ -409,10 +429,11 @@ class DiscreteMIP(object):
 			param = C.param
 			start, end = max(0,C.start), min(self.horizon,C.end)
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
-			if tasks:
-				affine = [(x[T, R, start], T[param]) for T in tasks]+\
-						 [(x[T, R, end], -T[param]) for T in tasks]
-				pulp_cons(affine, sense=-1, rhs=C.bound)
+			if not tasks:
+				continue
+			affine = [(x[T, R, start], T[param]) for T in tasks]+\
+					 [(x[T, R, end], -T[param]) for T in tasks]
+			pulp_cons(affine, sense=-1, rhs=C.bound)
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]) for T in S.objective if T in self.task_groups_free
@@ -449,7 +470,7 @@ class DiscreteMIP(object):
 						T_.resources.append(R)
 
 
-	def solve(self, scenario, horizon='100', kind='CBC', time_limit=None, task_groups=None, msg=0):
+	def solve(self, scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
 		"""
 		Solves the given scenario using a discrete MIP via the pulp package
 
@@ -468,7 +489,10 @@ class DiscreteMIP(object):
 		"""
 
 		self.scenario = scenario
-		self.horizon = horizon
+		if self.scenario.horizon is None:
+			raise Exception('ERROR: solver pulp.solve requires scenarios with defined horizon')
+			return 0
+		self.horizon = self.scenario.horizon
 		self.task_groups = task_groups
 		self.build_mip_from_scenario(msg=msg)
 
@@ -656,7 +680,10 @@ class DiscreteMIPUnit(object):
 		"""
 
 		self.scenario = scenario
-		self.horizon = horizon
+		if self.scenario.horizon is None:
+			raise Exception('ERROR: solver pulp.solve_unit requires scenarios with defined horizon')
+			return 0
+		self.horizon = self.scenario.horizon
 		self.task_groups = task_groups
 		self.build_mip_from_scenario(msg=msg)
 

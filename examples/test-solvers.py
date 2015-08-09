@@ -13,16 +13,16 @@ def solve_docloud(scenario) :
 	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
-#solvers.pulp.solve,
-#solvers.pulp.solve_discrete,
-solvers.pulp.solve_discrete_unit,
+solvers.pulp.solve,
+solvers.pulp.solve_unit,
+solvers.pulp.solve_bigm,
 #solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
 #solve_docloud
 ]
 
 def two_task_scenario() :
-	S = Scenario('Scenario_1')
+	S = Scenario('Scenario_1',horizon=horizon)
 	T1 = S.Task('T1')
 	T2 = S.Task('T2')
 	R1 = S.Resource('R1')
@@ -177,10 +177,7 @@ for scenario_method in scenario_methods :
 		solve_method = solve_method_names[solve_method_name]
 		S_ = copy.deepcopy(S)
 		try :
-			if 'horizon' in solve_method.__code__.co_varnames :
-				solve_method(S_,horizon=horizon,msg=msg)
-			else :
-				solve_method(S_)
+			solve_method(S_)
 			sol = str(S_.solution())
 			valid = ( sol in sols )
 			row.append(valid)

@@ -1,6 +1,6 @@
 #! /usr/bin/python
-from pyschedule import Scenario, Task, Resource, solvers, plotters
-import math
+import pyschedule
+import math, sys
 
 cities = '\
 Aachen 50.45 6.06\n\
@@ -287,7 +287,7 @@ def eucl_dist(orig,dest) :
 cities_table = [ row.split(' ') for row in cities.split('\n') ]
 cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
 n = 10 # use only few cities to test, more cities take a lone time #len(cities_table)
-capacity = n/2 # each vehicle can visit half of the cities
+capacity = int(n/2) # each vehicle can visit half of the cities
 coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
 cities = list(coords)
 
@@ -297,12 +297,12 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
-S = Scenario('VRP Germany')
-T = { city : Task(city) for city in cities }
+S = pyschedule.Scenario('VRP Germany',horizon=30)
+T = { city : S.Task(city) for city in cities }
 
 # resources
 # capacity + 2 to include start and end task
-R_blue, R_red = Resource('blue',capacity=capacity+2), Resource('red',capacity=capacity+2)
+R_blue, R_red = S.Resource('blue'), S.Resource('red')
 
 # tasks
 T['start'] = S.Task('start')
@@ -312,7 +312,7 @@ T['end'] = S.Task('end')
 S += T['start'] < { T[city] for city in cities if city != 'start' }
 S += T['end'] > { T[city] for city in cities if city != 'end' }
 
-# resource assignement
+# resource assignments
 S += T['start'] % [ R_blue, R_red ]
 S += T['end'] % [ R_blue, R_red ]
 for city in cities :
@@ -324,11 +324,18 @@ S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
 S += [ T['start'] + int(eucl_dist(coords['start'],coords[city])) << T[city] for city in cities ]
 S += [ T[city] + int(eucl_dist(coords['start'],coords[city])) << T['start'] for city in cities ]
 
+# capacities (+2 because start and end)
+S += R_blue['length'] <= capacity+2
+S += R_red['length'] <= capacity+2
+
 # objective
 S += T['end']*1
 
-solvers.pulp.solve(S,kind='CBC',time_limit=180,msg=1)
-plotters.matplotlib.plot(S,resource_height=1.0,)
+if not pyschedule.solvers.pulp.solve_bigm(S,kind='CBC',time_limit=60,msg=1):
+	print('no solution found')
+	sys.exit()
+
+pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,)
 
 # plot tours
 import pylab

@@ -11,9 +11,9 @@ pip install pyschedule
 Here is a hello world example, for a more detailed example go to the <a href="https://github.com/timnon/pyschedule/blob/master/examples/bike-shop.ipynb">bike shop notebook</a> and for a technical overview go to the <a href="https://github.com/timnon/pyschedule/wiki/Overview">overview wiki</a>:
 
 ```python
-# load pyschedule and create a scenario
+# load pyschedule and create a scenario with 10 steps planning horizon
 import pyschedule
-S = pyschedule.Scenario('hello pyschedule')
+S = pyschedule.Scenario('hello pyschedule',horizon=10)
 
 # create two resources
 Alice, Bob = S.Resource('Alice'), S.Resource('Bob')

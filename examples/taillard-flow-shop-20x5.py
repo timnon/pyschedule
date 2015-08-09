@@ -1,5 +1,5 @@
 #! /usr/bin/python
-from pyschedule import Scenario, Task, Resource, solvers, plotters
+import pyschedule
 import math
 
 # Taillards 20x5 flow-shop instance downloaded from
@@ -16,11 +16,11 @@ proc ='\
 proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
 n = len(proc_table[0])
 m = len(proc_table)
-#n = 6
+n = 6
 
-S = Scenario('Taillards Flow-Shop 15x15')
-T = { (i,j) : Task((i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
-R = { j : Resource(j) for j in range(m) }
+S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
+T = { (i,j) : S.Task((i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
+R = { j : S.Resource(j) for j in range(m) }
 
 S += [ T[(i,j)] < T[(i,j+1)] for i in range(n) for j in range(m-1) ]
 for i in range(n) :
@@ -28,5 +28,7 @@ for i in range(n) :
 		S += T[(i,j)] % R[j]
 
 S.use_makespan_objective()
-solvers.pulp.solve(S,time_limit=120,msg=1)
-plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+if pyschedule.solvers.pulp.solve_bigm(S,time_limit=120,msg=1):
+	pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+else:
+	print('no solution found')
