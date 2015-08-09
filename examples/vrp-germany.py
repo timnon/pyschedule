@@ -297,7 +297,7 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
-S = pyschedule.Scenario('VRP Germany',horizon=30)
+S = pyschedule.Scenario('VRP_Germany',horizon=30)
 T = { city : S.Task(city) for city in cities }
 
 # resources

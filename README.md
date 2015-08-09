@@ -8,7 +8,7 @@ pyschedule is the easiest way to match tasks with resources, period. It covers p
 pip install pyschedule
 ```
 
-Here is a hello world example, for a more detailed example go to the <a href="https://github.com/timnon/pyschedule/blob/master/examples/bike-shop.ipynb">bike shop notebook</a> and for a technical overview go to the <a href="https://github.com/timnon/pyschedule/wiki/Overview">overview wiki</a>:
+Here is a hello world example, for a more detailed example go to the <a href="https://github.com/timnon/pyschedule/blob/master/examples/bike-shop.ipynb">bike shop notebook</a> and for a technical overview go to the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.ipynb">overview notebook</a>:
 
 ```python
 # load pyschedule and create a scenario with 10 steps planning horizon
@@ -60,5 +60,7 @@ pyschedule supports different solvers, classical MIP-based ones as well as CP. A
 ```python
 pyschedule.solvers.pulp.solve(S,kind='CPLEX')
 ```
+
+pyschedule is under active development, there might be non-backward-compatible changes
 
 

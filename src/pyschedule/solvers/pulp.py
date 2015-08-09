@@ -196,6 +196,8 @@ class ContinuousMIP(object):
 
 		# capacity lower bounds
 		for C in S.capacity_low():
+			if C.start is None or C.end is None:
+				continue
 			R = C.resource
 			param = C.param
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
@@ -205,6 +207,8 @@ class ContinuousMIP(object):
 
 		# capacity upper bounds
 		for C in S.capacity_up():
+			if C.start is None or C.end is None:
+				continue
 			R = C.resource
 			param = C.param
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
@@ -415,7 +419,12 @@ class DiscreteMIP(object):
 		for C in S.capacity_low():
 			R = C.resource
 			param = C.param
-			start, end = max(0,C.start), min(self.horizon,C.end)
+			start = C.start
+			if start is None:
+				start = 0
+			end = C.end
+			if end is None:
+				end = self.horizon
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
 			if not tasks:
 				continue
@@ -427,7 +436,12 @@ class DiscreteMIP(object):
 		for C in S.capacity_up():
 			R = C.resource
 			param = C.param
-			start, end = max(0,C.start), min(self.horizon,C.end)
+			start = C.start
+			if start is None:
+				start = 0
+			end = C.end
+			if end is None:
+				end = self.horizon
 			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
 			if not tasks:
 				continue
@@ -614,7 +628,12 @@ class DiscreteMIPUnit(object):
 		for C in S.capacity_low():
 			R = C.resource
 			param = C.param
-			start, end = max(C.start,0), min(C.end,self.horizon-1)
+			start = C.start
+			if start is None:
+				start = 0
+			end = C.end
+			if end is None:
+				end = self.horizon
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
 			if not tasks:
 				continue
@@ -625,7 +644,12 @@ class DiscreteMIPUnit(object):
 		for C in S.capacity_up():
 			R = C.resource
 			param = C.param
-			start, end = max(C.start,0), min(C.end,self.horizon)
+			start = C.start
+			if start is None:
+				start = 0
+			end = C.end
+			if end is None:
+				end = self.horizon
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
 			if not tasks:
 				continue

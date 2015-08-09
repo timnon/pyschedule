@@ -44,9 +44,9 @@ proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').st
 mach_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in mach.split('\n') ]
 n = 6 #len(proc_table)
 
-S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
-T = { (i,j) : S.Task((i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
-R = { j : S.Resource(j) for j in range(n) }
+S = pyschedule.Scenario('Taillards_Flow_Shop_15x15')
+T = { (i,j) : S.Task('T_%i_%i'%(i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
+R = { j : S.Resource('R_%i'%j) for j in range(n) }
 
 S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(n-1) ]
 for i in range(n) :

@@ -6,8 +6,8 @@ import sys
 n = 10
 
 S = pyschedule.Scenario('n_queens_type_scheduling',horizon=n+1)
-R = { i : S.Resource(i) for i in range(n) } #resources
-T = { (i,j) : S.Task((i,j)) for i in range(n) for j in range(n) } #tasks
+R = { i : S.Resource('R_%i'%i) for i in range(n) } #resources
+T = { (i,j) : S.Task('T_%i_%i'%(i,j)) for i in range(n) for j in range(n) } #tasks
 
 # precedence constrains
 S += [ T[i,j-1] < T[i,j] for i in range(n) for j in range(1,n) ]

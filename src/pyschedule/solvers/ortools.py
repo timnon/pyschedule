@@ -25,7 +25,7 @@ import time, os, copy, collections
 
 
 
-def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
+def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 	"""
 	Integration of the ortools scheduling solver
 	"""
@@ -46,7 +46,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 	resource_to_intervals = resource_to_intervals = { R : list() for R in S.resources() }
 	resource_task_to_interval = collections.OrderedDict()
 	for T in S.tasks() :
-		I = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,False,T.name)
+		I = ort_solver.FixedDurationIntervalVar(0,S.horizon-T.length,T.length,False,T.name)
 		task_to_interval[T] = I
 
 		# fix start
@@ -60,7 +60,7 @@ def solve(scenario,horizon,time_limit=None,copy_scenario=False,msg=0) :
 			I = task_to_interval[T]
 			RA_tasks = list()
 			for R in RA :
-				I_ = ort_solver.FixedDurationIntervalVar(0,horizon-T.length,T.length,True,T.name+'_'+R.name)
+				I_ = ort_solver.FixedDurationIntervalVar(0,S.horizon-T.length,T.length,True,T.name+'_'+R.name)
 				resource_to_intervals[R].append(I_)
 				RA_tasks.append(I_)
 				resource_task_to_interval[(R,T)] = I_

@@ -18,14 +18,14 @@ n = len(proc_table[0])
 m = len(proc_table)
 n = 6
 
-S = pyschedule.Scenario('Taillards Flow-Shop 15x15')
-T = { (i,j) : S.Task((i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
-R = { j : S.Resource(j) for j in range(m) }
+S = pyschedule.Scenario('Taillards_Flow_Shop_15x15')
+T = { (i,j) : S.Task('T_%i_%i'%(i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
+R = { j : S.Resource('R_%i'%j) for j in range(m) }
 
-S += [ T[(i,j)] < T[(i,j+1)] for i in range(n) for j in range(m-1) ]
+S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(m-1) ]
 for i in range(n) :
 	for j in range(m) :
-		S += T[(i,j)] % R[j]
+		S += T[i,j] % R[j]
 
 S.use_makespan_objective()
 if pyschedule.solvers.pulp.solve_bigm(S,time_limit=120,msg=1):

@@ -26,13 +26,9 @@ under the License.
 python package to formulate and solve resource-constrained scheduling problems
 """
 
-#TODO: resources requirements should not overlap (can they?)
-#TODO: cpoptimier with cond precedence constraints
-#TODO: tasks of length 0 dont seem to work???
 
 
 from collections import OrderedDict as _DICT_TYPE
-import sys
 
 try: # allow Python 2 vs 3 compatibility
 	_maketrans = str.maketrans
@@ -52,37 +48,26 @@ def OR(L) :
 	return x
 
 def _isnumeric(var) :
-	return isinstance(var,(int)) # only integers are accepted
+	return type(var) is int # only integers are accepted
 
 def _isiterable(var) :
 	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
 
-LARGE_NUMBER = 1000000
 
+class _SchedElement(object):
 
-class _SchedElement(object) : # extend string object
-
-	def __init__(self,name,numeric_name_prefix='E') :
-		# purely numeric names are not allowed
-		if _isnumeric(name) :
-			name = numeric_name_prefix+str(name)
-		# remove illegal characters
-		'''
+	def __init__(self,name) :
 		trans = _maketrans("-+[] ->/","________")
-		if type(name) != str:
-			name = str(name)
-
 		name = str(name)
 		if name.translate(trans) != name:
 			raise Exception('ERROR: name %s contains one of the following characters: -+[] ->/'%name)
-		'''
 		self.name = name
-
-	def __repr__(self) :
-		return self.__str__()
 
 	def __str__(self) :
 		return str(self.name)
+
+	def __repr__(self) :
+		return self.__str__()
 
 	def __hash__(self) :
 		return self.name.__hash__()
@@ -123,7 +108,6 @@ class _SchedElementAffine(_DICT_TYPE) :
 			return self + type(self)(other)
 		raise Exception('ERROR: you cannot add %s to %s' % (str(other),str(self)))
 
-
 	def __sub__(self,other) :
 		if _isiterable(other) :
 			return [ self - x for x in other ]
@@ -145,8 +129,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 				for key in self :
 					new[key] *= other[1]
 			else :
-				raise Exception('ERROR: multipy '+str(self)+' only with number \
-                                                 but not with '+str(other))
+				raise Exception('ERROR: multipy %s only with integer but not with %s'(str(self),str(other)))
 			return new
 		else :
 			return self * type(self)(other)
@@ -160,7 +143,6 @@ class _SchedElementAffine(_DICT_TYPE) :
 				return str(val)+'x'
 			else :
 				return ''
-		# TODO: do not plot constant if not necessary
 		return self.affine_operator.join([ format_coeff(self[key])+str(key) for key in self ])
 
 	def __hash__(self) :
@@ -171,7 +153,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 class Scenario(_SchedElement):
 	
 	def __init__(self,name='scenario not named',horizon=None):
-		_SchedElement.__init__(self,name,numeric_name_prefix='S')
+		_SchedElement.__init__(self,name)
 		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
@@ -180,8 +162,10 @@ class Scenario(_SchedElement):
 
 	def Task(self,name,length=1,start=None,resources=None) :
 		"""
-		Adds a task with the given name to the scenario. Task names need to be unique. If task already exists
-		then it is returned.
+		Adds a task to the scenario
+		name      : unique task name, must not contain special characters
+		start     : an optional fixed start
+		resources : optional fixed resources. Should be given if start is fixed
 		"""
 		if name in self.T:
 			return self.T[name]
@@ -190,6 +174,9 @@ class Scenario(_SchedElement):
 		return task
 
 	def tasks(self,resource=None,single_resource=None) :
+		"""
+		Returns all tasks in scenario
+		"""
 		if resource is None :
 			return list(self.T.values())
 		else :
@@ -198,8 +185,10 @@ class Scenario(_SchedElement):
 
 	def Resource(self,name,size=1) :
 		"""
-		Adds a resource with the given name to the scenario. Resource names need to be unique. If resource already
-		exists then it is returned.
+		Adds a resource to the scenario
+		name   : unique resource name, must not contain special characters
+		size   : the size if the resource, if size > 1, then we get a cumulative resource that can process
+		         different tasks in parallel
 		"""
 		if name in self.R:
 			return self.R[name]
@@ -208,6 +197,9 @@ class Scenario(_SchedElement):
 		return resource
 
 	def resources(self,task=None,single_resource=None) :
+		"""
+		Returns all resources in scenario
+		"""
 		if task is None :
 			return list(self.R.values())
 		else :
@@ -332,12 +324,14 @@ class Scenario(_SchedElement):
 		return [ C for C in self.constraints if isinstance(C,CapacityUp) ]
 
 	def add_constraint(self,constraint):
+		for task in constraint.tasks():
+			if task not in self:
+				raise Exception('ERROR: task %s is not contained in scenario %s'%(str(task.name),str(self.name)))
+		for resource in constraint.resources():
+			if resource not in self:
+				raise Exception('ERROR: resource %s is not contained in scenario %s'%(str(resource.name),str(self.name)))
 		if str(constraint) in [ str(C) for C in self.constraints ]:
 			return self
-		for task in constraint.tasks():
-			self.add_task(task)
-		for resource in constraint.resources():
-			self.add_resource(resource)
 		self.constraints.append(constraint)
 		return self
 
@@ -354,6 +348,8 @@ class Scenario(_SchedElement):
 	def remove_task(self,task):
 		if task.name in self.T :
 			del self.T[task.name]
+		else :
+			raise Exception('ERROR: task with name %s not contained in scenario %s' % (str(task.name),str(self.name)))
 		self.constraints = [ C for C in self.constraints if task not in C.tasks() ]
 
 	def add_task_affine(self,task_affine):
@@ -371,6 +367,8 @@ class Scenario(_SchedElement):
 	def remove_resource(self,resource):
 		if resource.name in self.R :
 			del self.R[resource.name]
+		else:
+			raise Exception('ERROR: resource with name %s not contained in scenario %s' % (str(resource.name),str(self.name)))
 		self.constraints = [ C for C in self.constraints if resource not in C.resources() ]
 
 	def __iadd__(self,other) :
@@ -390,7 +388,7 @@ class Scenario(_SchedElement):
 		elif isinstance(other,Resource) :
 			self.add_resource(self,other)
 			return self
-		raise Exception('ERROR: cant add '+str(other)+' to scenario '+str(self.name))
+		raise Exception('ERROR: cant add %s to scenario %s'%(str(other),str(self.name)))
 
 	def __isub__(self,other) :
 		if _isiterable(other):
@@ -402,9 +400,17 @@ class Scenario(_SchedElement):
 			self.remove_resource(other)
 		elif isinstance(other,_Constraint):
 			self.remove_constraint(other)
-		else :
-			raise Exception('ERROR: task with name '+str(other.name)+\
-                            ' is not contained in scenario '+str(self.name))
+		else:
+			raise Exception('ERROR: task with name %s is not contained in scenario %s'%(str(other),str(self.name)))
+		return self
+
+	def __contains__(self, item):
+		if isinstance(item,Task):
+			return item in self.T.values()
+		elif isinstance(item,Resource):
+			return item in self.R.values()
+		else:
+			raise Exception('ERROR: %s cannot be checked for containment in scenario %s'%(str(item),str(self.name)))
 		return self
 
 	def __iter__(self):
@@ -412,8 +418,7 @@ class Scenario(_SchedElement):
 
 	def __getitem__(self, item):
 		if item not in self.T:
-			raise Exception('ERROR: task with name '+str(item)+\
-                            ' is not contained in scenario '+str(self.name))
+			raise Exception('ERROR: task with name %s is not contained in scenario %s'+(str(item),str(self.name)))
 		return self.T[item]
 
 	def __str__(self) :
@@ -509,8 +514,10 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,cost=None,start=None,resources=None) :
-		_SchedElement.__init__(self,name,numeric_name_prefix='T')
+	def __init__(self,name,length=1,start=None,resources=None) :
+		_SchedElement.__init__(self,name)
+		if not _isnumeric(length):
+			raise Exception('ERROR: length must be an integer')
 		self.length = length
 		self.start = start
 		self.resources = resources
@@ -592,7 +599,7 @@ class _TaskAffine(_SchedElementAffine) :
 		neg_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] < 0 ]
 		if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
 			raise Exception('ERROR: can only deal with simple precedences of \
-									the form T1 + 3 < T2 or T1 < 3 and not '+str(TA) )
+									the form T1 + 3 < T2 or T1 < 3 and not %s'%str(TA) )
 		# get offset
 		offset = 0
 		if 1 in TA : offset = TA[1]
@@ -665,7 +672,7 @@ class _Constraint(_SchedElement) :
 	An arbitrary constraint
 	"""
 	def __init__(self) :
-		_SchedElement.__init__(self,name='',numeric_name_prefix='C')
+		_SchedElement.__init__(self,name='')
 
 	def tasks(self):
 		return []
@@ -694,7 +701,6 @@ class _Precedence(_Constraint) :
 		return [self.left,self.right]
 
 	def __repr__(self) :
-		#kind_to_comp_operator = { 'lax':'<', 'tight':'<=', 'cond':'<<', 'low':'>', 'up':'<', 'first':'<', 'last':'>' }
 		s = str(self.left) + ' '
 		if self.offset != 0 :
 			s += '+ ' + str(self.offset) + ' '
@@ -769,15 +775,10 @@ class PrecedenceCond(_Precedence) :
 class Resource(_SchedElement) :
 	"""
 	A resource which can process at most one task per time step
-
-	capacity :  minimal and maximal task capacity of the tuple form (min,max)
-                    if capacity is an integer then this is interpreted as the
-                    maximal task capacity and the minimal taks capacity is set to 0
-	cost : the cost of using this resource in the solution
 	"""
 
 	def __init__(self,name=None,size=1) :
-		_SchedElement.__init__(self,name,numeric_name_prefix='R')
+		_SchedElement.__init__(self,name)
 		self.size = size
 
 	def __iadd__(self,other) :
@@ -886,7 +887,7 @@ class Capacity(_Constraint):
 	"""
 	A capacity bound on one resource in an interval
 	"""
-	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER,comp_operator=None):
+	def __init__(self,resource,param='length',bound=None,start=None,end=None,comp_operator=None):
 		_Constraint.__init__(self)
 		self.resource = resource
 		self.param = param
@@ -896,38 +897,34 @@ class Capacity(_Constraint):
 		self.comp_operator = comp_operator
 
 	def __ge__(self, other):
-		assert _isnumeric(other), 'ERROR: %s is not an integer, only integers are allowed'%str(other)
+		if not _isnumeric(other):
+			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityLow
 		self.comp_operator = '>='
 		self.bound = other
 		return self
 
 	def __le__(self, other):
-		assert _isnumeric(other), 'ERROR: %s is not an integer, only integers are allowed'%str(other)
+		if not _isnumeric(other):
+			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityUp
 		self.comp_operator = '<='
 		self.bound = other
 		return self
 
 	def __getitem__(self,slice):
-		if slice.start is not None:
-			self.start = slice.start
-		else:
-			self.start = 0
-		if slice.stop is not None:
-			self.end = slice.stop
-		else:
-			self.end = LARGE_NUMBER
+		self.start = slice.start
+		self.end = slice.stop
 		return self
 
 	def __str__(self):
 		slice = ''
-		if self.start != 0 or self.end != LARGE_NUMBER:
+		if self.start is not None or self.end is not None:
 			slice = '['
-			if self.start != 0:
+			if self.start is not None:
 				slice += str(self.start)
 			slice += ':'
-			if self.end < LARGE_NUMBER: #large number
+			if self.end is not None: #large number
 				slice += str(self.end)
 			slice += ']'
 		return '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
@@ -939,14 +936,14 @@ class Capacity(_Constraint):
 
 class CapacityLow(Capacity):
 
-	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER):
+	def __init__(self,resource,param='length',bound=None,start=None,end=None):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
 
 
 
 class CapacityUp(Capacity):
 
-	def __init__(self,resource,param='length',bound=None,start=0,end=LARGE_NUMBER):
+	def __init__(self,resource,param='length',bound=None,start=None,end=None):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
 
 

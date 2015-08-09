@@ -296,7 +296,7 @@ coords['start'] = coords[start_city]
 coords['end'] = coords[start_city]
 
 # scenario and city tasks
-S = pyschedule.Scenario('TSP Germany')
+S = pyschedule.Scenario('TSP_Germany')
 T = { city : S.Task(city) for city in coords  }
 Car = S.Resource('Car')
 

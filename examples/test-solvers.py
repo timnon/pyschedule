@@ -16,9 +16,9 @@ solve_methods = [
 solvers.pulp.solve,
 solvers.pulp.solve_unit,
 solvers.pulp.solve_bigm,
-#solvers.ortools.solve,
+solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
-#solve_docloud
+solve_docloud
 ]
 
 def two_task_scenario() :
@@ -159,7 +159,7 @@ CAP,
 CAPSLICE
 ]
 
-#scenario_methods = [FIX]
+#scenario_methods = [ZERO]
 
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
@@ -204,6 +204,9 @@ try :
 	df.columns = ['scenario'] + [ '.'.join(x.split('.')[-2:]) for x in table[0][1:] ]
 	df = df.set_index('scenario')
 	print(df)
+	with open('tmp.html','w') as f:
+		f.write(df.to_html())
+		f.close()
 except :
 	print('INFO: install pandas to get nicer table plot')
 	print(s)
