@@ -702,9 +702,11 @@ class _Precedence(_Constraint) :
 
 	def __repr__(self) :
 		s = str(self.left) + ' '
-		if self.offset != 0 :
+		if self.offset > 0 :
 			s += '+ ' + str(self.offset) + ' '
 		s += str(self.comp_operator) + ' ' + str(self.right)
+		if self.offset < 0 :
+			s += ' + ' + str(-self.offset) + ' '
 		return s
 
 	def __str__(self) :

@@ -189,7 +189,7 @@ def _get_dat_filename(scenario,msg=0) :
 
 
 
-def _read_solution(scenario,log,task_to_id,id_to_resource) :
+def _read_solution(scenario,log,task_to_id,id_to_resource,msg=0) :
 	S = scenario
 
 	# parse output 
@@ -205,7 +205,9 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 		start_i, end_i = log.index(start_str)+len(start_str), log.index(end_str)
 	except:
 		print(log)
-		raise Exception('ERROR: no solution found')
+		if msg:
+			print('ERROR: no solution found')
+		return 0
 
 	opl_plan = plan.parseString(log[start_i:end_i])
 	int_plan = opl_plan[0][0]
@@ -227,6 +229,8 @@ def _read_solution(scenario,log,task_to_id,id_to_resource) :
 			T.resources = list()
 		T.resources = [ id_to_resource[j] for j in assign[task_to_id[T]] ]
 
+	return 1
+
 
 
 def _get_mod_filename(mod_filename=None) :
@@ -246,10 +250,11 @@ def solve(scenario,mod_filename=None,msg=0) :
 	# run cp-optimizer
 	start_time = time.time()
 	log = os.popen('oplrun %s %s' % (mod_filename, dat_filename) ).read()
-	if msg : print('INFO: execution time (sec) = '+str(time.time()-start_time))
+	if msg :
+		print('INFO: execution time (sec) = '+str(time.time()-start_time))
 
 	# read solution
-	_read_solution(S,log,task_to_id,id_to_resource)
+	return _read_solution(S,log,task_to_id,id_to_resource,msg=msg)
 
 
 
@@ -266,7 +271,7 @@ def solve_docloud(scenario,api_key,
 	log = docloud.solve(base_url=base_url,api_key=api_key,filenames=[mod_filename,dat_filename],msg=msg)
 	if msg :
 		print(log)
-	_read_solution(S,log,task_to_id,id_to_resource)
+	return _read_solution(S,log,task_to_id,id_to_resource,msg=msg)
 
 
 
