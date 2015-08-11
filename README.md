@@ -13,7 +13,7 @@ Here is a hello world example, for a more detailed example go to the <a href="ht
 ```python
 # load pyschedule and create a scenario with 10 steps planning horizon
 import pyschedule
-S = pyschedule.Scenario('hello pyschedule',horizon=10)
+S = pyschedule.Scenario('hello_pyschedule',horizon=10)
 
 # create two resources
 Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
