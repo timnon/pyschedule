@@ -109,20 +109,13 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 	for P in S.precs_up() :
 		ort_solver.Add( task_to_interval[P.left].StartsBefore(P.right) )
 
-	'''
-	# ensure that tasks with similar precedences are run on the same resources
-	same_resource_precs = list()
-	if S.is_same_resource_precs_lax :
-		same_resource_precs.extend(S.precs_lax())
-	if S.is_same_resource_precs_tight :
-		same_resource_precs.extend(S.precs_tight())
-	for P in same_resource_precs :
-		shared_resources = set(P.left.resources_req_list()) & set(P.right.resources_req_list())
-		for R in shared_resources :
-			I_left = resource_task_to_interval[(R,P.left)]
-			I_right = resource_task_to_interval[(R,P.right)]
-			ort_solver.Add( I_left.PerformedExpr() == I_right.PerformedExpr() )
-	'''
+	# tight precedences low 
+	for P in S.precs_low_tight() :
+		ort_solver.Add( task_to_interval[P.left].StartsAt(P.right) )
+
+	# tight precedences up 
+	for P in S.precs_up_tight() :
+		ort_solver.Add( task_to_interval[P.left].EndsAt(P.right) )
 
 	# creates search phases.
 	vars_phase = ort_solver.Phase([ort_objective_var],

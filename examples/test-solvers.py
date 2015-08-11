@@ -44,22 +44,18 @@ def NONUNIT():
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 6)]']
 	return S,sols
 
-def FIX() :
-	S = two_task_scenario()
-	S += S.T['T1'] % S.R['R1'] | S.R['R2']
-	S += S.T['T2'] % S.R['R1'] | S.R['R2']
-	S.T['T1'].start = 1
-	S.T['T1'].resources = [ S.R['R1'] ]
-	S.T['T2'].start = 0
-	S.T['T2'].resources = [ S.R['R1'] ]
-	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
-	return S,sols
-
 def BOUND() : # only test lower bound, upper bound is similar
 	S = two_task_scenario()
 	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
 	S += S.T['T1'] > 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
+	return S,sols
+
+def BOUNDTIGHT() : # only test tight upper bound, lower bound is similar
+	S = two_task_scenario()
+	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
+	S += S.T['T1'] <= 3
+	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def LAX() :
@@ -144,8 +140,8 @@ def CAPSLICE():
 scenario_methods = [
 ZERO,
 NONUNIT,
-FIX,
 BOUND,
+BOUNDTIGHT,
 LAX,
 LAXPLUS,
 TIGHT,

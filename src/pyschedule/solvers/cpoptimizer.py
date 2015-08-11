@@ -141,10 +141,11 @@ def _get_dat_filename(scenario,msg=0) :
 		UpperBounds.append((task_to_id[P.left],P.right))
 
 	FixBounds = list()
-	for T in S.tasks() :
-		if T.start is not None :
-			FixBounds.append((task_to_id[T],T.start))
-
+	for P in S.precs_low_tight() :
+		FixBounds.append((task_to_id[P.left],P.right))
+	for P in S.precs_up_tight() :
+		FixBounds.append((task_to_id[P.left],P.right-P.left.length))
+			
 	# upper capacity bounds
 	CapacityUps = list()
 	CapacityUpTasks = list()

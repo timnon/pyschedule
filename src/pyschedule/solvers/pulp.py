@@ -105,17 +105,9 @@ class ContinuousMIP(object):
 		for T in S.tasks():
 			x[T] = pl.LpVariable(str(T), 0)
 
-			# fix variables if start is given (0.0 is also False!)
-			if T.start is not None:
-				mip += x[T] == T.start
-
 			# add task vs resource variabls
 			for R in S.resources(task=T):
 				x[(T, R)] = pl.LpVariable(str((T, R)), 0, 1, cat=pl.LpBinary)
-			# fix some TODO: restrict variables to the non-fixed ones
-			if T.resources is not None:
-				for R in T.resources:
-					mip += x[(T, R)] == 1
 
 		# resources req
 		for RA in S.resources_req():
@@ -157,9 +149,9 @@ class ContinuousMIP(object):
 				mip += x[(T, T_)] + x[(T_, T)] == 1
 
 				mip += x[T] + T.length <= x[T_] + \
-										  (1 - x[(T, T_)]) * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
+			               (1 - x[(T, T_)]) * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
 				mip += x[T_] + T_.length <= x[T] + \
-											x[(T, T_)] * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
+				        x[(T, T_)] * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
 
 		# precedence constraints
 		for P in S.precs_lax():
@@ -173,13 +165,13 @@ class ContinuousMIP(object):
 			if P.left.start is None and P.right.start is None:
 				mip += x[P.left] + P.left.length + P.offset == x[P.right]
 
-			# TODO: not set if not on same resource??
+		# TODO: not set if not on same resource??
 		# conditional precedence constraints
 		for P in S.precs_cond():
 			# if at least one of the tasks is not fixed
 			if P.left.start is None and P.right.start is None:
 				mip += x[P.left] + P.left.length + P.offset <= x[P.right] + \
-															   (1 - x[(P.left, P.right)]) * BIG_M + (1 - x[
+	                               (1 - x[(P.left, P.right)]) * BIG_M + (1 - x[
 					(P.left, P.right, 'SameResource')]) * BIG_M
 
 		# upper bounds
@@ -193,6 +185,18 @@ class ContinuousMIP(object):
 			# if start is not fixed
 			if P.left.start is None:
 				mip += x[P.left] >= P.right
+
+		# upper bounds
+		for P in S.precs_up_tight():
+			# if start is not fixed
+			if P.left.start is None:
+				mip += x[P.left] + P.left.length == P.right
+
+		# lower bounds
+		for P in S.precs_low_tight():
+			# if start is not fixed
+			if P.left.start is None:
+				mip += x[P.left] == P.right
 
 		# capacity lower bounds
 		for C in S.capacity_low():
@@ -345,18 +349,6 @@ class DiscreteMIP(object):
 				for t in range(self.horizon+1):
 					pulp_cons([(x[T, R, t], 1) for R in RA] + [(x[T, t], -1)],sense=0,rhs=0)
 
-		# respect fixed tasks, they can block free tasks
-		# TODO: currently fixed tasks are only blockers, not suitable for list scheduling
-		for T in S.tasks():
-			if T.start is None:
-				continue
-			for R in T.resources:
-				# all tasks are blocked on this resource
-				resource_tasks = [ T_ for T_ in S.tasks(resource=R) if T_ in self.task_groups_free ]
-				affine = [(x[T_, R, max(T.start-T_.length, 0)], 1) for T_ in resource_tasks] + \
-						 [(x[T_, R, T.start+T.length], -1) for T_ in resource_tasks]
-				pulp_cons(affine, sense=0, rhs=0)
-
 		# resource non-overlapping constraints
 		for R in S.resources():
 			resource_tasks = [T for T in self.task_groups_free if R in S.resources(task=T)]
@@ -375,7 +367,8 @@ class DiscreteMIP(object):
 			if P.left in self.task_groups_free and P.right in self.task_groups_free:
 				left_size = float(len(self.task_groups[P.left]))
 				right_size = float(len(self.task_groups[P.right]))
-				if P.left in self.task_groups_free and P.right in self.task_groups_free:  # TODO: take care of all other cases -> treat as prec_low and prec_up
+				if P.left in self.task_groups_free and P.right in self.task_groups_free:  
+					# TODO: take care of all other cases -> treat as prec_low and prec_up
 					for t in range(self.horizon+1):
 						affine = [( x[P.left, t], 1 / left_size),
 						         (x[P.right, min(t + P.left.length + P.offset, self.horizon)], -1 / right_size)]
@@ -413,7 +406,19 @@ class DiscreteMIP(object):
 		# upper bounds
 		for P in S.precs_up():
 			if P.left in self.task_groups_free:
-				pulp_cons(x[P.left, P.right], sense=0, rhs=0)
+				pulp_cons(x[P.left, max(P.right-P.left.length,0)], sense=0, rhs=0)
+
+		# tight lower bounds
+		for P in S.precs_low_tight():
+			if P.left in self.task_groups_free:
+				pulp_cons(x[P.left, P.right], sense=0, rhs=len(self.task_groups[T]))
+				pulp_cons(x[P.left, P.right+1], sense=0, rhs=0)
+
+		# tight upper bounds
+		for P in S.precs_up_tight():
+			if P.left in self.task_groups_free:
+				pulp_cons(x[P.left, max(P.right-P.left.length,0)], sense=0, rhs=len(self.task_groups[T]))
+				pulp_cons(x[P.left, max(P.right-P.left.length+1,0)], sense=0, rhs=0)
 
 		# capacity lower bounds
 		for C in S.capacity_low():
@@ -578,14 +583,6 @@ class DiscreteMIPUnit(object):
 					affine = [(x[T, R, t], 1) for R in RA] + [(x[T,t],-1)]
 					pulp_cons(affine, sense=0, rhs=0)
 
-		# respect fixed tasks, they can block free tasks
-		for T in S.tasks():
-			if T.start is None:
-				continue
-			for R in T.resources:
-				affine =  pl.LpAffineExpression()
-				pulp_cons([(x[T, R, T.start], 1)], sense=0, rhs=1)
-
 		# resource non-overlapping constraints
 		for R in S.resources():
 			if R.size is not None:
@@ -614,15 +611,25 @@ class DiscreteMIPUnit(object):
 				     [(x[P.right, t],-t) for t in range(self.horizon)]
 			pulp_cons(affine, sense=0, rhs=-(P.left.length + P.offset))
 
-		# low precedence constraints
+		# low bounds
 		for P in S.precs_low():
 			affine = [(x[P.left, t],t) for t in range(self.horizon)]
 			pulp_cons(affine, sense=1, rhs=P.right)
 
-		# up precedence constraints
+		# up bounds
 		for P in S.precs_up():
 			affine = [(x[P.left, t],t) for t in range(self.horizon)]
 			pulp_cons(affine, sense=-1, rhs=P.right-P.left.length)
+
+		# tight low bounds
+		for P in S.precs_low_tight():
+			affine = [(x[P.left, t],t) for t in range(self.horizon)]
+			pulp_cons(affine, sense=0, rhs=P.right)
+
+		# up precedence constraints
+		for P in S.precs_up_tight():
+			affine = [(x[P.left, t],t) for t in range(self.horizon)]
+			pulp_cons(affine, sense=0, rhs=P.right-P.left.length)
 
 		# capacity lower bounds
 		for C in S.capacity_low():
