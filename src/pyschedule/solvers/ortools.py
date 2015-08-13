@@ -49,10 +49,6 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 		I = ort_solver.FixedDurationIntervalVar(0,S.horizon-T.length,T.length,False,T.name)
 		task_to_interval[T] = I
 
-		# fix start
-		if T.start is not None :
-			ort_solver.Add(I.StartsAt(T.start))
-
 	# resourcee requirements
 	for RA in S.resources_req() :
 		tasks = RA.tasks()
@@ -164,13 +160,11 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 
 	# read last solution
 	for T in S.tasks() :
-		if T.start is None :
-			T.start = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
-		if not T.resources :
-			RAs = S.resources_req(task=T)
-			T.resources = [ R \
-		                    for RA in RAs for R in RA \
-		                    if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
+		T.start_value = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
+		RAs = S.resources_req(task=T)
+		T.resources = [ R \
+	                    for RA in RAs for R in RA \
+	                    if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
 	return 1
 	
 

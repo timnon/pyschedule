@@ -160,16 +160,15 @@ class Scenario(_SchedElement):
 		self.constraints = list()
 		self.horizon = horizon
 
-	def Task(self,name,length=1,start=None,resources=None) :
+	def Task(self,name,length=1) :
 		"""
 		Adds a task to the scenario
 		name      : unique task name, must not contain special characters
-		start     : an optional fixed start
-		resources : optional fixed resources. Should be given if start is fixed
+                length    : length of task
 		"""
 		if name in self.T:
 			return self.T[name]
-		task = Task(name,length=length,start=start,resources=resources)
+		task = Task(name,length=length)
 		self.add_task(task)
 		return task
 
@@ -209,8 +208,8 @@ class Scenario(_SchedElement):
 		"""
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
-		solution = [ (T,R,T.start,T.start+T.length) \
-                      for T in self.tasks() for R in T.resources ]
+		solution = [ (T,R,T.start_value,T.start_value+T.length) \
+                             for T in self.tasks() for R in T.resources ]
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 
@@ -218,14 +217,14 @@ class Scenario(_SchedElement):
 		"""
 		Returns the value of the objective
 		"""
-		return sum([ self.objective[T]*(T.start+T.length) for T in self.objective ])
+		return sum([ self.objective[T]*(T.start_value+T.length) for T in self.objective ])
 
 	def clear_objective(self):
 		self.objective.clear()
 
 	def use_makespan_objective(self) :
 		"""
-		Set the objective to the makespan of all included tasks without a fixed start
+		Set the objective to the makespan of all included tasks
 		"""
 		if 'MakeSpan' in self.T :
 			self.constraints = [ C for C in self.constraints if self.T['MakeSpan'] not in C.tasks() ]
@@ -234,7 +233,6 @@ class Scenario(_SchedElement):
 		makespan = self.Task('MakeSpan')
 		self += makespan % self.resources()[0] # add some random resource, every task needs one
 		for T in tasks :
-			#TODO: what for T.start is not None???
 			self += T < makespan
 		self.clear_objective()
 		self += makespan*1
@@ -244,23 +242,16 @@ class Scenario(_SchedElement):
 		Sets the objective a uniform flow-time objective
 		"""
 		self.clear_objective()
-		A = sum([ T*1 for T in self.tasks() if T.start is None ])
+		A = sum([ T*1 for T in self.tasks() ])
 		del A[1] #remove 1 due to sum
 		self += A
-
-	def clear_task_starts(self) :
-		"""
-		Remove the start times of all tasks
-		"""
-		for T in self.tasks() :
-			T.start = None
 
 	def clear_solution(self):
 		"""
 		Remove the solution from the scenario
 		"""
 		for T in self.tasks() :
-			T.start = None
+			T.start_value = None
 			T.resources = None
 
 	def precs_lax(self) :
@@ -478,14 +469,14 @@ class Task(_SchedElement) :
 	A task to be processed by at least one resource
 	"""
 
-	def __init__(self,name,length=1,start=None,resources=None) :
+	def __init__(self,name,length=1) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: length must be an integer')
 		self.length = length
-		self.start = start
-		self.resources = resources
 		self.params = dict()
+		self.start_value = None # should be filled by solver
+		self.resources = None # should be filled by solver
 
 	def __len__(self) :
 		return self.length

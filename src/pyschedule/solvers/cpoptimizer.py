@@ -82,17 +82,9 @@ def _get_dat_filename(scenario,msg=0) :
 	# resource requirements
 	for RA in S.resources_req() :
 		tasks = RA.tasks()
-
-		#TODO: allow fixed resources of different tasks
-		it_resources = list(RA)
 		# check if one of resources in RA is fixed
 		for T in tasks :
-			# check if one of resources in RA is fixed
-			if T.resources is not None :
-				fixed_resources = set(RA) & set(T.resources)
-				if fixed_resources :
-					it_resources = list(fixed_resources)[:1]
-			for R in it_resources :
+			for R in RA :
 				task_id = task_to_id[T]
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
@@ -122,11 +114,17 @@ def _get_dat_filename(scenario,msg=0) :
 	# Precedences for .dat-file
 	Precedences = list()
 	for P in S.precs_lax() :
-		Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		if P.offset >= 0:
+			Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		elif P.offset < 0:
+			Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset-P.left.length-P.right.length))
 
 	TightPrecedences = list()
 	for P in S.precs_tight() :
-		TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		if P.offset >= 0:
+			TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		elif P.offset < 0:
+			TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset-P.left.length-P.right.length))
 
 	CondPrecedences = list()
 	for P in S.precs_cond() :
@@ -225,7 +223,7 @@ def _read_solution(scenario,log,task_to_id,id_to_resource,msg=0) :
 
 	# add to scenario
 	for T in S.tasks() :
-		T.start = starts[task_to_id[T]]
+		T.start_value = starts[task_to_id[T]]
 		if T.resources is None :
 			T.resources = list()
 		T.resources = [ id_to_resource[j] for j in assign[task_to_id[T]] ]
