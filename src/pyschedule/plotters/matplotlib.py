@@ -91,6 +91,8 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	fig, ax = plt.subplots(1, 1, figsize=fig_size)
 	resource_sizes_count = 0
 	visible_resources = [ R for R in S.resources() if R not in hide_resources ]
+	if not visible_resources:
+		raise Exception('ERROR: no resources to plot')
 	total_resource_sizes = sum([ R.size for R in visible_resources ])
 	R_ticks = list()
 
