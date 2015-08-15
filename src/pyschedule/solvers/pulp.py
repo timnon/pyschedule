@@ -73,11 +73,11 @@ def solve_unit(scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
 	"""
 	return DiscreteMIPUnit().solve(scenario, kind=kind, time_limit=time_limit, task_groups=task_groups, msg=msg)
 
-def solve_bigm(scenario, big_m=10000, kind='CBC', time_limit=None, msg=0):
+def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
-	return ContinuousMIP().solve(scenario, big_m=big_m, kind=kind, time_limit=time_limit, msg=msg)
+	return ContinuousMIP().solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, msg=msg)
 
 
 
@@ -90,7 +90,7 @@ class ContinuousMIP(object):
 
 	def __init__(self):
 		self.scenario = None
-		self.big_m = None
+		self.bigm = None
 		self.mip = None
 		self.x = None  # mip variables shortcut
 
@@ -98,7 +98,7 @@ class ContinuousMIP(object):
 	def build_mip_from_scenario(self, task_groups=None, msg=0):
 
 		S = self.scenario
-		BIG_M = self.big_m
+		BIGM = self.bigm
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 
 		# task variables
@@ -151,9 +151,9 @@ class ContinuousMIP(object):
 				mip += x[(T, T_)] + x[(T_, T)] == 1
 
 				mip += x[T] + T.length <= x[T_] + \
-			               (1 - x[(T, T_)]) * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
+			               (1 - x[(T, T_)]) * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
 				mip += x[T_] + T_.length <= x[T] + \
-				        x[(T, T_)] * BIG_M + (1 - x[(T, T_, 'SameResource')]) * BIG_M
+				        x[(T, T_)] * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
 
 		# precedence constraints
 		for P in S.precs_lax():
@@ -172,12 +172,15 @@ class ContinuousMIP(object):
 		# conditional precedence constraints
 		for P in S.precs_cond():
 			mip += x[P.left] + P.left.length + P.offset <= x[P.right] + \
-                               (1 - x[(P.left, P.right)]) * BIG_M + (1 - x[
-				(P.left, P.right, 'SameResource')]) * BIG_M
+                               (1 - x[(P.left, P.right)]) * BIGM + (1 - x[
+				(P.left, P.right, 'SameResource')]) * BIGM
 
 		# upper bounds
 		for P in S.precs_up():
 			mip += x[P.left] + P.left.length <= P.right
+		if S.horizon is not None:
+			for T in S.tasks():
+				mip += x[T] <= S.horizon-1
 
 		# lower bounds
 		for P in S.precs_low():
@@ -193,6 +196,8 @@ class ContinuousMIP(object):
 
 		# capacity lower bounds
 		for C in S.capacity_low():
+			if C.start is not None or C.end is not None:
+				continue
 			R = C.resource
 			param = C.param
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
@@ -202,6 +207,8 @@ class ContinuousMIP(object):
 
 		# capacity upper bounds
 		for C in S.capacity_up():
+			if C.start is not None or C.end is not None:
+				continue
 			R = C.resource
 			param = C.param
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
@@ -222,14 +229,14 @@ class ContinuousMIP(object):
 			T.resources = [R for R in resources if self.x[(T, R)].varValue > 0]
 
 
-	def solve(self, scenario, big_m=10000, kind='CBC', time_limit=None, msg=0):
+	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, msg=0):
 		"""
 		Solves the given scenario using a continous MIP via the pulp package
 
 		Args:
 			scenario:    scenario to solve
 			kind:        MIP-solver to use: CPLEX, GLPK, CBC
-			big_m :      a large number to allow a big-m type model
+			bigm :      a large number to allow a big-m type model
 			time_limit:  a time limit, only for CPLEX and CBC
 			msg:         0 means no feedback (default) during computation, 1 means feedback
 	
@@ -238,7 +245,7 @@ class ContinuousMIP(object):
 			None if solving was not successful
 		"""
 		self.scenario = scenario
-		self.big_m = big_m
+		self.bigm = bigm
 		self.build_mip_from_scenario(msg=msg)
 		_solve_mip(self.mip, kind=kind, params={'time_limit': time_limit}, msg=msg)
 
@@ -294,31 +301,35 @@ class DiscreteMIP(object):
 				base_cat = 'Continuous'
 
 			# base time-indexed variables for task group
-			for t in range(self.horizon+1):
-				x[T, t] = pl.LpVariable(str((T, t)), 0, task_group_size,cat=base_cat)
+			x.update({ (T,t) : pl.LpVariable(str((T, t)), 0, task_group_size,cat=base_cat) 
+                                           for t in range(self.horizon+1) })
 			# lower and upper boundary conditions
 			pulp_cons(x[T, 0],sense=0,rhs=task_group_size)
-
-			# required for no solution feedback
 			pulp_cons(x[T, self.horizon],sense=0,rhs=0)
-
-			# monotonicity (base variables should inherit this)
+			# monotonicity
 			for t in range(self.horizon):
-				pulp_cons( [(x[T, t], 1), (x[T, t + 1], -1)] ,sense=1,rhs=0)
+				pulp_cons( [(x[T, t], 1), (x[T, t+1], -1)] ,sense=1,rhs=0)
 
 			# generate variables for task resources
-			for R in S.resources(task=T,single_resource=False):
-				# resource base variables
+			for RA in S.resources_req(task=T,single_resource=False):
+				# check if some resource is also a single resource
+				if set(RA.resources()) & set(S.resources(task=T,single_resource=True)):
+					continue
+				# create variables if necessary
+				x.update({ (T,R,t) : pl.LpVariable(str((T, R, t)), 0, 1, cat=pl.LpBinary)	
+				           for R in RA for t in range(self.horizon+1) if (T,R,t) not in x})
+				# synchronize with base variable
 				for t in range(self.horizon+1):
-					x[T, R, t] = pl.LpVariable(str((T, R, t)), 0,task_group_size, cat='Integer')
-				# monotonicity (base variables should inherit this)
-				for t in range(self.horizon):
-					pulp_cons([(x[T, R, t], 1), (x[T, R, t + 1], -1)],sense=1,rhs=0)
+					affine = [(x[T, R, t], 1) for R in RA] + [(x[T,t],-1)]
+					pulp_cons(affine, sense=0, rhs=0)
+				# monotonicity
+				for R in RA:
+					for t in range(self.horizon):
+						pulp_cons([(x[T, R, t], 1), (x[T, R, t+1], -1)],sense=1,rhs=0)
 
-			# shortcuts for single resources
-			for R in S.resources(task=T,single_resource=True):
-				for t in range(self.horizon+1):
-					x[T, R, t] = x[T, t]
+			# generate shortcuts for single resources
+			x.update({ (T,R,t) : x[T,t] for R in S.resources(task=T,single_resource=True)
+                                                    for t in range(self.horizon+1) })
 
 		# same distribution on resources in each RA
 		for RA in S.resources_req():
@@ -330,26 +341,15 @@ class DiscreteMIP(object):
 				for R in RA:
 					pulp_cons([(x[T, R, 0], 1), (x[T_, R, 0], -1)],sense=0,rhs=0)
 
-		# resource variables should match base variables in each time step
-		for RA in S.resources_req(single_resource=False):
-			tasks = [T for T in RA.tasks() if T in self.task_groups_free]
-			if not tasks:
-				continue
-			for T in tasks:
-				for t in range(self.horizon+1):
-					pulp_cons([(x[T, R, t], 1) for R in RA] + [(x[T, t], -1)],sense=0,rhs=0)
-
 		# resource non-overlapping constraints
 		for R in S.resources():
 			resource_tasks = [T for T in self.task_groups_free if R in S.resources(task=T)]
+			resource_size = 1.0
 			if R.size is not None:
 				resource_size = R.size
-			else:
-				resource_size = 1.0
-			for t in range(self.horizon+1):
-				affine = [(x[T, R, max(t - T.length, 0)], S.resources_req_coeff(task=T, resource=R)) for T in
-					      resource_tasks] + \
-					     [(x[T, R, t], -S.resources_req_coeff(task=T, resource=R)) for T in resource_tasks]
+			for t in range(self.horizon):
+				affine = [(x[T, R, max(t+1-T.length,0)], S.resources_req_coeff(task=T, resource=R)) for T in resource_tasks if (T,R,0) in x ] + \
+				         [(x[T, R, t+1], -S.resources_req_coeff(task=T, resource=R)) for T in resource_tasks if (T,R,0) in x ]
 				pulp_cons(affine,sense=-1,rhs=resource_size)
 
 		# lax precedence constraints
@@ -430,11 +430,12 @@ class DiscreteMIP(object):
 			end = C.end
 			if end is None:
 				end = self.horizon
-			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
+			tasks = [ T for T in S.tasks(resource=R) 
+			          if T in self.task_groups_free and param in T and (T,R,0) in x ]
 			if not tasks:
 				continue
-			affine = [(x[T, R, start],  T[param]) for T in tasks]+\
-					 [(x[T, R, end], -T[param]) for T in tasks]
+			affine = [(x[T, R, start],  T[param]) for T in tasks ]+\
+			         [(x[T, R, end], -T[param]) for T in tasks ]
 			pulp_cons(affine, sense=1, rhs=C.bound)
 
 		# capacity upper bounds
@@ -447,11 +448,12 @@ class DiscreteMIP(object):
 			end = C.end
 			if end is None:
 				end = self.horizon
-			tasks = [ T for T in S.tasks(resource=R) if param in T and T in self.task_groups_free ]
+			tasks = [ T for T in S.tasks(resource=R) 
+			          if T in self.task_groups_free and param in T and (T,R,0) in x ]
 			if not tasks:
 				continue
-			affine = [(x[T, R, start], T[param]) for T in tasks]+\
-					 [(x[T, R, end], -T[param]) for T in tasks]
+			affine = [(x[T, R, start], T[param]) for T in tasks ]+\
+			         [(x[T, R, end], -T[param]) for T in tasks ]
 			pulp_cons(affine, sense=-1, rhs=C.bound)
 
 		# objective
@@ -473,20 +475,27 @@ class DiscreteMIP(object):
 			RA_resources = collections.OrderedDict()
 			starts = list()
 			for R in self.scenario.resources(task=T):
-				starts_ = [max([t for t in range(self.horizon) if self.x[(T, R, t)].varValue >= z - 0.5]) \
-						   for z in range(int(self.x[(T, R, 0)].varValue), 0, -1)]
+				if not (T,R,0) in self.x:
+					continue				
+				starts_ = [max([t for t in range(self.horizon) if self.x[T, R, t].varValue >= z - 0.5]) \
+						   for z in range(int(self.x[T, R, 0].varValue), 0, -1)]
 				starts.extend([(t, R) for t in starts_])
 
 			# iteratively assign starts and resources
 			for T_ in self.task_groups[T]:
-				if T_.start_value is None and T_.resources is None:
-					RAs = self.scenario.resources_req(task=T)
-					T_.start_value = [t for (t, R) in starts][0]
-					T_.resources = list()
-					for RA in RAs :
-						(t, R) = [(t_, R_) for (t_, R_) in starts if R_ in RA and t_ == T_.start_value][0]
-						starts.remove((t, R))
-						T_.resources.append(R)
+				# consider single resources first
+				RAs = self.scenario.resources_req(task=T,single_resource=True) + \
+       				      self.scenario.resources_req(task=T,single_resource=False)
+				T_.start_value = [t for (t, R) in starts][0]
+				T_.resources = list()
+				for RA in RAs :
+					if set(T_.resources) & set(RA.resources()):
+						continue
+					(t, R) = [(t_, R_) for (t_, R_) in starts if R_ in RA and t_ == T_.start_value][0]
+					starts.remove((t, R))
+					T_.resources.append(R)
+
+			
 
 
 	def solve(self, scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
@@ -557,14 +566,13 @@ class DiscreteMIPUnit(object):
 			cons.append(pl.LpConstraint(pl.LpAffineExpression(aff),sense=sense,rhs=rhs))
 		for T in self.scenario.tasks():
 
-			# base time-indexed variables for task group
-			for t in range(self.horizon):
-				x[T, t] = pl.LpVariable(str((T, t)), 0, 1, cat=pl.LpBinary)
+			# base time-indexed variables
+			x.update({ (T,t) : pl.LpVariable(str((T, t)), 0, 1, cat=pl.LpBinary) for t in range(self.horizon) })
 			affine = [(x[T, t], 1) for t in range(self.horizon) ]
 			pulp_cons(affine, sense=0, rhs=1)
 
 			for RA in S.resources_req(task=T,single_resource=False):
-				# check if resource is also a single resource
+				# check if contains a single resource
 				if set(RA.resources()) & set(S.resources(task=T,single_resource=True)):
 					continue
 				# create variables if necessary
@@ -573,15 +581,14 @@ class DiscreteMIPUnit(object):
 				# one position needs to get selected
 				affine = [(x[T, R, t], 1) for R in RA for t in range(self.horizon) ]
 				pulp_cons(affine, sense=0, rhs=1)
-				# synchronize with base variable
+				# synchronize with base variables
 				for t in range(self.horizon):
 					affine = [(x[T, R, t], 1) for R in RA] + [(x[T,t],-1)]
 					pulp_cons(affine, sense=0, rhs=0)
 
-			# generate shortcut
-			for R in S.resources(task=T,single_resource=True):
-				for t in range(self.horizon):
-					x[T, R, t] = x[T, t]
+			# generate shortcuts for single resources
+			x.update({ (T,R,t) : x[T,t] for R in S.resources(task=T,single_resource=True)
+                                                    for t in range(self.horizon) })
 
 		# resource non-overlapping constraints
 		for R in S.resources():
@@ -590,8 +597,8 @@ class DiscreteMIPUnit(object):
 			else:
 				resource_size = 1.0
 			for t in range(self.horizon):
-				affine = [(x[T, R, t], S.resources_req_coeff(task=T, resource=R)) for T in S.tasks(resource=R)
-						                                                          if (T,R,t) in x ]
+				affine = [(x[T, R, t], S.resources_req_coeff(task=T, resource=R))
+				          for T in S.tasks(resource=R) if (T,R,t) in x ]                                                          
 				pulp_cons(affine, sense=-1, rhs=resource_size)
 
 		# lax precedence constraints
@@ -655,7 +662,7 @@ class DiscreteMIPUnit(object):
 			if end is None:
 				end = self.horizon
 			affine = [(x[T, R, t],  T[param]) for T in S.tasks() for t in range(start,end)
-					  if (T,R,t) in x and param in T]
+			                                  if (T,R,t) in x and param in T]
 			if not affine:
 				continue
 			pulp_cons(affine, sense=1, rhs=C.bound)
@@ -671,7 +678,7 @@ class DiscreteMIPUnit(object):
 			if end is None:
 				end = self.horizon
 			affine = [(x[T, R, t], T[param]) for T in S.tasks() for t in range(start,end)
-					  if (T,R,t) in x and param in T]
+			                                 if (T,R,t) in x and param in T]
 			if not affine:
 				continue
 			pulp_cons(affine, sense=-1, rhs=C.bound)

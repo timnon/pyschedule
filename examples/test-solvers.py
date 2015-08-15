@@ -155,7 +155,7 @@ CAP,
 CAPSLICE
 ]
 
-#scenario_methods = [ZERO]
+#scenario_methods = [CAPSLICE]
 
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)

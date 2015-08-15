@@ -287,6 +287,9 @@ class Scenario(_SchedElement):
 	def resources_req(self,task=None,resource=None,single_resource=None):
 		"""
 		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
+		task:             only resource requirements that contain this task
+		resources:        only resource requirements that contain this resource
+		single_resource:  True=only resource reqs. with a single resource, False=only resource reqs. with multiple resources
 		"""
 		constraints = [ C for C in self.constraints if isinstance(C,ResourceReq) ]
 		if task is not None :
@@ -308,10 +311,7 @@ class Scenario(_SchedElement):
 		"""
 		Returns the maximum resource requirement of the given task on the given resource
 		"""
-		try:
-			coeff = max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
-		except:
-			import pdb;pdb.set_trace()
+		coeff = max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
 		return coeff
 
 	def capacity_low(self):

@@ -31,7 +31,7 @@ tuple TaskResource {
 	key int task_id;
 	key int resource_id;
 	int length;
-	int group_id;
+	key int group_id;
 }
 
 // one group for every task-alternative
@@ -87,6 +87,7 @@ tuple CapacityUpTask {
 {Bound} LowerBounds = ...;
 {Bound} FixBounds = ...;
 {CapacityUp} CapacityUps = ...;
+{CapacityUp} CapacitySliceUps = ...;
 {CapacityUpTask} CapacityUpTasks = ...;
 
 
@@ -161,6 +162,12 @@ subject to {
   }
 
   forall( CU in CapacityUps ){
+        sum( CUT in CapacityUpTasks : CUT.capacity_up_id == CU.capacity_up_id, 
+            TR in TaskResources : (TR.resource_id == CU.resource_id) && (TR.task_id == CUT.task_id) )
+                          CUT.req*presenceOf(RIntervals[TR]) <= CU.bound;
+  }
+
+  forall( CU in CapacitySliceUps ){
         sum( CUT in CapacityUpTasks : CUT.capacity_up_id == CU.capacity_up_id, 
             TR in TaskResources : (TR.resource_id == CU.resource_id) && (TR.task_id == CUT.task_id) )
                           CUT.req*presenceOf(RIntervals[TR])*(startOf(RIntervals[TR])>=CU.start)*(endOf(RIntervals[TR])<=CU.end) <= CU.bound;

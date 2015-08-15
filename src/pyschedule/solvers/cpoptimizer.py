@@ -84,6 +84,9 @@ def _get_dat_filename(scenario,msg=0) :
 		tasks = RA.tasks()
 		# check if one of resources in RA is fixed
 		for T in tasks :
+			# do not consider tasks which appear in a single resorce
+			if len(RA.resources()) > 1 and set(RA.resources()) & set(S.resources(task=T,single_resource=True)):
+				continue
 			for R in RA :
 				task_id = task_to_id[T]
 				resource_id = resource_to_id[R]
@@ -91,7 +94,7 @@ def _get_dat_filename(scenario,msg=0) :
 					T_RAs = S.resources_req(task=T)
 					task_resource_group_id = T_RAs.index(RA) #T.resources_req.index(RA)
 					TaskResources.append( (task_id,resource_id,
-										   T.length,task_resource_group_id) )
+					                      T.length,task_resource_group_id) )
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
@@ -137,6 +140,9 @@ def _get_dat_filename(scenario,msg=0) :
 	UpperBounds = list()
 	for P in S.precs_up() :
 		UpperBounds.append((task_to_id[P.left],P.right))
+	if S.horizon is not None:
+		for T in S.tasks():
+			UpperBounds.append((task_to_id[T],S.horizon))
 
 	FixBounds = list()
 	for P in S.precs_low_tight() :
@@ -147,9 +153,22 @@ def _get_dat_filename(scenario,msg=0) :
 	# upper capacity bounds
 	CapacityUps = list()
 	CapacityUpTasks = list()
+
+	CapacitySliceUps = list()
+	CapacitySliceUpTasks = list()
 	count = 0
 	for C in S.capacity_up() :
-		CapacityUps.append((count,resource_to_id[C.resource],C.bound,C.start,C.end))
+		if C.start is None and C.end is None:
+			CapacityUps.append((count,resource_to_id[C.resource],C.bound,-1,-1))
+		else:
+			start = C.start
+			if start is None:
+				start = 0
+			end = C.end
+			if end is None:
+				end = S.horizon
+			CapacitySliceUps.append((count,resource_to_id[C.resource],C.bound,start,end))
+
 		for T in S.tasks() :
 			if C.param in T:
 				CapacityUpTasks.append((count,task_to_id[T],T[C.param]))
@@ -181,6 +200,7 @@ def _get_dat_filename(scenario,msg=0) :
 		f.write('LowerBounds={\n'+to_str(LowerBounds)+'\n};\n\n')
 		f.write('FixBounds={\n'+to_str(FixBounds)+'\n};\n\n')
 		f.write('CapacityUps={\n'+to_str(CapacityUps)+'\n};\n\n')
+		f.write('CapacitySliceUps={\n'+to_str(CapacitySliceUps)+'\n};\n\n')
 		f.write('CapacityUpTasks={\n'+to_str(CapacityUpTasks)+'\n};\n\n')
 		f.close()
 
