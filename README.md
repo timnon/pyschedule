@@ -52,9 +52,7 @@ Here we use a makespan objective which means that we want to minimize the comple
     plotters.matplotlib.plot(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_8_0.png)
-
-![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_8_0.png)
 
 
 pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>-based ones as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.ipynb">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
@@ -188,7 +186,7 @@ Hence, we want to minimize the position of the MakeSpan task subject to the cons
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_28_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_28_0.png)
 
 
 Alice is annoyed, if she paints the red bike, she also wants to do the post-processing, switching bikes takes too much time. We use the following constraints to ensure this. They ensure that painting and post-processing the red bike will both be done by either Alice or Bob. The same holds for the green on:
@@ -206,7 +204,7 @@ Alice is annoyed, if she paints the red bike, she also wants to do the post-proc
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_30_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_30_0.png)
 
 
 This schedule completes after four hours and suggests to paint both bikes at the same time. However, Alice and Bob have only a single paint shop which they need to share:
@@ -218,7 +216,7 @@ This schedule completes after four hours and suggests to paint both bikes at the
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_32_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_32_0.png)
 
 
 Great, everybody can still go home after five hours and have a late lunch! Unfortunately, Alice receives a call that the red bike will only arrive after two hours:
@@ -228,7 +226,7 @@ Great, everybody can still go home after five hours and have a late lunch! Unfor
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_34_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_34_0.png)
 
 
 Still everybody can go home after six hours. However, we encounter another problem, it is actually quite hard to switch the paint shop from green to red because the green color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that there needs to be a break of two hours if the red painting follows the green one:
@@ -238,7 +236,7 @@ Still everybody can go home after six hours. However, we encounter another probl
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_36_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_36_0.png)
 
 
 Damn, we have a full day of seven hours, this requires a lunch between the third and the fifth hour:
@@ -251,7 +249,7 @@ Damn, we have a full day of seven hours, this requires a lunch between the third
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_38_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_38_0.png)
 
 
 Our goal so far is to minimize the MakeSpan, the final completion time of any task. We can also make this more explicit:
@@ -269,7 +267,7 @@ Our goal so far is to minimize the MakeSpan, the final completion time of any ta
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_40_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_40_0.png)
 
 
 Unfortunately, Bob needs to do all the work. To evenly distribute the the work, we can assign capacities to resources:
@@ -280,7 +278,7 @@ Unfortunately, Bob needs to do all the work. To evenly distribute the the work, 
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_42_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_42_0.png)
 
 
 Also Alice wants to definitely do some work before lunch, that is, before the fourth hour:
@@ -290,7 +288,7 @@ Also Alice wants to definitely do some work before lunch, that is, before the fo
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_44_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_44_0.png)
 
 
 Finally Bob gets a call from the owner of the red bike which offers to give them a huge tip if they manage to finish his bike as early as possible. After talking with Alice, they give a six times higher priority, which translates into the following flow-time objective:
@@ -301,7 +299,7 @@ Finally Bob gets a call from the owner of the red bike which offers to give them
     run(S)
 
 
-![](https://github.com/timnon/pyschedule/tree/master/pics/output_46_0.png)
+![](https://github.com/timnon/pyschedule/blob/master/pics/output_46_0.png)
 
 
 All this sounds quite trivial, but think about the same problem with many bikes and many persons!
