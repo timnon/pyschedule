@@ -5,6 +5,8 @@
 
 # pyschedule - resource-constrained scheduling in python
 
+![](https://github.com/timnon/pyschedule/blob/master/pics/gantt.png)
+
 pyschedule is the easiest way to match tasks with resources, period. It covers problems such as flow- and job-shop scheduling, travelling salesman, vehicle routing with time windows, and many more combinations of theses. Install it with pip:
 
 
@@ -51,6 +53,8 @@ Here we use a makespan objective which means that we want to minimize the comple
 
 
 ![](https://github.com/timnon/pyschedule/tree/master/pics/output_8_0.png)
+
+![](https://github.com/timnon/pyschedule/blob/master/pics/hello-pyschedule.png)
 
 
 pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>-based ones as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.ipynb">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
