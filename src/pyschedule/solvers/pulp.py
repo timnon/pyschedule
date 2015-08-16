@@ -316,7 +316,7 @@ class DiscreteMIP(object):
 				if set(RA.resources()) & set(S.resources(task=T,single_resource=True)):
 					continue
 				# create variables if necessary
-				x.update({ (T,R,t) : pl.LpVariable(str((T, R, t)), 0, 1, cat=pl.LpBinary)	
+				x.update({ (T,R,t) : pl.LpVariable(str((T, R, t)), 0, task_group_size, cat=pl.LpInteger)	
 				           for R in RA for t in range(self.horizon+1) if (T,R,t) not in x})
 				# synchronize with base variable
 				for t in range(self.horizon+1):
@@ -458,7 +458,7 @@ class DiscreteMIP(object):
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]) for T in S.objective if T in self.task_groups_free
-									  for t in range(self.horizon+1)])
+									for t in range(self.horizon+1)])
 
 		for con in cons:
 			mip.addConstraint(con)
@@ -684,7 +684,8 @@ class DiscreteMIPUnit(object):
 			pulp_cons(affine, sense=-1, rhs=C.bound)
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]*t) for T in S.objective for t in range(self.horizon)])
+		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]*t) for T in S.objective if T in S.tasks() 
+		                                                          for t in range(self.horizon)])
 
 		for con in cons:
 			mip.addConstraint(con)

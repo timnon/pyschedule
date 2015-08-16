@@ -127,6 +127,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 					max(x_-x,0.5),   # width
 					resource_height,   # height
 					color = color_map[T],
+					alpha=0.6
 				    )
 				)
 				if show_task_labels :
