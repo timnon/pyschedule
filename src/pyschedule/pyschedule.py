@@ -766,7 +766,7 @@ class PrecedenceCond(_Precedence) :
 	"""
 	def __init__(self,left,right,offset=0) :
 		_Precedence.__init__(self,left,right,offset)
-		self.comp_operator = '<='
+		self.comp_operator = '<<'
 
 
 
