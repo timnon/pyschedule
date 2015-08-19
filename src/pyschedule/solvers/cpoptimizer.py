@@ -134,21 +134,21 @@ def _get_dat_filename(scenario,msg=0) :
 		CondPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
 
 	LowerBounds = list()
-	for P in S.precs_low() :
-		LowerBounds.append((task_to_id[P.left],P.right))
+	for P in S.bounds_low() :
+		LowerBounds.append((task_to_id[P.task],P.right))
 
 	UpperBounds = list()
-	for P in S.precs_up() :
-		UpperBounds.append((task_to_id[P.left],P.right))
+	for P in S.bounds_up() :
+		UpperBounds.append((task_to_id[P.task],P.right))
 	if S.horizon is not None:
 		for T in S.tasks():
 			UpperBounds.append((task_to_id[T],S.horizon))
 
 	FixBounds = list()
-	for P in S.precs_low_tight() :
-		FixBounds.append((task_to_id[P.left],P.right))
-	for P in S.precs_up_tight() :
-		FixBounds.append((task_to_id[P.left],P.right-P.left.length))
+	for P in S.bounds_low_tight() :
+		FixBounds.append((task_to_id[P.task],P.right))
+	for P in S.bounds_up_tight() :
+		FixBounds.append((task_to_id[P.task],P.right-P.task.length))
 			
 	# upper capacity bounds
 	CapacityUps = list()

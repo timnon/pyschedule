@@ -87,31 +87,31 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
                                           #[ task_to_interval[T].EndExpr()*1 for T in S.tasks() ])
 	ort_objective = ort_solver.Minimize(ort_objective_var, 1)
 
-	# precedences
+	# precedences lax
 	for P in S.precs_lax() :
-		ort_solver.Add( task_to_interval[P.right].StartsAfterEnd( task_to_interval[P.left] ) )
+		ort_solver.Add( task_to_interval[P.task_right].StartsAfterEnd( task_to_interval[P.task_left] ) )
 		# TODO: add offset, but this requires DependecyGraph which is not exposed via swig?
 
-	# precedences
+	# precedences tight
 	for P in S.precs_tight() :
-		ort_solver.Add( task_to_interval[P.right].StartsAtEnd( task_to_interval[P.left] ) )
+		ort_solver.Add( task_to_interval[P.task_right].StartsAtEnd( task_to_interval[P.task_left] ) )
 		# TODO: add offset, but this requires DependecyGraph which is not exposed via swig?
 
-	# precedences low 
-	for P in S.precs_low() :
-		ort_solver.Add( task_to_interval[P.left].StartsAfter(P.right) )
+	# bound low
+	for P in S.bounds_low() :
+		ort_solver.Add( task_to_interval[P.task].StartsAfter(P.bound) )
 
-	# precedences up 
-	for P in S.precs_up() :
-		ort_solver.Add( task_to_interval[P.left].StartsBefore(P.right) )
+	# bound up
+	for P in S.bounds_up() :
+		ort_solver.Add( task_to_interval[P.task].StartsBefore(P.bound) )
 
-	# tight precedences low 
-	for P in S.precs_low_tight() :
-		ort_solver.Add( task_to_interval[P.left].StartsAt(P.right) )
+	# tight bound low
+	for P in S.bounds_low_tight() :
+		ort_solver.Add( task_to_interval[P.task].StartsAt(P.bound) )
 
-	# tight precedences up 
-	for P in S.precs_up_tight() :
-		ort_solver.Add( task_to_interval[P.left].EndsAt(P.right) )
+	# tight bound up
+	for P in S.bounds_up_tight() :
+		ort_solver.Add( task_to_interval[P.task].EndsAt(P.bound) )
 
 	# creates search phases.
 	vars_phase = ort_solver.Phase([ort_objective_var],

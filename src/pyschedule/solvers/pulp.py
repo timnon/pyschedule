@@ -83,8 +83,9 @@ def _get_task_groups(scenario):
 	task_groups = collections.OrderedDict([ (_task_groups[task_group_name][0],
 	                                         _task_groups[task_group_name])
 	                                      for task_group_name in _task_groups])
+	tasks_in_task_groups = [ T_ for T in task_groups for T_ in task_groups[T] ]
 	task_groups.update([ (T,[T]) for T in scenario.tasks() 
-	                             if T not in task_groups ])
+	                             if T not in tasks_in_task_groups ])
 	return task_groups
 
 def solve(scenario, kind='CBC', time_limit=None, msg=0):
@@ -182,41 +183,41 @@ class ContinuousMIP(object):
 		# precedence constraints
 		for P in S.precs_lax():
 			if P.offset >= 0:
-				mip += x[P.left] + P.left.length + P.offset <= x[P.right]
+				mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right]
 			elif P.offset < 0:
-				mip += x[P.left] <= x[P.right] + P.right.length - P.offset	
+				mip += x[P.task_left] <= x[P.task_right] + P.task_right.length - P.offset	
 
 		# tight precedence constraints
 		for P in S.precs_tight():
 			if P.offset >= 0:
-				mip += x[P.left] + P.left.length + P.offset == x[P.right]
+				mip += x[P.task_left] + P.task_left.length + P.offset == x[P.task_right]
 			elif P.offset < 0:
-				mip += x[P.left] == x[P.right] + P.right.length - P.offset	
+				mip += x[P.task_left] == x[P.task_right] + P.task_right.length - P.offset	
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
-			mip += x[P.left] + P.left.length + P.offset <= x[P.right] + \
-                               (1 - x[(P.left, P.right)]) * BIGM + (1 - x[
-				(P.left, P.right, 'SameResource')]) * BIGM
+			mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right] + \
+                               (1 - x[(P.task_left, P.task_right)]) * BIGM + (1 - x[
+				(P.task_left, P.task_right, 'SameResource')]) * BIGM
 
 		# upper bounds
-		for P in S.precs_up():
-			mip += x[P.left] + P.left.length <= P.right
+		for P in S.bounds_up():
+			mip += x[P.task] + P.task.length <= P.bound
 		if S.horizon is not None:
 			for T in S.tasks():
 				mip += x[T] <= S.horizon-1
 
 		# lower bounds
-		for P in S.precs_low():
-			mip += x[P.left] >= P.right
+		for P in S.bounds_low():
+			mip += x[P.task] >= P.bound
 
 		# upper bounds
-		for P in S.precs_up_tight():
-			mip += x[P.left] + P.left.length == P.right
+		for P in S.bounds_up_tight():
+			mip += x[P.task] + P.task.length == P.bound
 
 		# lower bounds
-		for P in S.precs_low_tight():
-			mip += x[P.left] == P.right
+		for P in S.bounds_low_tight():
+			mip += x[P.task] == P.bound
 
 		# capacity lower bounds
 		for C in S.capacity_low():
@@ -372,71 +373,71 @@ class DiscreteMIP(object):
 
 		# lax precedence constraints
 		for P in S.precs_lax():
-			if P.left in self.task_groups_free and P.right in self.task_groups_free:
-				left_size = float(len(self.task_groups[P.left]))
-				right_size = float(len(self.task_groups[P.right]))
+			if P.task_left in self.task_groups_free and P.task_right in self.task_groups_free:
+				left_size = float(len(self.task_groups[P.task_left]))
+				right_size = float(len(self.task_groups[P.task_right]))
 				if P.offset >= 0:
 					for t in range(self.horizon+1):
-						affine = [( x[P.left, t], 1 / left_size),
-							  (x[P.right, min(t + P.left.length + P.offset, self.horizon)], -1 / right_size)]
+						affine = [( x[P.task_left, t], 1 / left_size),
+							  (x[P.task_right, min(t + P.task_left.length + P.offset, self.horizon)], -1 / right_size)]
 						cons.append(_con(affine, sense=-1, rhs=0))
 				elif P.offset < 0:
 					for t in range(self.horizon):
-						affine = [( x[P.left, t], 1 / left_size),
-							  ( x[P.right, max(t-P.right.length+P.offset,0)], -1 / right_size)]
+						affine = [( x[P.task_left, t], 1 / left_size),
+							  ( x[P.task_right, max(t-P.task_right.length+P.offset,0)], -1 / right_size)]
 						cons.append(_con(affine, sense=-1, rhs=0))
 					
 		# tight precedence constraints
 		for P in S.precs_tight():
-			if P.left in self.task_groups_free and P.right in self.task_groups_free:
-				left_size = float(len(self.task_groups[P.left]))
-				right_size = float(len(self.task_groups[P.right]))
+			if P.task_left in self.task_groups_free and P.task_right in self.task_groups_free:
+				left_size = float(len(self.task_groups[P.task_left]))
+				right_size = float(len(self.task_groups[P.task_right]))
 				if P.offset >= 0:
 					for t in range(self.horizon+1):
-						affine = [( x[P.left, t], 1 / left_size),
-								  (x[P.right, min(t + P.left.length + P.offset, self.horizon)], -1 / right_size)]
+						affine = [( x[P.task_left, t], 1 / left_size),
+								  (x[P.task_right, min(t + P.task_left.length + P.offset, self.horizon)], -1 / right_size)]
 						cons.append(_con(affine, sense=0, rhs=0))
 				elif P.offset < 0:
 					for t in range(self.horizon):
-						affine = [( x[P.left, t], 1 / left_size),
-							  ( x[P.right, max(t-P.right.length+P.offset,0)], -1 / right_size)]
+						affine = [( x[P.task_left, t], 1 / left_size),
+							  ( x[P.task_right, max(t-P.task_right.length+P.offset,0)], -1 / right_size)]
 						cons.append(_con(affine, sense=0, rhs=0))
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
-			if P.left in self.task_groups_free and P.right in self.task_groups_free:
-				left_size = float(len(self.task_groups[P.left]))
-				right_size = float(len(self.task_groups[P.right]))
+			if P.task_left in self.task_groups_free and P.task_right in self.task_groups_free:
+				left_size = float(len(self.task_groups[P.task_left]))
+				right_size = float(len(self.task_groups[P.task_right]))
 				S.resources(task=T)
-				shared_resources = list(set(S.resources(task=P.left)) & set(S.resources(task=P.right)))
+				shared_resources = list(set(S.resources(task=P.task_left)) & set(S.resources(task=P.task_right)))
 				for r in shared_resources:
 					for t in range(self.horizon+1):
-						affine = [( x[P.left, r, max(t - P.left.length, 0)], 1 ), (x[P.left, r, t], -1),
-							      ( x[P.right, r, max(t - P.left.length, 0)], 1),
-							      (x[P.right, r, min(t + P.offset, self.horizon)], -1)]
+						affine = [( x[P.task_left, r, max(t - P.task_left.length, 0)], 1 ), (x[P.task_left, r, t], -1),
+							      ( x[P.task_right, r, max(t - P.task_left.length, 0)], 1),
+							      (x[P.task_right, r, min(t + P.offset, self.horizon)], -1)]
 						cons.append(_con(affine, sense=-1, rhs=1))
 
 		# lower bounds
-		for P in S.precs_low():
-			if P.left in self.task_groups_free:
-				cons.append(_con(x[P.left, P.right], sense=0, rhs=len(self.task_groups[T])))
+		for P in S.bounds_low():
+			if P.task in self.task_groups_free:
+				cons.append(_con(x[P.task, P.bound], sense=0, rhs=len(self.task_groups[T])))
 
 		# upper bounds
-		for P in S.precs_up():
-			if P.left in self.task_groups_free:
-				cons.append(_con(x[P.left, max(P.right-P.left.length,0)], sense=0, rhs=0))
+		for P in S.bounds_up():
+			if P.task in self.task_groups_free:
+				cons.append(_con(x[P.task, max(P.bound-P.task.length,0)], sense=0, rhs=0))
 
 		# tight lower bounds
-		for P in S.precs_low_tight():
-			if P.left in self.task_groups_free:
-				cons.append(_con(x[P.left, P.right], sense=0, rhs=len(self.task_groups[T])))
-				cons.append(_con(x[P.left, P.right+1], sense=0, rhs=0))
+		for P in S.bounds_low_tight():
+			if P.task in self.task_groups_free:
+				cons.append(_con(x[P.task, P.bound], sense=0, rhs=len(self.task_groups[T])))
+				cons.append(_con(x[P.task, P.bound+1], sense=0, rhs=0))
 
 		# tight upper bounds
-		for P in S.precs_up_tight():
-			if P.left in self.task_groups_free:
-				cons.append(_con(x[P.left, max(P.right-P.left.length,0)], sense=0, rhs=len(self.task_groups[T])))
-				cons.append(_con(x[P.left, max(P.right-P.left.length+1,0)], sense=0, rhs=0))
+		for P in S.bounds_up_tight():
+			if P.task in self.task_groups_free:
+				cons.append(_con(x[P.task, max(P.bound-P.task.length,0)], sense=0, rhs=len(self.task_groups[T])))
+				cons.append(_con(x[P.task, max(P.bound-P.task.length+1,0)], sense=0, rhs=0))
 
 		# capacity lower bounds
 		for C in S.capacity_low():
@@ -579,6 +580,8 @@ class DiscreteMIPUnit(object):
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 		self.task_groups = _get_task_groups(self.scenario)
 
+		#import pdb;pdb.set_trace()
+
 		x = dict()  # mip variables
 		cons = list()  # mip constraints
 		for T in self.task_groups:
@@ -640,95 +643,91 @@ class DiscreteMIPUnit(object):
 
 		# lax precedence constraints
 		for P in S.precs_lax():
-			if P.left not in self.task_groups or P.right not in self.task_groups:
+			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
 			'''
 			if P.offset >= 0:
-				affine = [(x[P.left, t],t) for t in range(self.horizon)] +\
-				         [(x[P.right, t],-t) for t in range(self.horizon)]
-				pulp_cons(affine, sense=-1, rhs=-(P.left.length + P.offset))
+				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
+				         [(x[P.task_right, t],-t) for t in range(self.horizon)]
+				pulp_cons(affine, sense=-1, rhs=-(P.task_left.length + P.offset))
 			elif P.offset < 0:
-				affine = [(x[P.left, t],t) for t in range(self.horizon)] +\
-					     [(x[P.right, t],-t) for t in range(self.horizon)]
-				pulp_cons(affine, sense=-1, rhs= P.right.length-P.offset )
+				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
+					     [(x[P.task_right, t],-t) for t in range(self.horizon)]
+				pulp_cons(affine, sense=-1, rhs= P.task_right.length-P.offset )
 			# TODO: add second constraints, they seem to help??
 			'''
 			if P.offset >= 0:
 				for t in range(self.horizon):
-					affine = [(x[P.left, t_],1) for t_ in range(t,self.horizon)] + \
-						 [(x[P.right, t_],-1) for t_ in range(min(t+P.left.length+P.offset,self.horizon),self.horizon)]
+					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
+						 [(x[P.task_right, t_],-1) for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)]
 					cons.append(_con(affine, sense=-1, rhs=0))
 			elif P.offset < 0:
 				for t in range(self.horizon):
-					affine = [(x[P.right, t_],1) for t_ in range(t)] + \
-						 [(x[P.left, t_],-1) for t_ in range(min(t+P.right.length-P.offset,self.horizon))]
+					affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
+						 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
 					cons.append(_con(affine, sense=-1, rhs=0))
 
 		# tight precedence constraints
 		for P in S.precs_tight():
-			if P.left not in self.task_groups or P.right not in self.task_groups:
+			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
 			'''
 			if P.offset >= 0:
-				affine = [(x[P.left, t],t) for t in range(self.horizon)] + \
-					 [(x[P.right, t],-t) for t in range(self.horizon)]
-				pulp_cons(affine, sense=0, rhs=-(P.left.length + P.offset))
+				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] + \
+					 [(x[P.task_right, t],-t) for t in range(self.horizon)]
+				pulp_cons(affine, sense=0, rhs=-(P.task_left.length + P.offset))
 			elif P.offset < 0:
-				affine = [(x[P.left, t],t) for t in range(self.horizon)] +\
-					 [(x[P.right, t],-t) for t in range(self.horizon)]
-				pulp_cons(affine, sense=0, rhs= P.right.length-P.offset )
+				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
+					 [(x[P.task_right, t],-t) for t in range(self.horizon)]
+				pulp_cons(affine, sense=0, rhs= P.task_right.length-P.offset )
 			'''
 			if P.offset >= 0:
 				for t in range(self.horizon):
-					affine = [(x[P.left, t_],1) for t_ in range(t,self.horizon)] + \
-						 [(x[P.right, t_],-1) for t_ in range(min(t+P.left.length+P.offset,self.horizon),self.horizon)]
+					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
+						 [(x[P.task_right, t_],-1) for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)]
 					cons.append(_con(affine, sense=0, rhs=0))
 			elif P.offset < 0:
 				for t in range(self.horizon):
-					affine = [(x[P.right, t_],1) for t_ in range(t)] + \
-						 [(x[P.left, t_],-1) for t_ in range(min(t+P.right.length-P.offset,self.horizon))]
+					affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
+						 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
 					cons.append(_con(affine, sense=0, rhs=0))
 
 		# low bounds
-		for P in S.precs_low():
-			if P.left not in self.task_groups:
+		for P in S.bounds_low():
+			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.left, t],1) for t in range(P.right)]
+			affine = [(x[P.task, t],1) for t in range(P.bound)]
 			cons.append(_con(affine, sense=0, rhs=0))
 
 		# up bounds
-		for P in S.precs_up():
-			if P.left not in self.task_groups:
+		for P in S.bounds_up():
+			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.left, t],1) for t in range(P.right,self.horizon)]
+			affine = [(x[P.task, t],1) for t in range(P.bound,self.horizon)]
 			cons.append(_con(affine, sense=0, rhs=0))
 
 		# tight low bounds
-		for P in S.precs_low_tight():
-			if P.left not in self.task_groups:
+		for P in S.bounds_low_tight():
+			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.left, t],1) for t in range(P.right)]
-			cons.append(_con(affine, sense=0, rhs=0))
-			cons.append(_con([(x[P.left, P.right],1)], sense=1, rhs=1))
+			cons.append(_con([(x[P.task, P.bound],1)], sense=1, rhs=1))
 
-		# up precedence constraints
-		for P in S.precs_up_tight():
-			if P.left not in self.task_groups:
+		# tight up bounds
+		for P in S.bounds_up_tight():
+			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.left, t],1) for t in range(min(P.right,self.horizon),self.horizon)]
-			cons.append(_con(affine, sense=0, rhs=0))
-			cons.append(_con([(x[P.left, max(P.right-1,0)],1)], sense=1, rhs=1))
+			cons.append(_con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=1, rhs=1))
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
-			if P.left not in self.task_groups or P.right not in self.task_groups:
+			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-			shared_resources = list(set(S.resources(task=P.left)) & set(S.resources(task=P.right)))
+			shared_resources = list(set(S.resources(task=P.task_left)) & set(S.resources(task=P.task_right)))
 			for R in shared_resources:
 				for t in range(self.horizon):
-					affine = [(x[P.left, R, t], 1)] +\
-					         [(x[P.right, R, t_],1) for t_ in range(t,min(t+P.left.length+P.offset,self.horizon))]
-					cons.append(_con(affine, sense=-1, rhs=(len(self.task_groups[P.left])+len(self.task_groups[P.right])/2.0)))
+					affine = [(x[P.task_left, R, t], 1)] +\
+					         [(x[P.task_right, R, t_],1) for t_ in range(t,min(t+P.task_left.length+P.offset,self.horizon))]
+					cons.append(_con(affine, sense=-1, rhs=(len(self.task_groups[P.task_left])+len(self.task_groups[P.task_right])/2.0)))
 
 		# capacity lower bounds
 		for C in S.capacity_low():

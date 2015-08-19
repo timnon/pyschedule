@@ -14,7 +14,7 @@ def solve_docloud(scenario) :
 
 solve_methods = [
 solvers.pulp.solve,
-solvers.pulp.solve_unit,
+solvers.pulp.solve_mon,
 solvers.pulp.solve_bigm,
 solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
@@ -178,7 +178,8 @@ for scenario_method in scenario_methods :
 			valid = ( sol in sols )
 			row.append(valid)
 			print(sol)
-		except :
+		except Exception as err:
+			print(err)
 			row.append('Error')
 			traceback.print_exc()
 	table.append(row)
