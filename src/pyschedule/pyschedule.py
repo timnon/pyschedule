@@ -38,7 +38,7 @@ except AttributeError:
 def OR(L) :
 	"""
 	method to iterate the or-operator over a list to allow lists of alternative resources,
-        e.g. OR([R1,R2,R3]) = R1 | R2 | R3
+        e.g. OR([R1,R2,R3]) = R1|R2|R3
 	"""
 	x = None
 	if L :
@@ -157,7 +157,7 @@ class Scenario(_SchedElement):
 		self.objective = _TaskAffine()
 		self.T = _DICT_TYPE() #tasks
 		self.R = _DICT_TYPE() #resources
-		self.constraints = list()
+		self._constraints = list()
 		self.horizon = horizon
 
 	def Task(self,name,length=1) :
@@ -227,7 +227,7 @@ class Scenario(_SchedElement):
 		Set the objective to the makespan of all included tasks
 		"""
 		if 'MakeSpan' in self.T :
-			self.constraints = [ C for C in self.constraints if self.T['MakeSpan'] not in C.tasks() ]
+			self._constraints = [ C for C in self._constraints if self.T['MakeSpan'] not in C.tasks() ]
 			del self.T['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
 		makespan = self.Task('MakeSpan')
@@ -255,25 +255,25 @@ class Scenario(_SchedElement):
 			T.resources = None
 
 	def precs_lax(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceLax) ]
+		return [ C for C in self._constraints if isinstance(C,PrecedenceLax) ]
 
 	def precs_tight(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceTight)  ]
+		return [ C for C in self._constraints if isinstance(C,PrecedenceTight)  ]
 		
 	def precs_cond(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceCond) ]
+		return [ C for C in self._constraints if isinstance(C,PrecedenceCond) ]
 
-	def precs_low(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceLow) ]
+	def bounds_low(self) :
+		return [ C for C in self._constraints if isinstance(C,BoundLow) ]
 
-	def precs_up(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceUp) ]
+	def bounds_up(self) :
+		return [ C for C in self._constraints if isinstance(C,BoundUp) ]
 
-	def precs_low_tight(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceLowTight) ]
+	def bounds_low_tight(self) :
+		return [ C for C in self._constraints if isinstance(C,BoundLowTight) ]
 
-	def precs_up_tight(self) :
-		return [ C for C in self.constraints if isinstance(C,PrecedenceUpTight) ]
+	def bounds_up_tight(self) :
+		return [ C for C in self._constraints if isinstance(C,BoundUpTight) ]
 
 	#TODO: add again last and first constraints
 	'''
@@ -291,7 +291,7 @@ class Scenario(_SchedElement):
 		resources:        only resource requirements that contain this resource
 		single_resource:  True=only resource reqs. with a single resource, False=only resource reqs. with multiple resources
 		"""
-		constraints = [ C for C in self.constraints if isinstance(C,ResourceReq) ]
+		constraints = [ C for C in self._constraints if isinstance(C,ResourceReq) ]
 		if task is not None :
 			constraints = [ C for C in constraints 
                                         if task in C.tasks() ]
@@ -315,10 +315,10 @@ class Scenario(_SchedElement):
 		return coeff
 
 	def capacity_low(self):
-		return [ C for C in self.constraints if isinstance(C,CapacityLow) ]
+		return [ C for C in self._constraints if isinstance(C,CapacityLow) ]
 
 	def capacity_up(self):
-		return [ C for C in self.constraints if isinstance(C,CapacityUp) ]
+		return [ C for C in self._constraints if isinstance(C,CapacityUp) ]
 
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
@@ -327,13 +327,13 @@ class Scenario(_SchedElement):
 		for resource in constraint.resources():
 			if resource not in self:
 				raise Exception('ERROR: resource %s is not contained in scenario %s'%(str(resource.name),str(self.name)))
-		if str(constraint) in [ str(C) for C in self.constraints ]:
+		if str(constraint) in [ str(C) for C in self._constraints ]:
 			return self
-		self.constraints.append(constraint)
+		self._constraints.append(constraint)
 		return self
 
 	def remove_constraint(self,constraint):
-		self.constraints = [ C for C in self.constraints if str(C) != str(constraint) ]
+		self._constraints = [ C for C in self._constraints if str(C) != str(constraint) ]
 		return self
 
 	def add_task(self,task):
@@ -347,7 +347,7 @@ class Scenario(_SchedElement):
 			del self.T[task.name]
 		else :
 			raise Exception('ERROR: task with name %s not contained in scenario %s' % (str(task.name),str(self.name)))
-		self.constraints = [ C for C in self.constraints if task not in C.tasks() ]
+		self._constraints = [ C for C in self._constraints if task not in C.tasks() ]
 
 	def add_task_affine(self,task_affine):
 		for task in task_affine:
@@ -366,7 +366,7 @@ class Scenario(_SchedElement):
 			del self.R[resource.name]
 		else:
 			raise Exception('ERROR: resource with name %s not contained in scenario %s' % (str(resource.name),str(self.name)))
-		self.constraints = [ C for C in self.constraints if resource not in C.resources() ]
+		self._constraints = [ C for C in self._constraints if resource not in C.resources() ]
 
 	def __iadd__(self,other) :
 		if _isiterable(other) :
@@ -415,7 +415,7 @@ class Scenario(_SchedElement):
 
 	def __getitem__(self, item):
 		if item not in self.T:
-			raise Exception('ERROR: task with name %s is not contained in scenario %s'+(str(item),str(self.name)))
+			raise Exception('ERROR: task with name %s is not contained in scenario %s'%(str(item),str(self.name)))
 		return self.T[item]
 
 	def __str__(self) :
@@ -453,10 +453,10 @@ class Scenario(_SchedElement):
 		s += print_constraint('LAX PRECEDENCES',self.precs_lax())
 		s += print_constraint('TIGHT PRECEDENCES',self.precs_tight())
 		s += print_constraint('COND PRECEDENCES',self.precs_cond())
-		s += print_constraint('LOWER BOUNDS',self.precs_low())
-		s += print_constraint('UPPER BOUNDS',self.precs_up())
-		s += print_constraint('TIGHT LOWER BOUNDS',self.precs_low_tight())
-		s += print_constraint('TIGHT UPPER BOUNDS',self.precs_up_tight())
+		s += print_constraint('LOWER BOUNDS',self.bounds_low())
+		s += print_constraint('UPPER BOUNDS',self.bounds_up())
+		s += print_constraint('TIGHT LOWER BOUNDS',self.bounds_low_tight())
+		s += print_constraint('TIGHT UPPER BOUNDS',self.bounds_up_tight())
 		s += print_constraint('CAPACITY LOWER BOUNDS',self.capacity_low())
 		s += print_constraint('CAPACITY UPPER BOUNDS',self.capacity_up())
 		s += '###############################################'
@@ -563,35 +563,33 @@ class _TaskAffine(_SchedElementAffine) :
 			left = pos_tasks[0]
 			right = neg_tasks[0]
 			if comp_operator == '<' :
-				return PrecedenceLax(left=left,right=right,offset=offset)
+				return PrecedenceLax(task_left=left,task_right=right,offset=offset)
 			elif comp_operator == '<=' :
-				return PrecedenceTight(left=left,right=right,offset=offset)
+				return PrecedenceTight(task_left=left,task_right=right,offset=offset)
 			elif comp_operator == '<<' :
-				return PrecedenceCond(left=left,right=right,offset=offset)
+				return PrecedenceCond(task_left=left,task_right=right,offset=offset)
 		elif pos_tasks and not neg_tasks:
 			left = pos_tasks[0]
 			right = -offset
 			if comp_operator == '<':
-				return PrecedenceUp(left=left,right=right)
+				return BoundUp(task=left,bound=right)
 			elif comp_operator == '<=':
-				return PrecedenceUpTight(left=left,right=right)
+				return BoundUpTight(task=left,bound=right)
 			elif comp_operator == '>':
-				return PrecedenceLow(left=left,right=right)
+				return BoundLow(task=left,bound=right)
 			elif comp_operator == '>=':
-				return PrecedenceLowTight(left=left,right=right)
+				return BoundLowTight(task=left,bound=right)
 		elif neg_tasks and not pos_tasks:
 			left = neg_tasks[0]
 			right = offset
 			if comp_operator == '<':
-				return PrecedenceLow(left=left,right=right)
+				return BoundLow(task=left,bound=right)
 			elif comp_operator == '<=':
-				return PrecedenceLowTight(left=left,right=right)
+				return BoundLowTight(task=left,bound=right)
 			elif comp_operator == '>':
-				return PrecedenceUp(left=left,right=right)
+				return BoundUp(task=left,bound=right)
 			elif comp_operator == '>=':
-				return PrecedenceUpTight(left=left,right=right)
-
-		import pdb;pdb.set_trace()
+				return BoundUpTight(task=left,bound=right)
 		raise Exception('ERROR: sth is wrong')
 
 	def __lt__(self,other) :
@@ -653,29 +651,89 @@ class _Constraint(_SchedElement) :
 
 
 
+class _Bound(_Constraint) :
+	"""
+	A bound of a task
+	"""
+	def __init__(self,task,bound) :
+		_Constraint.__init__(self)
+		self.task = task
+		self.bound = bound
+		self.comp_operator = '<'
+
+	def tasks(self) :
+		return [self.task]
+
+	def __repr__(self) :
+		return str(self.task) + ' ' + str(self.comp_operator) + ' ' + str(self.bound)
+
+	def __str__(self) :
+		return self.__repr__()
+
+	def __hash__(self) :
+		return self.__repr__().__hash__()
+
+
+
+class BoundLow(_Bound) :
+	"""
+	A bound of the form T > 3
+	"""
+	def __init__(self,task,bound) :
+		_Bound.__init__(self,task,bound)
+		self.comp_operator = '>'
+
+
+
+class BoundUp(_Bound) :
+	"""
+	A bound of the form T < 3
+	"""
+	def __init__(self,task,bound) :
+		_Bound.__init__(self,task,bound)
+		self.comp_operator = '<'
+
+
+
+class BoundLowTight(_Bound) :
+	"""
+	A bound of the form T >= 3
+	"""
+	def __init__(self,task,bound) :
+		_Bound.__init__(self,task,bound)
+		self.comp_operator = '>='
+
+
+
+class BoundUpTight(_Bound) :
+	"""
+	A bound of the form T <= 3
+	"""
+	def __init__(self,task,bound) :
+		_Bound.__init__(self,task,bound)
+		self.comp_operator = '<='
+
+
+
 class _Precedence(_Constraint) :
 	"""
 	A precedence constraint of two tasks, left and right, and an offset.
-	right might also be a number.
 	"""
-	def __init__(self,left=None,right=None,offset=0,TA=None) :
+	def __init__(self,task_left,task_right,offset=0) :
 		_Constraint.__init__(self)
-		if left is not None and right is not None :
-			self.left = left
-			self.right = right
-			self.offset = offset
-			self.comp_operator = '<'
-		elif TA is not None :
-			self.format(TA)
+		self.task_left = task_left
+		self.task_right = task_right
+		self.offset = offset
+		self.comp_operator = '<'
 
 	def tasks(self) :
-		return [self.left,self.right]
+		return [self.task_left,self.task_right]
 
 	def __repr__(self) :
-		s = str(self.left) + ' '
+		s = str(self.task_left) + ' '
 		if self.offset > 0 :
 			s += '+ ' + str(self.offset) + ' '
-		s += str(self.comp_operator) + ' ' + str(self.right)
+		s += str(self.comp_operator) + ' ' + str(self.task_right)
 		if self.offset < 0 :
 			s += ' + ' + str(-self.offset) + ' '
 		return s
@@ -688,64 +746,12 @@ class _Precedence(_Constraint) :
 
 
 
-class PrecedenceLow(_Precedence) :
-	"""
-	A precedence of the form T1 < 3
-	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
-		self.comp_operator = '>'
-
-	def tasks(self):
-		return [self.left]
-
-
-
-class PrecedenceUp(_Precedence) :
-	"""
-	A precedence of the form T1 > 3
-	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
-		self.comp_operator = '<'
-
-	def tasks(self):
-		return [self.left]
-
-
-
-class PrecedenceLowTight(_Precedence) :
-	"""
-	A precedence of the form T1 <= 3
-	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
-		self.comp_operator = '>='
-
-	def tasks(self):
-		return [self.left]
-
-
-
-class PrecedenceUpTight(_Precedence) :
-	"""
-	A precedence of the form T1 >= 3
-	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
-		self.comp_operator = '<='
-
-	def tasks(self):
-		return [self.left]
-
-
-
 class PrecedenceLax(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 < T2
 	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
+	def __init__(self,task_left,task_right,offset=0) :
+		_Precedence.__init__(self,task_left,task_right,offset)
 		self.comp_operator = '<'
 
 
@@ -754,8 +760,8 @@ class PrecedenceTight(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 <= T2
 	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
+	def __init__(self,task_left,task_right,offset=0) :
+		_Precedence.__init__(self,task_left,task_right,offset)
 		self.comp_operator = '<='
 
 
@@ -764,8 +770,8 @@ class PrecedenceCond(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 <= T2
 	"""
-	def __init__(self,left,right,offset=0) :
-		_Precedence.__init__(self,left,right,offset)
+	def __init__(self,task_left,task_right,offset=0) :
+		_Precedence.__init__(self,task_left,task_right,offset)
 		self.comp_operator = '<<'
 
 
