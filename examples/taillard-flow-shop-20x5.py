@@ -18,7 +18,7 @@ n = len(proc_table[0])
 m = len(proc_table)
 n = 6
 
-S = pyschedule.Scenario('Taillards_Flow_Shop_15x15')
+S = pyschedule.Scenario('Taillards_Flow_Shop_20x5')
 T = { (i,j) : S.Task('T_%i_%i'%(i,j),length=proc_table[j][i]) for i in range(n) for j in range(m) }
 R = { j : S.Resource('R_%i'%j) for j in range(m) }
 
@@ -29,6 +29,6 @@ for i in range(n) :
 
 S.use_makespan_objective()
 if pyschedule.solvers.pulp.solve_bigm(S,time_limit=120,msg=1):
-	pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S.T['MakeSpan']])
+	pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S._tasks['MakeSpan']])
 else:
 	print('no solution found')

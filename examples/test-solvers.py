@@ -32,106 +32,106 @@ def two_task_scenario() :
 
 def ZERO() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S.T['T1'].length = 0
+	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'].length = 0
 	sols = ['[(T1, R1, 0, 0), (T2, R1, 0, 1)]']
 	return S,sols
 
 def NONUNIT():
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S.T['T1'].length = 5
+	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'].length = 5
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 6)]']
 	return S,sols
 
 def BOUND() : # only test lower bound, upper bound is similar
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] > 3
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T1'] > 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
 def BOUNDTIGHT() : # only test tight upper bound, lower bound is similar
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] <= 3
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T1'] <= 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def LAX() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T2'] < S.T['T1']
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T2'] < S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def LAXPLUS() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T2'] + 1 < S.T['T1']
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T2'] + 1 < S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def TIGHT() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T2'] <= S.T['T1']
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T2'] <= S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def TIGHTPLUS() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T2'] + 1 <= S.T['T1']
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T2'] + 1 <= S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def COND() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.T['T1'] + 2 << S.T['T2']
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['T1'] + 2 << S['T2']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def ALT() :
 	S = two_task_scenario()
-	S += S.R['R1'] | S.R['R2'] % S.T['T1']
-	S += S.R['R1'] | S.R['R2'] % S.T['T2']
+	S += S['R1'] | S['R2'] % S['T1']
+	S += S['R1'] | S['R2'] % S['T2']
 	sols = ['[(T1, R1, 0, 1), (T2, R2, 0, 1)]','[(T1, R2, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
 def MULT() :
 	S = two_task_scenario()
-	S += S.R['R1'] % (S.T['T1'],S.T['T2'])
-	S += S.R['R2'] % (S.T['T1'],S.T['T2'])
+	S += S['R1'] % (S['T1'],S['T2'])
+	S += S['R2'] % (S['T1'],S['T2'])
 	sols = ['[(T1, R1, 0, 1), (T1, R2, 0, 1), (T2, R1, 1, 2), (T2, R2, 1, 2)]']
 	return S,sols
 
 def ALTMULT() :
 	S = two_task_scenario()
-	S += S.R['R1'] | S.R['R2'] % (S.T['T1'],S.T['T2'])
+	S += S['R1'] | S['R2'] % (S['T1'],S['T2'])
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]','[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
 
 def CUMUL() :
 	S = two_task_scenario()
-	S.R['R1'].size = 2
-	S += S.R['R1'] % (S.T['T1'], S.T['T2'])
+	S['R1'].size = 2
+	S += S['R1'] % (S['T1'], S['T2'])
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
 def CAP():
 	S = two_task_scenario()
-	S += S.T['T1'] % S.R['R1']|S.R['R2']
-	S += S.T['T2'] % S.R['R1']|S.R['R2']
-	S += S.R['R2']['length'] <= 0
+	S += S['T1'] % S['R1']|S['R2']
+	S += S['T2'] % S['R1']|S['R2']
+	S += S['R2']['length'] <= 0
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
 def CAPSLICE():
 	S = two_task_scenario()
-	S += S.R['R1'] % {S.T['T1'],S.T['T2']}
-	S += S.R['R1']['length'][:3] <= 1
+	S += S['R1'] % {S['T1'],S['T2']}
+	S += S['R1']['length'][:3] <= 1
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
 	return S,sols
 

@@ -146,7 +146,7 @@ class ContinuousMIP(object):
 					mip += x[(T, R)] == x[(T_, R)]
 
 		# objective
-		mip += sum([x[T] * S.objective[T] for T in S.objective if T in x])
+		mip += sum([x[T] * S.objective(T) for T in S.tasks() if T in x])
 
 		# same resource variable
 		task_pairs = [(T, T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_)]
@@ -476,7 +476,7 @@ class DiscreteMIP(object):
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]) for T in S.objective if T in self.task_groups_free
+		mip += pl.LpAffineExpression([(x[T, t], S.objective(T)) for T in S.tasks() if T in self.task_groups_free
 									for t in range(self.horizon+1)])
 
 		for con in cons:
@@ -762,7 +762,7 @@ class DiscreteMIPUnit(object):
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], S.objective[T]*t) for T in S.objective if T in self.task_groups
+		mip += pl.LpAffineExpression([(x[T, t], S.objective(T)*t) for T in S.tasks() if T in self.task_groups
 		                                                          for t in range(self.horizon)])
 
 		for con in cons:

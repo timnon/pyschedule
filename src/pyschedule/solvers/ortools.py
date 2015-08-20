@@ -83,7 +83,7 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 
 	# move objective
 	# TODO: bug, variables that are not part of the objective might not be finally defined
-	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*S.objective[T] for T in S.objective if T in task_to_interval ])#+
+	ort_objective_var = ort_solver.Sum([ task_to_interval[T].EndExpr()*S.objective(T) for T in S.tasks() if T in task_to_interval ])#+
                                           #[ task_to_interval[T].EndExpr()*1 for T in S.tasks() ])
 	ort_objective = ort_solver.Minimize(ort_objective_var, 1)
 

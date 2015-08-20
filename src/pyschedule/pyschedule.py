@@ -35,30 +35,34 @@ try: # allow Python 2 vs 3 compatibility
 except AttributeError:
 	from string import maketrans as _maketrans
 
-def OR(L) :
+def OR(*args) :
 	"""
-	method to iterate the or-operator over a list to allow lists of alternative resources,
-        e.g. OR([R1,R2,R3]) = R1|R2|R3
+	Method to iterate the or-operator over the given elements
+    e.g. OR(R1,R2,R3) = R1|R2|R3
 	"""
-	x = None
-	if L :
-		x = L[0]
-	for y in L[1:] :
-		x = x | y
-	return x
+	import functools
+	return functools.reduce(lambda x,y: x|y, args[0])
 
 def _isnumeric(var) :
-	return type(var) is int # only integers are accepted
+	"""
+	Test if var is numeric, only integers are allowed
+	"""
+	return type(var) is int
 
 def _isiterable(var) :
+	"""
+	Test if var is list, set or tuple
+	"""
 	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
+
 
 
 class _SchedElement(object):
 
 	def __init__(self,name) :
+		if type(name) is not str:
+			raise Exception('ERROR: name %s is not a string'%str(name))
 		trans = _maketrans("-+[] ->/","________")
-		name = str(name)
 		if name.translate(trans) != name:
 			raise Exception('ERROR: name %s contains one of the following characters: -+[] ->/'%name)
 		self.name = name
@@ -141,8 +145,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 		def format_coeff(val) :
 			if val != 1 :
 				return str(val)+'x'
-			else :
-				return ''
+			return ''
 		return self.affine_operator.join([ format_coeff(self[key])+str(key) for key in self ])
 
 	def __hash__(self) :
@@ -151,23 +154,30 @@ class _SchedElementAffine(_DICT_TYPE) :
 
 	
 class Scenario(_SchedElement):
-	
+	"""
+	The base scenario class
+	"""
 	def __init__(self,name='scenario not named',horizon=None):
 		_SchedElement.__init__(self,name)
-		self.objective = _TaskAffine()
-		self.T = _DICT_TYPE() #tasks
-		self.R = _DICT_TYPE() #resources
-		self._constraints = list()
 		self.horizon = horizon
+		self._objective = _TaskAffine()
+		self._tasks = _DICT_TYPE() #tasks
+		self._resources = _DICT_TYPE() #resources
+		self._constraints = list()
+
+	def objective(self,task):
+		if task in self._objective:
+			return self._objective[task]
+		return 0
 
 	def Task(self,name,length=1) :
 		"""
-		Adds a task to the scenario
+		Adds a new task to the scenario
 		name      : unique task name, must not contain special characters
-                length    : length of task
+    	length    : length of task, default is 1
 		"""
-		if name in self.T:
-			return self.T[name]
+		if name in self._tasks or name in self._resources:
+			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
 		task = Task(name,length=length)
 		self.add_task(task)
 		return task
@@ -177,20 +187,20 @@ class Scenario(_SchedElement):
 		Returns all tasks in scenario
 		"""
 		if resource is None :
-			return list(self.T.values())
+			return list(self._tasks.values())
 		else :
 			return list({ T for RA in self.resources_req(resource=resource,single_resource=single_resource)
 						    for T in RA.tasks() })
 
 	def Resource(self,name,size=1) :
 		"""
-		Adds a resource to the scenario
+		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
-		size   : the size if the resource, if size > 1, then we get a cumulative resource that can process
+		size   : the size of the resource, if size > 1, then we get a cumulative resource that can process
 		         different tasks in parallel
 		"""
-		if name in self.R:
-			return self.R[name]
+		if name in self._tasks or name in self._resources:
+			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
 		resource = Resource(name,size=size)
 		self.add_resource(resource)
 		return resource
@@ -200,7 +210,7 @@ class Scenario(_SchedElement):
 		Returns all resources in scenario
 		"""
 		if task is None :
-			return list(self.R.values())
+			return list(self._resources.values())
 		else :
 			return list({ R for RA in self.resources_req(task=task,single_resource=single_resource) for R in RA })
 
@@ -217,18 +227,18 @@ class Scenario(_SchedElement):
 		"""
 		Returns the value of the objective
 		"""
-		return sum([ self.objective[T]*(T.start_value+T.length) for T in self.objective ])
+		return sum([ self._objective[T]*(T.start_value+T.length) for T in self._objective ])
 
 	def clear_objective(self):
-		self.objective.clear()
+		self._objective.clear()
 
 	def use_makespan_objective(self) :
 		"""
 		Set the objective to the makespan of all included tasks
 		"""
-		if 'MakeSpan' in self.T :
-			self._constraints = [ C for C in self._constraints if self.T['MakeSpan'] not in C.tasks() ]
-			del self.T['MakeSpan']
+		if 'MakeSpan' in self._tasks :
+			self._constraints = [ C for C in self._constraints if self._tasks['MakeSpan'] not in C.tasks() ]
+			del self._tasks['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
 		makespan = self.Task('MakeSpan')
 		self += makespan % self.resources()[0] # add some random resource, every task needs one
@@ -239,7 +249,7 @@ class Scenario(_SchedElement):
 
 	def use_flowtime_objective(self) :
 		"""
-		Sets the objective a uniform flow-time objective
+		Sets the objective to a uniform flow-time objective
 		"""
 		self.clear_objective()
 		A = sum([ T*1 for T in self.tasks() ])
@@ -254,26 +264,31 @@ class Scenario(_SchedElement):
 			T.start_value = None
 			T.resources = None
 
-	def precs_lax(self) :
-		return [ C for C in self._constraints if isinstance(C,PrecedenceLax) ]
+	def constraints(self,constraint_type=None):
+		if constraint_type is None:
+			return self._constraints
+		return [ C for C in self._constraints if isinstance(C,constraint_type) ]
 
-	def precs_tight(self) :
-		return [ C for C in self._constraints if isinstance(C,PrecedenceTight)  ]
-		
-	def precs_cond(self) :
-		return [ C for C in self._constraints if isinstance(C,PrecedenceCond) ]
+	def precs_lax(self):
+		return self.constraints(PrecedenceLax)
+
+	def precs_tight(self):
+		return self.constraints(PrecedenceTight)
+
+	def precs_cond(self):
+		return self.constraints(PrecedenceCond)
 
 	def bounds_low(self) :
-		return [ C for C in self._constraints if isinstance(C,BoundLow) ]
+		return self.constraints(BoundLow)
 
 	def bounds_up(self) :
-		return [ C for C in self._constraints if isinstance(C,BoundUp) ]
+		return self.constraints(BoundUp)
 
 	def bounds_low_tight(self) :
-		return [ C for C in self._constraints if isinstance(C,BoundLowTight) ]
+		return self.constraints(BoundLowTight)
 
 	def bounds_up_tight(self) :
-		return [ C for C in self._constraints if isinstance(C,BoundUpTight) ]
+		return self.constraints(BoundUpTight)
 
 	#TODO: add again last and first constraints
 	'''
@@ -287,38 +302,38 @@ class Scenario(_SchedElement):
 	def resources_req(self,task=None,resource=None,single_resource=None):
 		"""
 		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
-		task:             only resource requirements that contain this task
-		resources:        only resource requirements that contain this resource
-		single_resource:  True=only resource reqs. with a single resource, False=only resource reqs. with multiple resources
+		task:            only resource requirements that contain this task
+		resource:        only resource requirements that contain this resource
+		single_resource: True=only resource reqs. with a single resource,
+		                 False=only resource reqs. with multiple resources
 		"""
-		constraints = [ C for C in self._constraints if isinstance(C,ResourceReq) ]
+		constraints = self.constraints(ResourceReq)
 		if task is not None :
 			constraints = [ C for C in constraints 
-                                        if task in C.tasks() ]
+                            if task in C.tasks() ]
 		if resource is not None :
 			constraints = [ C for C in constraints
-                                        if resource in C.resources() ]
+                            if resource in C.resources() ]
 		if single_resource is not None:
 			if single_resource:
 				constraints = [ C for C in constraints
-                                                if len(C.resources()) == 1 ]
+                                if len(C.resources()) == 1 ]
 			else:
 				constraints = [ C for C in constraints 
-                                                if len(C.resources()) > 1 ]
+                                if len(C.resources()) > 1 ]
 		return constraints
 
 	def resources_req_coeff(self,task,resource):
 		"""
 		Returns the maximum resource requirement of the given task on the given resource
 		"""
-		coeff = max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
-		return coeff
+		return max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
 
 	def capacity_low(self):
-		return [ C for C in self._constraints if isinstance(C,CapacityLow) ]
+		return self.constraints(CapacityLow)
 
 	def capacity_up(self):
-		return [ C for C in self._constraints if isinstance(C,CapacityUp) ]
+		return self.constraints(CapacityUp)
 
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
@@ -330,42 +345,44 @@ class Scenario(_SchedElement):
 		if str(constraint) in [ str(C) for C in self._constraints ]:
 			return self
 		self._constraints.append(constraint)
-		return self
 
 	def remove_constraint(self,constraint):
 		self._constraints = [ C for C in self._constraints if str(C) != str(constraint) ]
-		return self
 
 	def add_task(self,task):
-		if task.name in self.T and task is not self.T[task.name]:
+		if task.name in self._tasks and task is not self._tasks[task.name]:
 			raise Exception('ERROR: task with name %s already contained in scenario %s' % (str(task.name),str(self.name)))
 		elif task not in self.tasks():
-			self.T[task.name] = task
+			self._tasks[task.name] = task
 
 	def remove_task(self,task):
-		if task.name in self.T :
-			del self.T[task.name]
+		if task.name in self._tasks :
+			del self._tasks[task.name]
 		else :
 			raise Exception('ERROR: task with name %s not contained in scenario %s' % (str(task.name),str(self.name)))
 		self._constraints = [ C for C in self._constraints if task not in C.tasks() ]
+		if task in self._objective:
+			del self._objective[task]
 
 	def add_task_affine(self,task_affine):
 		for task in task_affine:
 			if isinstance(task,Task):
 				self.add_task(task)
-		self.objective += task_affine
+		self._objective += task_affine
 
 	def add_resource(self,resource):
-		if resource.name in self.R and resource is not self.R[resource.name]:
-			raise Exception('ERROR: resource with name %s already contained in scenario %s' % (str(resource.name),str(self.name)))
+		if resource.name in self._resources and resource is not self._resources[resource.name]:
+			raise Exception('ERROR: resource with name %s already contained in scenario %s'%
+			                (str(resource.name),str(self.name)))
 		elif resource not in self.resources():
-			self.R[resource.name] = resource
+			self._resources[resource.name] = resource
 
 	def remove_resource(self,resource):
-		if resource.name in self.R :
-			del self.R[resource.name]
+		if resource.name in self._resources :
+			del self._resources[resource.name]
 		else:
-			raise Exception('ERROR: resource with name %s not contained in scenario %s' % (str(resource.name),str(self.name)))
+			raise Exception('ERROR: resource with name %s not contained in scenario %s'%
+			                (str(resource.name),str(self.name)))
 		self._constraints = [ C for C in self._constraints if resource not in C.resources() ]
 
 	def __iadd__(self,other) :
@@ -403,20 +420,23 @@ class Scenario(_SchedElement):
 
 	def __contains__(self, item):
 		if isinstance(item,Task):
-			return item in self.T.values()
+			return item in self._tasks.values()
 		elif isinstance(item,Resource):
-			return item in self.R.values()
+			return item in self._resources.values()
 		else:
 			raise Exception('ERROR: %s cannot be checked for containment in scenario %s'%(str(item),str(self.name)))
 		return self
 
 	def __iter__(self):
-		return self.T.values().__iter__()
+		return self._tasks.values().__iter__()
 
 	def __getitem__(self, item):
-		if item not in self.T:
-			raise Exception('ERROR: task with name %s is not contained in scenario %s'%(str(item),str(self.name)))
-		return self.T[item]
+		if item not in self._tasks and item not in self._resources:
+			raise Exception('ERROR: task or resource with name %s is not contained in scenario %s'%
+			                (str(item),str(self.name)))
+		if item in self._tasks:
+			return self._tasks[item]
+		return self._resources[item]
 
 	def __str__(self) :
 		s = '###############################################\n'
@@ -427,22 +447,18 @@ class Scenario(_SchedElement):
 		else:
 			s += ' / no horizon set\n\n'
 
-		#print objective
-		s += 'OBJECTIVE: '+str(self.objective)+'\n\n'
+		s += 'OBJECTIVE: '+str(self._objective)+'\n\n'
 
-		# print resources
 		s += 'RESOURCES:\n'
 		for R in self.resources() :
 			s += str(R.name)+'\n'
 		s += '\n'
 
-		# print tasks
 		s += 'TASKS:\n'
 		for T in self.tasks() :
 			s += '%s : %s\n'%(str(T.name),str(self.resources_req(task=T)))
 		s += '\n'
 
-		# print constraints
 		def print_constraint(title,constraints):
 			s = ''
 			if constraints:
@@ -472,9 +488,9 @@ class Task(_SchedElement) :
 	def __init__(self,name,length=1) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
-			raise Exception('ERROR: length must be an integer')
+			raise Exception('ERROR: task length must be an integer')
 		self.length = length
-		self.params = dict()
+		self.params = dict() # parameter and annotations
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
 
@@ -482,17 +498,9 @@ class Task(_SchedElement) :
 		return self.length
 
 	def __lt__(self,other) :
-		'''
-		if isinstance(other,Resource) :
-			return Precedence(left=self,right=other,kind='first')
-		'''
 		return _TaskAffine(self) < other
 
 	def __gt__(self,other) :
-		'''
-		if isinstance(other,Resource) :
-			return _Precedence(left=self,right=other,kind='last')
-		'''
 		return _TaskAffine(self) > other
 
 	def __le__(self,other) :
@@ -637,9 +645,7 @@ class _TaskAffine(_SchedElementAffine) :
 
 
 class _Constraint(_SchedElement) :
-	"""
-	An arbitrary constraint
-	"""
+
 	def __init__(self) :
 		_SchedElement.__init__(self,name='')
 
@@ -652,9 +658,7 @@ class _Constraint(_SchedElement) :
 
 
 class _Bound(_Constraint) :
-	"""
-	A bound of a task
-	"""
+
 	def __init__(self,task,bound) :
 		_Constraint.__init__(self)
 		self.task = task
@@ -809,7 +813,7 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self) % other
 
 	def __getitem__(self, item):
-		return Capacity(resource=self,param=item)
+		return _Capacity(resource=self,param=item)
 
 
 
@@ -888,10 +892,8 @@ class ResourceReq(_Constraint) :
 
 
 
-class Capacity(_Constraint):
-	"""
-	A capacity bound on one resource in an interval
-	"""
+class _Capacity(_Constraint):
+
 	def __init__(self,resource,param='length',bound=None,start=None,end=None,comp_operator=None):
 		_Constraint.__init__(self)
 		self.resource = resource
@@ -939,15 +941,19 @@ class Capacity(_Constraint):
 
 
 
-class CapacityLow(Capacity):
-
+class CapacityLow(_Capacity):
+	"""
+	A lower capacity bound on one resource in an interval
+	"""
 	def __init__(self,resource,param='length',bound=None,start=None,end=None):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
 
 
 
-class CapacityUp(Capacity):
-
+class CapacityUp(_Capacity):
+	"""
+	An upper capacity bound on one resource in an interval
+	"""
 	def __init__(self,resource,param='length',bound=None,start=None,end=None):
 		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
 

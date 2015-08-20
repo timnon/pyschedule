@@ -175,7 +175,7 @@ def _get_dat_filename(scenario,msg=0) :
 		count += 1
 
 	# add objective
-	Objectives = [ (task_to_id[key],S.objective[key]) for key in S.objective if key != 1 ]
+	Objectives = [ (task_to_id[key],S.objective(key)) for key in S.tasks() ]
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists
