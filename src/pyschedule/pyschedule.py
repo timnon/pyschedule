@@ -35,10 +35,10 @@ try: # allow Python 2 vs 3 compatibility
 except AttributeError:
 	from string import maketrans as _maketrans
 
-def OR(*args) :
+def alt(*args) :
 	"""
-	Method to iterate the or-operator over the given elements
-    e.g. OR(R1,R2,R3) = R1|R2|R3
+	Method to reduce the given elements with the or-operator
+    e.g. alt(R1,R2,R3) = R1|R2|R3
 	"""
 	import functools
 	return functools.reduce(lambda x,y: x|y, args[0])
@@ -347,6 +347,8 @@ class Scenario(_SchedElement):
 		self._constraints.append(constraint)
 
 	def remove_constraint(self,constraint):
+		if str(constraint) not in [ str(C) for C in self._constraints ]:
+			raise Exception('ERROR: constraint %s not contained in scenario %s'%(str(constraint),str(self.name)))
 		self._constraints = [ C for C in self._constraints if str(C) != str(constraint) ]
 
 	def add_task(self,task):
