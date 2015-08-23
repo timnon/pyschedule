@@ -32,5 +32,3 @@ from . import pulp
 from . import cpoptimizer
 from . import ortools
 from . import listsched
-from . import localsearch
-

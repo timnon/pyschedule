@@ -226,9 +226,10 @@ class Scenario(_SchedElement):
 		"""
 		Returns a representation of all objectives
 		"""
-		return reduce(lambda x,y:x+y, [T*T['_completion_time_cost'] for T in self.tasks()
-		                              if '_completion_time_cost' in T ])
-
+		tasks_objective = [T*T['_completion_time_cost'] for T in self.tasks() if '_completion_time_cost' in T ]
+		if tasks_objective:
+			return functools.reduce(lambda x,y:x+y,tasks_objective)
+		return None
 
 	def objective_value(self) :
 		"""
@@ -376,8 +377,6 @@ class Scenario(_SchedElement):
 		else :
 			raise Exception('ERROR: task with name %s not contained in scenario %s' % (str(task.name),str(self.name)))
 		self._constraints = [ C for C in self._constraints if task not in C.tasks() ]
-		if task in self._objective:
-			del self._objective[task]
 
 	def add_task_affine(self,task_affine):
 		for task in task_affine:
