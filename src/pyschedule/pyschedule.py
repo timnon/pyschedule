@@ -947,8 +947,12 @@ class _Capacity(_Constraint):
 		return self
 
 	def __getitem__(self,slice):
-		self.start = slice.start
-		self.end = slice.stop
+		if type(slice) is int:
+			self.start = slice
+			self.end = slice+1
+		else:
+			self.start = slice.start
+			self.end = slice.stop
 		return self
 
 	def __str__(self):
