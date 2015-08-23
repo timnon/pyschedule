@@ -48,13 +48,13 @@ def sort_with_precs(scenario) :
 	import networkx as nx
 	G = nx.DiGraph()
 	G.add_nodes_from(S.tasks())
-	G.add_edges_from([ (P.left,P.right) for P in S.precs_lax() ])
+	G.add_edges_from([ (P.task_left,P.task_right) for P in S.precs_lax() ])
 	task_list = nx.algorithms.topological_sort(G)
 	return task_list
 
 
 #TODO: list as parameter of solving procedure
-def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,msg=0) :
+def solve(scenario,solve_method,task_list=None,batch_size=1,plot_method=None,msg=0) :
 	"""
 	Iteratively adds tasks and uses solve_method to integrate these
 	tasks into the schedule.
@@ -62,39 +62,41 @@ def solve(scenario,solve_method,task_list=None,batch_size=1,copy_scenario=False,
 	Arguments:
 		scenario   : the scenario to solve
 		task_list  : list of all tasks which defines the order in which all tasks are
-                             added to the schedule
+                     added to the schedule
 		batch_size : the number of tasks to integrate in the schedule at a time
 	"""
 
 	S = scenario
-	if copy_scenario :
-		S = copy.deepcopy(scenario)
 
-	if not task_list :
+	if task_list is None :
 		task_list = sort_with_precs(S)
-		task_list = [ T for T in task_list if T.start is None ]
 
-	constraints = S.constraints # keep references and clear old reference list
-	S.constraints = []
+	constraints = S._constraints # keep references and clear old reference list
+	S._constraints = []
 
 	#non_objective_tasks = [ T for T in task_list if not T.objective ]
-	for T in task_list : S -= T #remove all tasks which are not part of objective
+	for T in task_list :
+		S -= T #remove all tasks which are not part of objective
 
 	def batches(tasks, batch_size):
 		for i in xrange(0, len(tasks), batch_size):
 			yield tasks[i:i+batch_size]
-	
+
 	for batch in batches(task_list,batch_size) :
 		if msg :
 			print('INFO: batch for list scheduling '+','.join([ str(T) for T in batch]))
 		for T in batch :
 			S += T
-		S.constraints = [ C for C in constraints if set(C.tasks()).issubset(set(S.tasks())) ]
+		S._constraints = [ C for C in constraints if set(C.tasks()).issubset(set(S.tasks())) ]
+
 		solve_method(S)
-		'''
-		import pyschedule
-		pyschedule.plotters.matplotlib.plot(S)
-		'''
+		if plot_method is not None:
+			plot_method(S)
+
+		for T in S.tasks():
+			S += T >= T.start_value
+
+
 		
 		
 		

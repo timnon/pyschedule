@@ -174,8 +174,9 @@ def _get_dat_filename(scenario,msg=0) :
 				CapacityUpTasks.append((count,task_to_id[T],T[C.param]))
 		count += 1
 
-	# add objective
-	Objectives = [ (task_to_id[key],S.objective(key)) for key in S.tasks() ]
+	# objective
+	Objective = [ (task_to_id[T],T['_completion_time_cost']) for T in S.tasks()
+	              if '_completion_time_cost' in T ]
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists

@@ -29,19 +29,13 @@ python package to formulate and solve resource-constrained scheduling problems
 
 
 from collections import OrderedDict as _DICT_TYPE
+import types
+import functools
 
 try: # allow Python 2 vs 3 compatibility
 	_maketrans = str.maketrans
 except AttributeError:
 	from string import maketrans as _maketrans
-
-def alt(*args) :
-	"""
-	Method to reduce the given elements with the or-operator
-    e.g. alt(R1,R2,R3) = R1|R2|R3
-	"""
-	import functools
-	return functools.reduce(lambda x,y: x|y, args[0])
 
 def _isnumeric(var) :
 	"""
@@ -51,9 +45,20 @@ def _isnumeric(var) :
 
 def _isiterable(var) :
 	"""
-	Test if var is list, set or tuple
+	Test if var is iterable
 	"""
 	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
+
+def alt(*args) :
+	"""
+	Method to reduce the given elements with the or-operator
+	e.g. alt(R1,R2,R3) = alt( R for R in [R1,R2,R3] ) = alt([R1,R2,R3]) = R1|R2|R3
+	"""
+	l = [ functools.reduce(lambda x,y: x|y, a) for a in args if _isiterable(a)
+	                                    or isinstance(a, types.GeneratorType)] +\
+            [ a for a in args if not _isiterable(a) 
+	                         and not isinstance(a, types.GeneratorType)  ]
+	return functools.reduce(lambda x,y: x|y, l)
 
 
 
@@ -160,15 +165,9 @@ class Scenario(_SchedElement):
 	def __init__(self,name='scenario not named',horizon=None):
 		_SchedElement.__init__(self,name)
 		self.horizon = horizon
-		self._objective = _TaskAffine()
 		self._tasks = _DICT_TYPE() #tasks
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
-
-	def objective(self,task):
-		if task in self._objective:
-			return self._objective[task]
-		return 0
 
 	def Task(self,name,length=1) :
 		"""
@@ -219,18 +218,24 @@ class Scenario(_SchedElement):
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
 		solution = [ (T,R,T.start_value,T.start_value+T.length) \
-                             for T in self.tasks() for R in T.resources ]
+                     for T in self.tasks() for R in T.resources ]
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
+
+	def objective(self):
+		"""
+		Returns a representation of all objectives
+		"""
+		return reduce(lambda x,y:x+y, [T*T['_completion_time_cost'] for T in self.tasks()
+		                              if '_completion_time_cost' in T ])
+
 
 	def objective_value(self) :
 		"""
 		Returns the value of the objective
 		"""
-		return sum([ self._objective[T]*(T.start_value+T.length) for T in self._objective ])
-
-	def clear_objective(self):
-		self._objective.clear()
+		return sum([ T['_completion_time_cost']*(T.start_value+T.length) for T in self.tasks()
+		                                                                 if '_completion_time_cost' in T])
 
 	def use_makespan_objective(self) :
 		"""
@@ -263,6 +268,14 @@ class Scenario(_SchedElement):
 		for T in self.tasks() :
 			T.start_value = None
 			T.resources = None
+
+	def clear_objective(self):
+		"""
+		Removes all objective annotations
+		"""
+		for T in self.tasks():
+			if '_completion_time_cost' in T:
+				del T['_completion_time_cost']
 
 	def constraints(self,constraint_type=None):
 		if constraint_type is None:
@@ -369,8 +382,9 @@ class Scenario(_SchedElement):
 	def add_task_affine(self,task_affine):
 		for task in task_affine:
 			if isinstance(task,Task):
-				self.add_task(task)
-		self._objective += task_affine
+				if task not in self:
+					raise Exception('ERROR: task %s is not contained in scenario %s'%(str(task.name),str(self.name)))
+			task['_completion_time_cost'] = task_affine[task]
 
 	def add_resource(self,resource):
 		if resource.name in self._resources and resource is not self._resources[resource.name]:
@@ -440,6 +454,15 @@ class Scenario(_SchedElement):
 			return self._tasks[item]
 		return self._resources[item]
 
+	def check(self):
+		"""
+		Do basic checks on scenario
+		"""
+		# check if each task has a resource
+		for T in self.tasks():
+			if not self.resources(task=T):
+				raise Exception('ERROR: task %s has no resource requirement'%str(T))
+
 	def __str__(self) :
 		s = '###############################################\n'
 		s += '\n'
@@ -449,7 +472,7 @@ class Scenario(_SchedElement):
 		else:
 			s += ' / no horizon set\n\n'
 
-		s += 'OBJECTIVE: '+str(self._objective)+'\n\n'
+		s += 'OBJECTIVE: '+str(self.objective())+'\n\n'
 
 		s += 'RESOURCES:\n'
 		for R in self.resources() :
@@ -546,6 +569,9 @@ class Task(_SchedElement) :
 		if key == 'length':
 			self.length = value
 		self.params[key] = value
+
+	def __delitem__(self,key):
+		del self.params[key]
 
 	def __contains__(self,key):
 		if key == 'length':

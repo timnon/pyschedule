@@ -92,18 +92,21 @@ def solve(scenario, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to discrete mip unit
 	"""
+	scenario.check()
 	return DiscreteMIPUnit().solve(scenario, kind=kind, time_limit=time_limit, msg=msg)
 
 def solve_mon(scenario, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to discrete mip with monotonous decrease
 	"""
+	scenario.check()
 	return DiscreteMIP().solve(scenario, kind=kind, time_limit=time_limit, msg=msg)
 
 def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
+	scenario.check()
 	return ContinuousMIP().solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, msg=msg)
 
 
@@ -146,7 +149,8 @@ class ContinuousMIP(object):
 					mip += x[(T, R)] == x[(T_, R)]
 
 		# objective
-		mip += sum([x[T] * S.objective(T) for T in S.tasks() if T in x])
+		mip += pl.LpAffineExpression([ (x[T], T['_completion_time_cost']) for T in S.tasks()
+		                                        if '_completion_time_cost' in T and T in x ])
 
 		# same resource variable
 		task_pairs = [(T, T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_)]
@@ -476,8 +480,9 @@ class DiscreteMIP(object):
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], S.objective(T)) for T in S.tasks() if T in self.task_groups_free
-									for t in range(self.horizon+1)])
+		mip += pl.LpAffineExpression([(x[T, t], T['_completion_time_cost']*t) for T in S.tasks()
+		                                        if T in self.task_groups and '_completion_time_cost' in T
+		                                        for t in range(self.horizon)])
 
 		for con in cons:
 			mip.addConstraint(con)
@@ -495,7 +500,7 @@ class DiscreteMIP(object):
 			starts = list()
 			for R in self.scenario.resources(task=T):
 				if not (T,R,0) in self.x:
-					continue				
+					continue
 				starts_ = [max([t for t in range(self.horizon) if self.x[T, R, t].varValue >= z - 0.5]) \
 						   for z in range(int(self.x[T, R, 0].varValue), 0, -1)]
 				starts.extend([(t, R) for t in starts_])
@@ -514,7 +519,7 @@ class DiscreteMIP(object):
 					starts.remove((t, R))
 					T_.resources.append(R)
 
-			
+
 
 
 	def solve(self, scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
@@ -579,8 +584,6 @@ class DiscreteMIPUnit(object):
 		S = self.scenario
 		mip = pl.LpProblem(str(S), pl.LpMinimize)
 		self.task_groups = _get_task_groups(self.scenario)
-
-		#import pdb;pdb.set_trace()
 
 		x = dict()  # mip variables
 		cons = list()  # mip constraints
@@ -762,8 +765,9 @@ class DiscreteMIPUnit(object):
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], S.objective(T)*t) for T in S.tasks() if T in self.task_groups
-		                                                          for t in range(self.horizon)])
+		mip += pl.LpAffineExpression([(x[T, t], T['_completion_time_cost']*t) for T in S.tasks()
+		                                        if T in self.task_groups and '_completion_time_cost' in T
+		                                        for t in range(self.horizon)])
 
 		for con in cons:
 			mip.addConstraint(con)
