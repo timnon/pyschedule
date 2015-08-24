@@ -505,6 +505,8 @@ class Scenario(_SchedElement):
 		s += print_constraint('TIGHT UPPER BOUNDS',self.bounds_up_tight())
 		s += print_constraint('CAPACITY LOWER BOUNDS',self.capacity_low())
 		s += print_constraint('CAPACITY UPPER BOUNDS',self.capacity_up())
+		s += print_constraint('CAPACITY DIFF LOWER BOUNDS',self.capacity_diff_low())
+		s += print_constraint('CAPACITY DIFF UPPER BOUNDS',self.capacity_diff_up())
 		s += '###############################################'
 		return s
 

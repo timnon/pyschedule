@@ -135,6 +135,27 @@ def CAPSLICE():
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
 	return S,sols
 
+def CAPDIFF():
+	S = two_task_scenario()
+	S += S['T1'] % S['R1']
+	S += S['T2'] % S['R1']
+	S.clear_objective()
+	S += S['T1'] - S['T2']*2
+	S += ~S['R1']['length'] <= 1
+	sols = ['[(T1, R1, 8, 9), (T2, R1, 9, 10)]']
+	return S,sols
+
+def CAPDIFFSLICE():
+	S = two_task_scenario()
+	S += S['T1'] % S['R1']
+	S += S['T2'] % S['R1']
+	S.clear_objective()
+	S += S['T1'] - S['T2']*2
+	S += ~S['R1']['length'][5:] <= 0
+	S += ~S['R1']['length'][:5] <= 1
+	sols = ['[(T1, R1, 3, 4), (T2, R1, 4, 5)]']
+	return S,sols
+
 
 
 scenario_methods = [
@@ -152,11 +173,12 @@ MULT,
 ALTMULT,
 CUMUL,
 CAP,
-CAPSLICE
+CAPSLICE,
+CAPDIFF,
+CAPDIFFSLICE
 ]
 
-#scenario_methods = [CAPSLICE]
-
+#scenario_methods = [CAPDIFFSLICE]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
