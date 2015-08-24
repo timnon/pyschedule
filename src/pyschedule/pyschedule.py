@@ -349,6 +349,12 @@ class Scenario(_SchedElement):
 	def capacity_up(self):
 		return self.constraints(CapacityUp)
 
+	def capacity_diff_up(self):
+		return self.constraints(CapacityDiffUp)
+
+	def capacity_diff_low(self):
+		return self.constraints(CapacityDiffLow)
+
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
 			if task not in self:
@@ -929,11 +935,14 @@ class _Capacity(_Constraint):
 		self.end = end
 		self.bound = bound
 		self.comp_operator = comp_operator
+		self.diff = False
 
 	def __ge__(self, other):
 		if not _isnumeric(other):
 			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityLow
+		if self.diff:
+			self.__class__ = CapacityDiffLow
 		self.comp_operator = '>='
 		self.bound = other
 		return self
@@ -942,6 +951,8 @@ class _Capacity(_Constraint):
 		if not _isnumeric(other):
 			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityUp
+		if self.diff:
+			self.__class__ = CapacityDiffUp
 		self.comp_operator = '<='
 		self.bound = other
 		return self
@@ -955,6 +966,10 @@ class _Capacity(_Constraint):
 			self.end = slice.stop
 		return self
 
+	def __invert__(self):
+		self.diff = not self.diff
+		return self
+
 	def __str__(self):
 		slice = ''
 		if self.start is not None or self.end is not None:
@@ -965,7 +980,10 @@ class _Capacity(_Constraint):
 			if self.end is not None: #large number
 				slice += str(self.end)
 			slice += ']'
-		return '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
+		s = '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
+		if self.diff:
+			s = '~'+s
+		return s
 
 	def __repr__(self):
 		return self.__str__()
@@ -977,7 +995,16 @@ class CapacityLow(_Capacity):
 	A lower capacity bound on one resource in an interval
 	"""
 	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
+		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
+
+
+
+class CapacityDiffLow(_Capacity):
+	"""
+	A lower bound on the number of on/off-switches for the capacity
+	"""
+	def __init__(self,resource,param='length',bound=None,start=None,end=None):
+		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<<')
 
 
 
@@ -986,7 +1013,16 @@ class CapacityUp(_Capacity):
 	An upper capacity bound on one resource in an interval
 	"""
 	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
+		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
+
+
+
+class CapacityDiffUp(_Capacity):
+	"""
+	An upper bound on the number of on/off-switches for the capacity
+	"""
+	def __init__(self,resource,param='length',bound=None,start=None,end=None):
+		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<<')
 
 
 
