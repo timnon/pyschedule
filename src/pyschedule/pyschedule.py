@@ -847,8 +847,14 @@ class Resource(_SchedElement) :
 	def __mod__(self,other) :
 		return _ResourceAffine(self) % other
 
-	def __getitem__(self, item):
-		return _Capacity(resource=self,param=item)
+	def __getitem__(self, key):
+		C = _Capacity(resource=self)
+		if isinstance(key,slice) or isinstance(key,int):
+			return C[key]
+		elif isinstance(key,str):
+			C.param = key
+			return C
+		raise Exception('ERROR: index not correct')
 
 
 
@@ -959,13 +965,13 @@ class _Capacity(_Constraint):
 		self.bound = other
 		return self
 
-	def __getitem__(self,slice):
-		if type(slice) is int:
-			self.start = slice
-			self.end = slice+1
+	def __getitem__(self,key):
+		if type(key) is int:
+			self.start = key
+			self.end = key+1
 		else:
-			self.start = slice.start
-			self.end = slice.stop
+			self.start = key.start
+			self.end = key.stop
 		return self
 
 	def __invert__(self):
