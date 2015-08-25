@@ -965,13 +965,15 @@ class _Capacity(_Constraint):
 		return self
 
 	def __getitem__(self,key):
-		if type(key) is int:
+		if isinstance(key,int):
 			self.start = key
 			self.end = key+1
-		else:
+			return self
+		elif isinstance(key,slice):
 			self.start = key.start
 			self.end = key.stop
-		return self
+			return self
+		raise Exception('ERROR: index is wrong')
 
 	def __invert__(self):
 		self.diff = not self.diff
