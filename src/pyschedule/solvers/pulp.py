@@ -766,40 +766,54 @@ class DiscreteMIPUnit(object):
 				continue
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
-		# TODO: allow C.start < 0 and C.end >= self.horizon
 		# capacity switch bounds
 		for C in S.capacity_diff_up():
 			R = C.resource
 			param = C.param
+			# fix start and end
 			start = C.start
 			out_start=False
-			if start < 0:
+			if start is not None and start < 0:
 				out_start = True
 			if start is None or start < 0:
 				start = 0
 			end = C.end
 			out_end = False
-			if end > self.horizon:
+			if end is not None and end > self.horizon:
 				out_end = True
 			if end is None or end > self.horizon:
 				end = self.horizon
+			# create variables if necessary
+			'''
 			x.update({ (R,t) : pl.LpVariable(str((R, t)), 0, 1)
 					   for t in range(start,end) if (R,t) not in x })
+			'''
 			x.update({ (R,t,'switch') : pl.LpVariable(str((R, t, 'switch')), 0, 1)
 			           for t in range(start,end-1) if (R,t,'switch') not in x })
+			# sync resource variable TODO: replace by expression
+			'''
 			for t in range(start,end):
 				affine = [ (x[R,t],1) ] + [ (x[T,R,t],-1) for T in self.task_groups ]
 				cons.append(_con(affine, sense=0, rhs=0))
+			'''
 			for t in range(start,end-1):
-				affine = [(x[R,t,'switch'],1), (x[R,t],-1), (x[R,t+1],1)]
+				#affine = [(x[R,t,'switch'],1), (x[R,t],-1), (x[R,t+1],1)]
+				affine = [ (x[R,t,'switch'],1) ] +\
+						 [ (x[T,R,t],-1) for T in self.task_groups if (T,R,t) in x and param in T ] +\
+				         [ (x[T,R,t+1],1) for T in self.task_groups if (T,R,t+1) in x and param in T ]
 				cons.append(_con(affine, sense=1, rhs=0))
-				affine = [(x[R,t,'switch'],1), (x[R,t],1), (x[R,t+1],-1)]
+				#affine = [(x[R,t,'switch'],1), (x[R,t],1), (x[R,t+1],-1)]
+				affine = [ (x[R,t,'switch'],1) ] +\
+						 [ (x[T,R,t],1) for T in self.task_groups if (T,R,t) in x and param in T ] +\
+				         [ (x[T,R,t+1],-1) for T in self.task_groups if (T,R,t+1) in x and param in T ]
 				cons.append(_con(affine, sense=1, rhs=0))
-			affine = [ (x[R,t,'switch'],1) for t in range(start,end-1) ] #+ [ (x[R,end-1],1) ]
+			affine = [ (x[R,t,'switch'],1) for t in range(start,end-1) ]
 			if out_start:
-				affine += [ (x[R,0],1) ]
+				affine += [ (x[T,R,0],1) for T in self.task_groups
+							if (T,R,0) in x and param in T ] #[ (x[R,0],1) ]
 			if out_end:
-				affine += [ (x[R,self.horizon-1],1) ]
+				affine += [ (x[T,R,self.horizon-1],1) for T in self.task_groups
+							if (T,R,self.horizon-1) in x and param in T ] #[ (x[R,self.horizon-1],1) ]
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective

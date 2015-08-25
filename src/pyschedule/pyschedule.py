@@ -856,6 +856,15 @@ class Resource(_SchedElement) :
 			return C
 		raise Exception('ERROR: index not correct')
 
+	def __le__(self,other):
+		return _Capacity(resource=self) <= other
+
+	def __ge__(self,other):
+		return _Capacity(resource=self) >= other
+
+	def __invert__(self):
+		return _Capacity(resource=self,diff=True)
+
 
 
 class _ResourceAffine(_SchedElementAffine) :
@@ -935,7 +944,7 @@ class ResourceReq(_Constraint) :
 
 class _Capacity(_Constraint):
 
-	def __init__(self,resource,param='length',bound=None,start=None,end=None,comp_operator=None):
+	def __init__(self,resource,param='length',bound=None,start=None,end=None,comp_operator=None,diff=False):
 		_Constraint.__init__(self)
 		self.resource = resource
 		self.param = param
@@ -943,7 +952,7 @@ class _Capacity(_Constraint):
 		self.end = end
 		self.bound = bound
 		self.comp_operator = comp_operator
-		self.diff = False
+		self.diff = diff
 
 	def __ge__(self, other):
 		if not _isnumeric(other):
