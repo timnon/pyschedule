@@ -70,12 +70,12 @@ def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 def _get_task_groups(scenario):
 	"""
 	computes the task groups according to the _task_group parameter
-	returns a mapping a task group representant to the task group
+	returns a mapping a task group representative to the task group
 	"""
 	_task_groups = collections.OrderedDict()
 	for T in scenario.tasks():
-		if '_group' in T:
-			task_group_name = T['_group']
+		if 'group' in T:
+			task_group_name = T.group
 			if task_group_name in _task_groups:
 				_task_groups[task_group_name].append(T)
 			else:
@@ -149,8 +149,8 @@ class ContinuousMIP(object):
 					mip += x[(T, R)] == x[(T_, R)]
 
 		# objective
-		mip += pl.LpAffineExpression([ (x[T], T['_completion_time_cost']) for T in S.tasks()
-		                                        if '_completion_time_cost' in T and T in x ])
+		mip += pl.LpAffineExpression([ (x[T], T.completion_time_cost) for T in S.tasks()
+		                                        if 'completion_time_cost' in T and T in x ])
 
 		# same resource variable
 		task_pairs = [(T, T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_)]
@@ -232,7 +232,7 @@ class ContinuousMIP(object):
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
 			if not tasks:
 				continue
-			mip += sum([ x[(T,R)]*T[param] for T in tasks ]) >= C.bound
+			mip += sum([ x[(T,R)]*getattr(T,param) for T in tasks ]) >= C.bound
 
 		# capacity upper bounds
 		for C in S.capacity_up():
@@ -243,7 +243,7 @@ class ContinuousMIP(object):
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
 			if not tasks:
 				continue
-			mip += sum([ x[(T,R)]*T[param] for T in tasks ]) <= C.bound
+			mip += sum([ x[(T,R)]*getattr(T,param) for T in tasks ]) <= C.bound
 
 		self.mip = mip
 		self.x = x
@@ -457,8 +457,8 @@ class DiscreteMIP(object):
 			          if T in self.task_groups_free and param in T and (T,R,0) in x ]
 			if not tasks:
 				continue
-			affine = [(x[T, R, start],  T[param]) for T in tasks ]+\
-			         [(x[T, R, end], -T[param]) for T in tasks ]
+			affine = [(x[T, R, start], getattr(T,param)) for T in tasks ]+\
+			         [(x[T, R, end], -getattr(T,param)) for T in tasks ]
 			cons.append(_con(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
@@ -475,13 +475,13 @@ class DiscreteMIP(object):
 			          if T in self.task_groups_free and param in T and (T,R,0) in x ]
 			if not tasks:
 				continue
-			affine = [(x[T, R, start], T[param]) for T in tasks ]+\
-			         [(x[T, R, end], -T[param]) for T in tasks ]
+			affine = [(x[T, R, start], getattr(T,param)) for T in tasks ]+\
+			         [(x[T, R, end], -getattr(T,param)) for T in tasks ]
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], T['_completion_time_cost']*t) for T in S.tasks()
-		                                        if T in self.task_groups and '_completion_time_cost' in T
+		mip += pl.LpAffineExpression([(x[T, t], T.completion_time_cost*t) for T in S.tasks()
+		                                        if T in self.task_groups and 'completion_time_cost' in T
 		                                        for t in range(self.horizon)])
 
 		for con in cons:
@@ -713,15 +713,13 @@ class DiscreteMIPUnit(object):
 		for P in S.bounds_low_tight():
 			if P.task not in self.task_groups:
 				continue
-			task_group_size = len(self.task_groups[P.task])
-			cons.append(_con([(x[P.task, P.bound],1)], sense=0, rhs=task_group_size))
+			cons.append(_con([(x[P.task, P.bound],1)], sense=1, rhs=1))
 
 		# tight up bounds
 		for P in S.bounds_up_tight():
 			if P.task not in self.task_groups:
 				continue
-			task_group_size = len(self.task_groups[P.task])
-			cons.append(_con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=0, rhs=task_group_size))
+			cons.append(_con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=1, rhs=1))
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
@@ -744,7 +742,7 @@ class DiscreteMIPUnit(object):
 			end = C.end
 			if end is None:
 				end = self.horizon
-			affine = [(x[T, R, t],  T[param]) for T in self.task_groups for t in range(start,end)
+			affine = [(x[T, R, t],  getattr(T,param)) for T in self.task_groups for t in range(start,end)
 			                                  if (T,R,t) in x and param in T]
 			if not affine:
 				continue
@@ -760,7 +758,7 @@ class DiscreteMIPUnit(object):
 			end = C.end
 			if end is None:
 				end = self.horizon
-			affine = [(x[T, R, t], T[param]) for T in self.task_groups for t in range(start,end)
+			affine = [(x[T, R, t], getattr(T,param)) for T in self.task_groups for t in range(start,end)
 			                                 if (T,R,t) in x and param in T]
 			if not affine:
 				continue
@@ -817,8 +815,8 @@ class DiscreteMIPUnit(object):
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# objective
-		mip += pl.LpAffineExpression([(x[T, t], T['_completion_time_cost']*t) for T in S.tasks()
-		                                        if T in self.task_groups and '_completion_time_cost' in T
+		mip += pl.LpAffineExpression([(x[T, t], T.completion_time_cost*t) for T in S.tasks()
+		                                        if T in self.task_groups and 'completion_time_cost' in T
 		                                        for t in range(self.horizon)])
 
 		for con in cons:

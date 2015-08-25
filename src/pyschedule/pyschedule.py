@@ -389,7 +389,7 @@ class Scenario(_SchedElement):
 			if isinstance(task,Task):
 				if task not in self:
 					raise Exception('ERROR: task %s is not contained in scenario %s'%(str(task.name),str(self.name)))
-			task['_completion_time_cost'] = task_affine[task]
+			task.completion_time_cost = task_affine[task]
 
 	def add_resource(self,resource):
 		if resource.name in self._resources and resource is not self._resources[resource.name]:
@@ -522,9 +522,10 @@ class Task(_SchedElement) :
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
 		self.length = length
-		self.params = dict() # parameter and annotations
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
+		self.completion_time_cost = None # cost on the final completion time
+		self.group = None # group exchangeable tasks
 
 	def __len__(self) :
 		return self.length
@@ -567,23 +568,12 @@ class Task(_SchedElement) :
 			return [ x % self for x in other ]
 		return other % self
 
-	def __getitem__(self,key):
-		if key == 'length':
-			return self.length
-		return self.params[key]
-
-	def __setitem__(self,key,value):
-		if key == 'length':
-			self.length = value
-		self.params[key] = value
-
-	def __delitem__(self,key):
-		del self.params[key]
-
 	def __contains__(self,key):
-		if key == 'length':
-			return True
-		return key in self.params
+		if not hasattr(self,key):
+			return False
+		if getattr(self,key) is None:
+			return False
+		return True
 
 
 
