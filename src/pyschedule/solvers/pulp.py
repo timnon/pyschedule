@@ -628,7 +628,7 @@ class DiscreteMIPUnit(object):
 					cons.append(_con(affine, sense=0, rhs=0))
 
 		# everybody is finished before the horizon TODO: why is this check necessary
-		affine = [ (x[T, t],1) for T in S.tasks() for t in range(self.horizon-T.length+1,self.horizon) ]
+		affine = [ (x[T, t],1) for T in S.tasks() for t in range(self.horizon-T.length+1,self.horizon) if (T,t) in x ]
 		cons.append(_con(affine, sense=-1, rhs=0))
 
 		# resource non-overlapping constraints
