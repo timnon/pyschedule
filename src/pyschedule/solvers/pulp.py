@@ -531,8 +531,6 @@ class DiscreteMIP(object):
 			kind:                MIP-solver to use: CPLEX, GLPK, CBC
 			horizon :            the number of time steps to model
 			time_limit:          a time limit, only for CPLEX and CBC
-                        task_groups:         a dictionary that clusters the tasks into identical ones,
-                                             the key of each cluster must be a representative
 			msg:                 0 means no feedback (default) during computation, 1 means feedback
 
 		Returns:
@@ -628,6 +626,10 @@ class DiscreteMIPUnit(object):
 					affine = [(x[T,R,t],1) for t in range(self.horizon) ]+\
 					         [(x[T_,R,t],-1) for t in range(self.horizon) ]
 					cons.append(_con(affine, sense=0, rhs=0))
+
+		# everybody is finished before the horizon TODO: why is this check necessary
+		affine = [ (x[T, t],1) for T in S.tasks() for t in range(self.horizon-T.length+1,self.horizon) ]
+		cons.append(_con(affine, sense=-1, rhs=0))
 
 		# resource non-overlapping constraints
 		coeffs = { (T,R) : S.resources_req_coeff(task=T, resource=R) for T in S.tasks()
@@ -796,14 +798,20 @@ class DiscreteMIPUnit(object):
 			'''
 			for t in range(start,end-1):
 				#affine = [(x[R,t,'switch'],1), (x[R,t],-1), (x[R,t+1],1)]
+				# decrease switch
 				affine = [ (x[R,t,'switch'],1) ] +\
-						 [ (x[T,R,t],-1) for T in self.task_groups if (T,R,t) in x and param in T ] +\
-				         [ (x[T,R,t+1],1) for T in self.task_groups if (T,R,t+1) in x and param in T ]
+						 [ (x[T,R,t-T.length+1],-1) for T in self.task_groups
+						   if (T,R,t-T.length+1) in x and param in T ] +\
+				         [ (x[T,R,t+1],1) for T in self.task_groups
+						   if (T,R,t+1) in x and param in T ]
 				cons.append(_con(affine, sense=1, rhs=0))
 				#affine = [(x[R,t,'switch'],1), (x[R,t],1), (x[R,t+1],-1)]
+				# increase switch
 				affine = [ (x[R,t,'switch'],1) ] +\
-						 [ (x[T,R,t],1) for T in self.task_groups if (T,R,t) in x and param in T ] +\
-				         [ (x[T,R,t+1],-1) for T in self.task_groups if (T,R,t+1) in x and param in T ]
+						 [ (x[T,R,t-T.length+1],1) for T in self.task_groups
+						   if (T,R,t-T.length+1) in x and param in T ] +\
+				         [ (x[T,R,t+1],-1) for T in self.task_groups
+						   if (T,R,t+1) in x and param in T ]
 				cons.append(_con(affine, sense=1, rhs=0))
 			affine = [ (x[R,t,'switch'],1) for t in range(start,end-1) ]
 			if out_start:
