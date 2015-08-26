@@ -7,14 +7,15 @@
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/gantt.png)
 
-pyschedule is the easiest way to match tasks with resources. It covers problems such as flow- and job-shop scheduling, travelling salesman, vehicle routing with time windows, and many more combinations of theses. Install it with pip:
+pyschedule is the easiest way to match tasks with resources. Do you need to plan a conference or schedule your employees and there are a lot of requirements to satisfy, like availability of rooms or maximal allowed working times? Then pyschedule might be for you. Install it with pip:
 
 
 ```python
 pip install pyschedule
 ```
 
-Here is a hello world example, you can also find this document as a <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/README.ipynb">notebook</a>. There are more example notebooks <a href="https://github.com/timnon/pyschedule-notebooks">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">here</a>.
+Here is a hello world example, you can also find this document as a <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/README.ipynb">notebook</a>. There are more example notebooks <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.ipynb">overview notebook</a>.
+
 
 ```python
 # Load pyschedule and create a scenario with ten steps planning horizon
@@ -56,10 +57,10 @@ plotters.matplotlib.plot(S,fig_size=(10,5))
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_9_0.png)
+![png](output_9_0.png)
 
 
-pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.ipynb">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
+pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
 
 
 
@@ -67,7 +68,7 @@ pyschedule supports different solvers, classical <a href="https://en.wikipedia.o
 solvers.pulp.solve(S,kind='CPLEX')
 ```
 
-pyschedule is under active development, there might be non-backward-compatible changes. The base features are explained in the following example.
+pyschedule is under active development, there might be non-backward-compatible changes. More base features are explained in the following example.
 
 # Alice and Bob optimize their bike paint shop with pyschedule
 
@@ -207,7 +208,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_29_0.png)
+![png](output_29_0.png)
 
 
 Bob is annoyed, if he paints the red bike, he also wants to do the post-processing, switching bikes takes too much time. We use the following constraints to ensure this. They ensure that painting and post-processing the red bike will both be done by either Alice or Bob. The same holds for the green one:
@@ -227,7 +228,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_31_0.png)
+![png](output_31_0.png)
 
 
 This schedule completes after four hours and suggests to paint both bikes at the same time. However, Alice and Bob have only a single paint shop which they need to share:
@@ -241,7 +242,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_33_0.png)
+![png](output_33_0.png)
 
 
 Great, everybody can still go home after five hours and have a late lunch! Unfortunately, Alice receives a call that the red bike will only arrive after two hours:
@@ -253,7 +254,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_35_0.png)
+![png](output_35_0.png)
 
 
 Still everybody can go home after six hours, but we encounter another problem, it is actually quite hard to switch the paint shop from green to red because the green color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that there needs to be a break of two hours if the red painting follows the green one:
@@ -265,7 +266,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_37_0.png)
+![png](output_37_0.png)
 
 
 Damn, we have a full day of seven hours, this requires a lunch between the third and the fifth hour:
@@ -280,7 +281,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_39_0.png)
+![png](output_39_0.png)
 
 
 Our goal so far is to minimize the MakeSpan, the final completion time of any task. We can also make this more explicit:
@@ -300,7 +301,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_41_0.png)
+![png](output_41_0.png)
 
 
 Alice is a morning person and  wants to finish three hours of work before lunch, that is, before the third hour:
@@ -312,7 +313,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_43_0.png)
+![png](output_43_0.png)
 
 
 All this sounds quite trivial, but think about the same problem with many bikes and many persons!

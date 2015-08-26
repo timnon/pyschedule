@@ -6,7 +6,8 @@
 pyschedule is a package to formulate and solve resource-constrained scheduling problems, which covers a lot! Its main modelling entities are:
 
 - **precedence relations between tasks** (e.g. this one is before this one)
-- **resource requirements of tasks** (e.g. this one can be done either by him or her)
+- **resource requirements of tasks** (e.g. this one can be done either by her or him)
+- **capacities** (e.g. he can only do that many)
 
 more specifically, pyschedule ...
 
@@ -22,15 +23,15 @@ pyschedule tries to gain the best of two worlds by supporting classical MIP-mode
 
 - **pulp.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK"). CBC is part of pulp and hence works out of the box.
 - **pulp.solve_mon(scenario,kind) :** time-indexed MIP-formulation that is slightly better for tasks of length > 1.
-- **pulp.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation build on top of package, works for small models. The specific MIP-solver can also be selected via parameter "kind".
+- **pulp.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
 - **ortools.solve(scenario) :** the open source CP-solver of Google, a little restricted but good to ensure feasibility of larger models. Make sure that package [ortools](https://github.com/google/or-tools) is installed.
 - **cpoptimizer.solve(scenario) :** [IBM CP Optimizer](http://www-01.ibm.com/software/commerce/optimization/cplex-cp-optimizer/), requires command "oplrun" to be executable. Industrial-scale solver that runs fast on very large problems.
 - **cpoptimizer.solve_docloud(scenario,api_key) :** IBM CP Optimizer hosted in the cloud, you need to provide an "api_key" which you can get [here](https://developer.ibm.com/docloud/) for a trial.
 - to be continued ...
 
-There is one pre-defined heuristic (meta-solvers):
+There is one pre-defined heuristic (meta-solver):
 
-- **listsched.solve(scenario,solve_method,task_list) :** the tasks in scenario are added according to task_list and integrated in the current plan using solve_method. If task_list is not specified, then all tasks are ordered according to the precedence constraints.
+- **listsched.solve(scenario,solve_method,task_list,batch_size) :** all tasks are added in the order of task_list and integrated in the current schedule using solve_method. If task_list is not specified, then an ordering according to the precedence constraints is used as default.
 
 
 pyschedule has been tested with python 2.7 and 3.4. All solvers support a parameter "msg" to switch feedback on/off. Moreover, solvers.pulp.solve, solvers.pulp.solve_discrete and solvers.ortools.solve support a parameter "time_limit" to limit the running time.
