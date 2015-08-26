@@ -58,10 +58,10 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **ALT :** alternative resources, e.g. `S += T1 % R1|R2`, T1 uses either R1 or R2. For a list of resources L it is also possible to write `S += T1 % alt(L)` or `S += T1 % alt( R for R in L )`.
 - **ALTMULT :** alternative resources which are similar for different tasks, e.g. `S += R1|R2 % [T1,T2]`, T1 and T2 either use R1 or R2, but they both use the same one.
 - **CUMUL :** cumulative resources, e.g. `R1 = S.Resource('R1',size=3); S += T1 % R1*2`, R1 has size 3 and T1 uses 2 units of that size whenever run. This can be used to model worker pools or any other resource with a high multiplicity. Using a resource of size n instead n resources of size 1 often helps the solver.
-- **CAP :** capacities, e.g. `R1['length'] <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1['work'] = 3` and then `R1['work'] <= 4`.
-- **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 1 to 10 must be at most 4.
-
-
+- **CAP :** capacities, e.g. `R1 <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
+- **CAPSLICE :** capacities, e.g. `R1[:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 1 to 9 must be at most 4.
+- **CAPDIFF :** change in capacity over time like a derivate, e.g. `~R1 <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `~R1['work'] <= 4`.
+- **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `~R1[:10] <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
 
 
 
@@ -208,18 +208,26 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> False</td>
       <td> True</td>
     </tr>
+        <tr>
+      <th>CAPDIFF</th>
+      <td> True</td>
+      <td>  False</td>
+      <td> False</td>
+      <td> False</td>
+      <td> False</td>
+    </tr>
+    <tr>
+      <th>CAPDIFFSLICE</th>
+      <td> True</td>
+      <td>  False</td>
+      <td> False</td>
+      <td> False</td>
+      <td> False</td>
+    </tr>
   </tbody>
 </table>
 
 True means that the constraint is working, False means that the constraint has no effect, and Error means that it produces an error when using it (to be fixed).
-
-### Solver Task Annotations
-
-Annotations provide the solver with additional information about the scenario. An annotations are set using `T[<annotation name>] = <annotation value>`:
-
-- **_completion_time_cost:** adds the completion time of the task times its annotaton value to the objective. This is currently the only available type of objective. Adding `S += T1*5 + T2*3` is a shortcut for setting `T1['_completion_time_cost'] = 5` and `T2['_completion_time_cost'] = 3`. This should always be supported by all solvers since it allows flow-time as well as makespan objectives.
-
-- **_task_group:** task groups are groups of tasks that have to satisfy the same constraints. We can specify a task group by writing `T1['_task_group'] = 'a'` and `T2['_task_group'] = 'a'`, hence T1 and T2 both belong to task group `a`. This annotation speeds up the solving process if there are many tasks with the same characteristc. This is currently only supported by solvers `pulp.solve` and `pulp.solve_mon`.
 
 ### Outlook
 
@@ -227,3 +235,6 @@ Constraints that are only partially implemented or on the TODO list:
 
 - **FIRST :** first/last tasks on resources, the envisioned syntax is `S += R1[3:7] < T1` to ensure that T1 is the last task on R1 in between 3 and 7
 - resource-dependent precedences, the envisioned syntax is `S += R1 % T1 + 3 << T2` which ensures that only on resource R1 the conditional precedence `T1 + 3 << T2` holds. This would make conditional precedences more applicable
+- soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
+- addition of capacities, `R[:10] + R[20:22] + ~R[20:22]`
+- turn solvers.pulp into solvers.mip which is agnostic of the python mip package

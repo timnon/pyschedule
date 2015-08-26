@@ -307,7 +307,7 @@ Alice is a morning person and  wants to finish three hours of work before lunch,
 
 
 ```python
-S += Alice['length'][:3] >= 3
+S += Alice[:3] >= 3
 run(S)
 ```
 
