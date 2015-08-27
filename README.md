@@ -14,7 +14,7 @@ pyschedule is the easiest way to match tasks with resources. Do you need to plan
 pip install pyschedule
 ```
 
-Here is a hello world example, you can also find this document as a <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/README.ipynb">notebook</a>. There are more example notebooks <a href="https://github.com/timnon/pyschedule-notebooks/">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">overview notebook</a>.
+Here is a hello world example, you can also find this document as a <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/README.ipynb">notebook</a>. There are more example notebooks <a href="https://github.com/timnon/pyschedule-notebooks/">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">here</a>.
 
 ```python
 # Load pyschedule and create a scenario with ten steps planning horizon
@@ -35,7 +35,7 @@ S += clean % Alice|Bob
 
 # Solve and print solution
 S.use_makespan_objective()
-solvers.pulp.solve(S,msg=1)
+solvers.mip.solve(S,msg=1)
 
 # Print the solution
 print(S.solution())
@@ -64,7 +64,7 @@ pyschedule supports different solvers, classical <a href="https://en.wikipedia.o
 
 
 ```python
-solvers.pulp.solve(S,kind='CPLEX')
+solvers.mip.solve(S,kind='CPLEX')
 ```
 
 pyschedule is under active development, there might be non-backward-compatible changes. More base features are explained in the following example.
@@ -197,7 +197,7 @@ task_colors = { green_paint   : '#A1D372',
 
 # A small helper method to solve and plot a scenario
 def run(S) :
-    if solvers.pulp.solve(S):
+    if solvers.mip.solve(S):
         %matplotlib inline
         plotters.matplotlib.plot(S,task_colors=task_colors,fig_size=(10,5))
     else:

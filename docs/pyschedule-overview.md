@@ -21,9 +21,9 @@ more specifically, pyschedule ...
 
 pyschedule tries to gain the best of two worlds by supporting classical MIP-models (Mixed Integer) as well as CP solvers (Constraint Programming). All solvers interfaces are in the solvers subpackage:
 
-- **pulp.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK"). CBC is part of pulp and hence works out of the box.
-- **pulp.solve_mon(scenario,kind) :** time-indexed MIP-formulation that is slightly better for tasks of length > 1.
-- **pulp.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
+- **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK"). CBC is part of pulp and hence works out of the box.
+- **mip.solve_mon(scenario,kind) :** time-indexed MIP-formulation that is slightly better for tasks of length > 1.
+- **mip.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
 - **ortools.solve(scenario) :** the open source CP-solver of Google, a little restricted but good to ensure feasibility of larger models. Make sure that package [ortools](https://github.com/google/or-tools) is installed.
 - **cpoptimizer.solve(scenario) :** [IBM CP Optimizer](http://www-01.ibm.com/software/commerce/optimization/cplex-cp-optimizer/), requires command "oplrun" to be executable. Industrial-scale solver that runs fast on very large problems.
 - **cpoptimizer.solve_docloud(scenario,api_key) :** IBM CP Optimizer hosted in the cloud, you need to provide an "api_key" which you can get [here](https://developer.ibm.com/docloud/) for a trial.
@@ -34,7 +34,7 @@ There is one pre-defined heuristic (meta-solver):
 - **listsched.solve(scenario,solve_method,task_list,batch_size) :** all tasks are added in the order of task_list and integrated in the current schedule using solve_method. If task_list is not specified, then an ordering according to the precedence constraints is used as default.
 
 
-pyschedule has been tested with python 2.7 and 3.4. All solvers support a parameter "msg" to switch feedback on/off. Moreover, solvers.pulp.solve, solvers.pulp.solve_discrete and solvers.ortools.solve support a parameter "time_limit" to limit the running time.
+pyschedule has been tested with python 2.7 and 3.4. All solvers support a parameter "msg" to switch feedback on/off. Moreover, solvers.mip.solve, solvers.mip.solve_discrete and solvers.ortools.solve support a parameter "time_limit" to limit the running time.
 
 ### Constraints
 
@@ -73,9 +73,9 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>pulp.solve</th>
-      <th>pulp.solve_mon</th>
-      <th>pulp.solve_bigm</th>
+      <th>mip.solve</th>
+      <th>mip.solve_mon</th>
+      <th>mip.solve_bigm</th>
       <th>ortools.solve</th>
       <th>cpoptimizer.solve_docloud</th>
     </tr>
@@ -238,4 +238,3 @@ Constraints that are only partially implemented or on the TODO list:
 - resource-dependent precedences, the envisioned syntax is `S += R1 % T1 + 3 << T2` which ensures that only on resource R1 the conditional precedence `T1 + 3 << T2` holds. This would make conditional precedences more applicable
 - soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
 - addition of capacities, `R[:10] + R[20:22] + ~R[20:22]`
-- turn solvers.pulp into solvers.mip which is agnostic of the python mip package

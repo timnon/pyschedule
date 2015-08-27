@@ -331,7 +331,7 @@ S += R_red['length'] <= capacity+2
 # objective
 S += T['end']*1
 
-if not pyschedule.solvers.pulp.solve_bigm(S,kind='CBC',time_limit=60,msg=1):
+if not pyschedule.solvers.mip.solve_bigm(S,kind='CBC',time_limit=60,msg=1):
 	print('no solution found')
 	sys.exit()
 

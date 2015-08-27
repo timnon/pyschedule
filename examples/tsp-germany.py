@@ -314,7 +314,7 @@ S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
 # objective: minimze the end of the trip (multiply with 1 to turn into affine combination of tasks)
 S += T['end']*1
 
-if not pyschedule.solvers.pulp.solve_bigm(S,time_limit=30,msg=1):
+if not pyschedule.solvers.mip.solve_bigm(S,time_limit=30,msg=1):
 	print('no solution found')
 	sys.exit()
 

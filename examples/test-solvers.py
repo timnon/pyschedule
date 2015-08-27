@@ -13,9 +13,9 @@ def solve_docloud(scenario) :
 	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
-solvers.pulp.solve,
-solvers.pulp.solve_mon,
-solvers.pulp.solve_bigm,
+solvers.mip.solve,
+solvers.mip.solve_mon,
+solvers.mip.solve_bigm,
 solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
 solve_docloud

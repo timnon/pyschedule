@@ -28,7 +28,7 @@ exists, then a 0 should be returned, otherwise a 1. The optimal solution
 should be directly written to the passed scenario
 """
 
-from . import pulp
+from . import mip
 from . import cpoptimizer
 from . import ortools
 from . import listsched
