@@ -52,11 +52,11 @@ def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 		mip.solve(pl.GLPK_CMD(msg=msg))
 	elif kind == 'CBC':
 		options = []
-		for key in params:
-			if key == 'time_limit':
-				options.extend(['sec', str(params['time_limit'])])
-			else:
-				options.extend([str(key), str(params[key])])
+		if 'time_limit' in params:
+			options.extend(['sec', str(params['time_limit'])])
+		if 'random_seed' in params:
+			options.extend(['randomSeed', str(params['random_seed'])])
+			options.extend(['randomCbcSeed', str(params['random_seed'])])
 		mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
 	else:
 		raise Exception('ERROR: solver ' + kind + ' not known')
@@ -88,26 +88,26 @@ def _get_task_groups(scenario):
 	                             if T not in tasks_in_task_groups ])
 	return task_groups
 
-def solve(scenario, kind='CBC', time_limit=None, msg=0):
+def solve(scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
 	"""
 	Shortcut to discrete mip unit
 	"""
 	scenario.check()
-	return DiscreteMIPUnit().solve(scenario, kind=kind, time_limit=time_limit, msg=msg)
+	return DiscreteMIPUnit().solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
 
-def solve_mon(scenario, kind='CBC', time_limit=None, msg=0):
+def solve_mon(scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
 	"""
 	Shortcut to discrete mip with monotonous decrease
 	"""
 	scenario.check()
-	return DiscreteMIP().solve(scenario, kind=kind, time_limit=time_limit, msg=msg)
+	return DiscreteMIP().solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
 
-def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, msg=0):
+def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
 	scenario.check()
-	return ContinuousMIP().solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, msg=msg)
+	return ContinuousMIP().solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
 
 
 
@@ -258,7 +258,7 @@ class ContinuousMIP(object):
 			T.resources = [R for R in resources if self.x[(T, R)].varValue > 0]
 
 
-	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, msg=0):
+	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
 		"""
 		Solves the given scenario using a continous MIP via the pulp package
 
@@ -267,6 +267,7 @@ class ContinuousMIP(object):
 			kind:        MIP-solver to use: CPLEX, GLPK, CBC
 			bigm :       a large number to allow a big-m type model
 			time_limit:  a time limit, only for CPLEX and CBC
+			random_seed: random_seed
 			msg:         0 means no feedback (default) during computation, 1 means feedback
 	
 		Returns:
@@ -276,7 +277,13 @@ class ContinuousMIP(object):
 		self.scenario = scenario
 		self.bigm = bigm
 		self.build_mip_from_scenario(msg=msg)
-		_solve_mip(self.mip, kind=kind, params={'time_limit': time_limit}, msg=msg)
+
+		params = dict()
+		if time_limit is not None:
+			params['time_limit'] = str(time_limit)
+		if random_seed is not None:
+			params['random_seed'] = str(random_seed)
+		_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
 		if self.mip.status == 1:
 			self.read_solution_from_mip(msg=msg)
@@ -522,7 +529,7 @@ class DiscreteMIP(object):
 
 
 
-	def solve(self, scenario, kind='CBC', time_limit=None, task_groups=None, msg=0):
+	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
 		"""
 		Solves the given scenario using a discrete MIP via the pulp package
 
@@ -531,6 +538,7 @@ class DiscreteMIP(object):
 			kind:                MIP-solver to use: CPLEX, GLPK, CBC
 			horizon :            the number of time steps to model
 			time_limit:          a time limit, only for CPLEX and CBC
+			random_seed:         random seed
 			msg:                 0 means no feedback (default) during computation, 1 means feedback
 
 		Returns:
@@ -543,7 +551,6 @@ class DiscreteMIP(object):
 			raise Exception('ERROR: solver pulp.solve requires scenarios with defined horizon')
 			return 0
 		self.horizon = self.scenario.horizon
-		self.task_groups = task_groups
 		self.build_mip_from_scenario(msg=msg)
 
 		# if time_limit :
@@ -553,8 +560,10 @@ class DiscreteMIP(object):
 		params = dict()
 		if time_limit != None:
 			params['time_limit'] = time_limit
+		if random_seed is not None:
+			params['random_seed'] = str(random_seed)
 		#params['cuts'] = 'off'
-		params['ratioGap'] = str(0.1)
+		#params['ratioGap'] = str(0.1)
 		_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
 		if self.mip.status == 1:
@@ -856,7 +865,7 @@ class DiscreteMIPUnit(object):
 					T_.resources.append(R)
 
 
-	def solve(self, scenario, kind='CBC', time_limit=None, msg=0):
+	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
 		"""
 		Solves the given scenario using a discrete MIP via the pulp package
 
@@ -865,6 +874,7 @@ class DiscreteMIPUnit(object):
 			kind:                MIP-solver to use: CPLEX, GLPK, CBC
 			horizon :            the number of time steps to model
 			time_limit:          a time limit, only for CPLEX and CBC
+			random_seed:         random seed
 			msg:                 0 means no feedback (default) during computation, 1 means feedback
 
 		Returns:
@@ -884,10 +894,12 @@ class DiscreteMIPUnit(object):
                 #       'heur','on','preprocess','on','feas','on']#,'maxNodes',str(0),'feas','both','doh','solve']
 
 		params = dict()
-		if time_limit != None:
+		if time_limit is not None:
 			params['time_limit'] = time_limit
+		if random_seed is not None:
+			params['random_seed'] = str(random_seed)
 		#params['cuts'] = 'off'
-		params['ratioGap'] = str(0.1)
+		#params['ratioGap'] = str(0.1)
 		_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
 		if self.mip.status == 1:
