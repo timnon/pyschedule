@@ -571,8 +571,8 @@ class Task(_SchedElement) :
 	def __setitem__(self, key, value):
 		setattr(self,str(key),value)
 
-	def __getitem__(self, key, value):
-		setattr(self,str(key),value)
+	def __getitem__(self, key):
+		return getattr(self,str(key))
 
 	def __contains__(self,key):
 		if not hasattr(self,key):
