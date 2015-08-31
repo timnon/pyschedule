@@ -724,13 +724,15 @@ class DiscreteMIPUnit(object):
 		for P in S.bounds_low_tight():
 			if P.task not in self.task_groups:
 				continue
-			cons.append(_con([(x[P.task, P.bound],1)], sense=1, rhs=1))
+			task_group_size = len(self.task_groups[P.task])
+			cons.append(_con([(x[P.task, P.bound],1)], sense=0, rhs=task_group_size))
 
 		# tight up bounds
 		for P in S.bounds_up_tight():
 			if P.task not in self.task_groups:
 				continue
-			cons.append(_con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=1, rhs=1))
+			task_group_size = len(self.task_groups[P.task])
+			cons.append(_con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=0, rhs=task_group_size))
 
 		# conditional precedence constraints
 		for P in S.precs_cond():

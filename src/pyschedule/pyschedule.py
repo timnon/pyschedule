@@ -568,6 +568,12 @@ class Task(_SchedElement) :
 			return [ x % self for x in other ]
 		return other % self
 
+	def __setitem__(self, key, value):
+		setattr(self,str(key),value)
+
+	def __getitem__(self, key, value):
+		setattr(self,str(key),value)
+
 	def __contains__(self,key):
 		if not hasattr(self,key):
 			return False
