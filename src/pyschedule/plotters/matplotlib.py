@@ -112,7 +112,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 		for T,R_,x,y in R_solution :
 			sorted_levels =  sorted(level_fill.items(), key = operator.itemgetter(1, 0))
 			# get the maximum resource requirement
-			coeff = S.resources_req_coeff(task=T,resource=R)
+			coeff = max([ RA[R] for RA in T.resources_req if R_ in RA ])
 			min_levels = [ level for level,fill in sorted_levels[:coeff] ]
 			task_levels[T] = min_levels
 			for level in min_levels :

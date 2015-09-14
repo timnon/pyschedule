@@ -6,7 +6,7 @@ import copy, collections, traceback
 horizon = 10
 
 # solver feedback
-msg = 1
+msg = 0
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
@@ -14,11 +14,10 @@ def solve_docloud(scenario) :
 
 solve_methods = [
 solvers.mip.solve,
-solvers.mip.solve_mon,
 solvers.mip.solve_bigm,
 solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
-solve_docloud
+#solve_docloud
 ]
 
 def two_task_scenario() :
@@ -32,113 +31,126 @@ def two_task_scenario() :
 
 def ZERO() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S['T1'].length = 0
 	sols = ['[(T1, R1, 0, 0), (T2, R1, 0, 1)]']
 	return S,sols
 
 def NONUNIT():
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S['T1'].length = 5
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 6)]']
 	return S,sols
 
 def BOUND() : # only test lower bound, upper bound is similar
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T1'] > 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 3, 4)]']
 	return S,sols
 
 def BOUNDTIGHT() : # only test tight upper bound, lower bound is similar
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T1'] <= 3
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def LAX() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T2'] < S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def LAXPLUS() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T2'] + 1 < S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def TIGHT() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T2'] <= S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def TIGHTPLUS() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T2'] + 1 <= S['T1']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
 def COND() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['T1'] + 2 << S['T2']
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
 	return S,sols
 
 def ALT() :
 	S = two_task_scenario()
-	S += S['R1'] | S['R2'] % S['T1']
-	S += S['R1'] | S['R2'] % S['T2']
+	S['T1'] += S['R1']|S['R2']
+	S['T2'] += S['R1']|S['R2']
 	sols = ['[(T1, R1, 0, 1), (T2, R2, 0, 1)]','[(T1, R2, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
 def MULT() :
 	S = two_task_scenario()
-	S += S['R1'] % (S['T1'],S['T2'])
-	S += S['R2'] % (S['T1'],S['T2'])
+	S['T1'] += (S['R1'],S['R2'])
+	S['T2'] += (S['R1'],S['R2'])
 	sols = ['[(T1, R1, 0, 1), (T1, R2, 0, 1), (T2, R1, 1, 2), (T2, R2, 1, 2)]']
 	return S,sols
 
 def ALTMULT() :
 	S = two_task_scenario()
-	S += S['R1'] | S['R2'] % (S['T1'],S['T2'])
+	RA = S['R1']|S['R2']
+	S['T1'] += RA
+	S['T2'] += RA
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]','[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
 
 def CUMUL() :
 	S = two_task_scenario()
 	S['R1'].size = 2
-	S += S['R1'] % (S['T1'], S['T2'])
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
 
 def CAP():
 	S = two_task_scenario()
-	S += S['T1'] % S['R1']|S['R2']
-	S += S['T2'] % S['R1']|S['R2']
+	S['T1'] += S['R1']|S['R2']
+	S['T2'] += S['R1']|S['R2']
 	S += S['R2']['length'] <= 0
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]']
 	return S,sols
 
 def CAPSLICE():
 	S = two_task_scenario()
-	S += S['R1'] % {S['T1'],S['T2']}
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S += S['R1']['length'][:3] <= 1
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
 	return S,sols
 
 def CAPDIFF():
 	S = two_task_scenario()
-	S += S['T1'] % S['R1']
-	S += S['T2'] % S['R1']
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S.clear_objective()
 	S += S['T1'] - S['T2']*2
 	S += S['R1']['length'].diff() <= 1
@@ -147,8 +159,8 @@ def CAPDIFF():
 
 def CAPDIFFSLICE():
 	S = two_task_scenario()
-	S += S['T1'] % S['R1']
-	S += S['T2'] % S['R1']
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
 	S.clear_objective()
 	S += S['T1'] - S['T2']*2
 	S += S['R1']['length'][5:].diff() <= 0
@@ -178,7 +190,7 @@ CAPDIFF,
 CAPDIFFSLICE
 ]
 
-#scenario_methods = [CAPDIFF]
+#scenario_methods = [ALT]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

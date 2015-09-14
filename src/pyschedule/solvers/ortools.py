@@ -49,11 +49,13 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 		I = ort_solver.FixedDurationIntervalVar(0,S.horizon-T.length,T.length,False,T.name)
 		task_to_interval[T] = I
 
+
+
+
 	# resourcee requirements
-	for RA in S.resources_req() :
-		tasks = RA.tasks()
-		for T in tasks :
-			I = task_to_interval[T]
+	for T in S.tasks():
+		I = task_to_interval[T]
+		for RA in T.resources_req:
 			RA_tasks = list()
 			for R in RA :
 				I_ = ort_solver.FixedDurationIntervalVar(0,S.horizon-T.length,T.length,True,T.name+'_'+R.name)
@@ -66,7 +68,9 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 					ort_solver.Add( I_.PerformedExpr() == 1 )
 			# one resource needs to get selected
 			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in RA_tasks ]) == 1)
-		# same resources for tasks
+	ra_to_tasks = S.joint_resources()
+	for RA in ra_to_tasks:
+		tasks = list(ra_to_tasks[RA])
 		T = tasks[0]
 		for T_ in tasks[1:] :
 			for R in RA :
@@ -162,9 +166,8 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 	# read last solution
 	for T in S.tasks() :
 		T.start_value = int(solution.StartMin(task_to_interval[T])) #collector.StartValue(0, task_to_interval[T])
-		RAs = S.resources_req(task=T)
 		T.resources = [ R \
-	                    for RA in RAs for R in RA \
+	                    for RA in T.resources_req for R in RA \
 	                    if collector.PerformedValue(0,resource_task_to_interval[(R,T)]) == 1 ]
 	return 1
 	

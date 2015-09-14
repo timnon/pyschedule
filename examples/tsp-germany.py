@@ -301,7 +301,8 @@ T = { city : S.Task(city) for city in coords  }
 Car = S.Resource('Car')
 
 # the car has to pass every city
-S += Car % [ T[city] for city in coords ]
+for city in coords:
+	T[city] += Car
 
 # make sure that the tour start and ends at start_city
 S += T['start'] < { T[city] for city in coords if city != 'start' }

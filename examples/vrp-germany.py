@@ -313,10 +313,10 @@ S += T['start'] < { T[city] for city in cities if city != 'start' }
 S += T['end'] > { T[city] for city in cities if city != 'end' }
 
 # resource assignments
-S += T['start'] % [ R_blue, R_red ]
-S += T['end'] % [ R_blue, R_red ]
+T['start'] += [ R_blue, R_red ]
+T['end'] += [ R_blue, R_red ]
 for city in cities :
-	S += T[city] % R_blue | R_red
+	T[city] += R_blue|R_red
 
 # distances
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \

@@ -13,11 +13,12 @@ T = { (i,j) : S.Task('T_%i_%i'%(i,j)) for i in range(n) for j in range(n) } #tas
 S += [ T[i,j-1] < T[i,j] for i in range(n) for j in range(1,n) ]
 
 # resource assignment modulo n
-for i in range(n) :
-	S += R[i] % [ T[(i+j) % n,j] for j in range(n) ]
+for j in range(n):
+	for i in range(n):
+		T[(i+j) % n,j] += R[i]
 
 S.use_makespan_objective()
-if pyschedule.solvers.pulp.solve(S,msg=1):
+if pyschedule.solvers.mip.solve(S,msg=1):
 	pyschedule.plotters.matplotlib.plot(S,color_prec_groups=False)
 else:
 	print('no solution found')

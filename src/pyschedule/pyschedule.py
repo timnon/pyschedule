@@ -148,12 +148,15 @@ class _SchedElementAffine(_DICT_TYPE) :
 	def __radd__(self,other) :
 		return self + other
 
-	def __repr__(self) :
+	def __str__(self) :
 		def format_coeff(val) :
 			if val != 1 :
 				return str(val)+'x'
 			return ''
 		return self.affine_operator.join([ format_coeff(self[key])+str(key) for key in self ])
+
+	def __repr__(self):
+		return self.__str__() + '_' + str(id(self)) #add id because representation is otherwise not unique
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
@@ -183,15 +186,14 @@ class Scenario(_SchedElement):
 		self.add_task(task)
 		return task
 
-	def tasks(self,resource=None,single_resource=None) :
+	def tasks(self,resource=None) :
 		"""
 		Returns all tasks in scenario
 		"""
 		if resource is None :
 			return list(self._tasks.values())
 		else :
-			return list({ T for RA in self.resources_req(resource=resource,single_resource=single_resource)
-						    for T in RA.tasks() })
+			return list({ T for T in self.tasks() for RA in T.resources_req if resource in RA })
 
 	def Resource(self,name,size=1) :
 		"""
@@ -206,14 +208,29 @@ class Scenario(_SchedElement):
 		self.add_resource(resource)
 		return resource
 
-	def resources(self,task=None,single_resource=None) :
+	def resources(self,task=None) :
 		"""
 		Returns all resources in scenario
 		"""
 		if task is None :
 			return list(self._resources.values())
 		else :
-			return list({ R for RA in self.resources_req(task=task,single_resource=single_resource) for R in RA })
+			return list({ R for RA in task.resources_req for R in RA })
+
+	def joint_resources(self):
+		"""
+		Returns a mapping of resource alternatives to tasks
+		"""
+		ra_to_tasks = dict()
+		for T in self.tasks():
+			for RA in T.resources_req:
+				if len(RA) < 2:
+					continue
+				if RA not in ra_to_tasks:
+					ra_to_tasks[RA] = {T}
+				else:
+					ra_to_tasks[RA].add(T)
+		return ra_to_tasks
 
 	def solution(self) :
 		"""
@@ -249,7 +266,7 @@ class Scenario(_SchedElement):
 			del self._tasks['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
 		makespan = self.Task('MakeSpan')
-		self += makespan % self.resources()[0] # add some random resource, every task needs one
+		makespan += self.resources()[0] # add some random resource, every task needs one
 		for T in tasks :
 			self += T < makespan
 		self.clear_objective()
@@ -305,45 +322,6 @@ class Scenario(_SchedElement):
 
 	def bounds_up_tight(self) :
 		return self.constraints(BoundUpTight)
-
-	#TODO: add again last and first constraints
-	'''
-	def precs_first(self) :
-		return [ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'first' ]
-
-	def precs_last(self) :
-		return []#[ C for C in self.constraints if isinstance(C,_Precedence) and C.kind == 'last' ]
-	'''
-
-	def resources_req(self,task=None,resource=None,single_resource=None):
-		"""
-		Returns all resource requirements constraints. Restrict to constraints containing the given task or resource
-		task:            only resource requirements that contain this task
-		resource:        only resource requirements that contain this resource
-		single_resource: True=only resource reqs. with a single resource,
-		                 False=only resource reqs. with multiple resources
-		"""
-		constraints = self.constraints(ResourceReq)
-		if task is not None :
-			constraints = [ C for C in constraints 
-                            if task in C.tasks() ]
-		if resource is not None :
-			constraints = [ C for C in constraints
-                            if resource in C.resources() ]
-		if single_resource is not None:
-			if single_resource:
-				constraints = [ C for C in constraints
-                                if len(C.resources()) == 1 ]
-			else:
-				constraints = [ C for C in constraints 
-                                if len(C.resources()) > 1 ]
-		return constraints
-
-	def resources_req_coeff(self,task,resource):
-		"""
-		Returns the maximum resource requirement of the given task on the given resource
-		"""
-		return max([ RA[resource] for RA in self.resources_req(task=task,resource=resource) ])
 
 	def capacity_low(self):
 		return self.constraints(CapacityLow)
@@ -461,13 +439,16 @@ class Scenario(_SchedElement):
 			return self._tasks[item]
 		return self._resources[item]
 
+	def __setitem__(self,key,item):
+		return self
+
 	def check(self):
 		"""
 		Do basic checks on scenario
 		"""
 		# check if each task has a resource
 		for T in self.tasks():
-			if not self.resources(task=T):
+			if not T.resources_req:
 				raise Exception('ERROR: task %s has no resource requirement'%str(T))
 
 	def __str__(self) :
@@ -488,7 +469,13 @@ class Scenario(_SchedElement):
 
 		s += 'TASKS:\n'
 		for T in self.tasks() :
-			s += '%s : %s\n'%(str(T.name),str(self.resources_req(task=T)))
+			s += '%s : %s\n'%(str(T.name),','.join([ str(RA) for RA in T.resources_req ]))
+		s += '\n'
+
+		s += 'JOINT RESOURCES:\n'
+		ra_to_tasks = self.joint_resources()
+		for RA in ra_to_tasks:
+			s += '%s : %s\n'%(str(RA),','.join([ str(T) for T in ra_to_tasks[RA] ]))
 		s += '\n'
 
 		def print_constraint(title,constraints):
@@ -518,7 +505,6 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-
 	def __init__(self,name,length=1) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
@@ -526,6 +512,7 @@ class Task(_SchedElement) :
 		self.length = length
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
+		self.resources_req = list() # required resources
 		self.completion_time_cost = None # cost on the final completion time
 		self.group = None # group exchangeable tasks
 
@@ -565,10 +552,19 @@ class Task(_SchedElement) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
-	def __mod__(self,other) :
-		if _isiterable(other) :
-			return [ x % self for x in other ]
-		return other % self
+	def __iadd__(self,other):
+		if _isiterable(other):
+			for x in other:
+				self += x
+			return self
+		elif isinstance(other,Resource):
+			other = _ResourceAffine(other) #transform into _ResourceAffine
+			self.resources_req.append(other)
+			return self
+		elif isinstance(other,_ResourceAffine):
+			self.resources_req.append(other)
+			return self
+		raise Exception('ERROR: cant add object to task')
 
 	def __setitem__(self, key, value):
 		setattr(self,str(key),value)
@@ -823,40 +819,25 @@ class Resource(_SchedElement) :
 		_SchedElement.__init__(self,name)
 		self.size = size
 
-	def __iadd__(self,other) :
-		if isinstance(other,Task) :
-			other += self
-			return self
-		elif _isiterable(other) :
-			for x in other : self += x	
-		else :
-			raise Exception('ERROR: cant add '+str(other)+' to resource '+str(self))
-		return self
-
 	def __mul__(self,other) :
-		return _ResourceAffine(self) * other
+		return _ResourceAffine(self).__iadd__(other)
 
 	def __or__(self,other) :
+		'''
 		if isinstance(other,ResourceReq) :
 			other._resources = self | other._resources
 			return other
+		'''
 		return _ResourceAffine(self) | other
 
+	'''
 	def __mod__(self,other) :
 		return _ResourceAffine(self) % other
+	'''
 
 	def __getitem__(self, key):
 		C = _Capacity(resource=self)
 		return C[key]
-		'''
-		if isinstance(key,slice) or isinstance(key,int):
-			C = _Capacity(resource=self)
-			return C[key]
-		elif isinstance(key,str) or hasattr(key, '__call__'):
-			C = _Capacity(resource=self,weight=key)
-			return C
-		raise Exception('ERROR: index not correct')
-		'''
 
 	def __le__(self,other):
 		return _Capacity(resource=self) <= other
@@ -873,71 +854,6 @@ class _ResourceAffine(_SchedElementAffine) :
 
 	def __or__(self,other) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
-
-	def __mod__(self,other) :
-		RA = ResourceReq(tasks=[], resources=self)
-		return RA % other
-
-
-
-class ResourceReq(_Constraint) :
-	"""
-	A resource requirement of one or multiple tasks
-	"""
-	def __init__(self,tasks,resources):
-		_Constraint.__init__(self)
-		self._tasks = tasks
-		self._resources = resources
-
-	def tasks(self) :
-		return self._tasks
-
-	def resources(self):
-		return list(self)
-
-	def __getitem__(self, resource):
-		if resource in self._resources :
-			try :
-				return self._resources.__getitem__(resource)
-			except :
-				return 1
-		raise Exception('ERROR: %s not contained in %s' % (str(resource),str(self)))
-
-	def __iter__(self):
-		return self._resources.__iter__()
-
-	def __or__(self,other) :
-		if _isiterable(other) :
-			for x in other :
-				self = self | other
-		if isinstance(other,Resource) or isinstance(other,_ResourceAffine) :
-			self._resources = self._resources | other
-		else :
-			Exception('ERROR: cannot take or of %s with resource requirement %s' % (str(other),str(self)))
-		return self
-
-	def __mod__(self,other) :
-		if not _isiterable(other):
-			other = [other]
-		for x in other :
-			if isinstance(x,Task) :
-				self._tasks.append(x)
-			else :
-				raise Exception('ERROR: cannot add %s to resource requirement %s' % (str(x),str(self)))
-		return self
-
-	def __repr__(self):
-		s = ''
-		if len(self.tasks()) > 1 :
-			s += '('
-		s += ','.join([ str(T) for T in self.tasks() ])
-		if len(self.tasks()) > 1 :
-			s += ')'
-		s += ' % ' + str(self._resources)
-		return s
-
-	def __str__(self):
-		return self.__repr__()
 
 
 
