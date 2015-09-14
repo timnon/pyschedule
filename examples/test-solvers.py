@@ -17,7 +17,7 @@ solvers.mip.solve,
 solvers.mip.solve_bigm,
 solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
-#solve_docloud
+solve_docloud
 ]
 
 def two_task_scenario() :
@@ -153,7 +153,7 @@ def CAPDIFF():
 	S['T2'] += S['R1']
 	S.clear_objective()
 	S += S['T1'] - S['T2']*2
-	S += S['R1']['length'].diff() <= 1
+	S += S['R1'].diff() <= 1
 	sols = ['[(T1, R1, 8, 9), (T2, R1, 9, 10)]']
 	return S,sols
 

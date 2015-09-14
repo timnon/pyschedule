@@ -245,7 +245,7 @@ class Scenario(_SchedElement):
 		"""
 		Returns a representation of all objectives
 		"""
-		tasks_objective = [T*T['_completion_time_cost'] for T in self.tasks() if '_completion_time_cost' in T ]
+		tasks_objective = [T*T['completion_time_cost'] for T in self.tasks() if 'completion_time_cost' in T ]
 		if tasks_objective:
 			return functools.reduce(lambda x,y:x+y,tasks_objective)
 		return None
@@ -566,6 +566,20 @@ class Task(_SchedElement) :
 			return self
 		raise Exception('ERROR: cant add object to task')
 
+	def __isub__(self,other):
+		if _isiterable(other):
+			for x in other:
+				self += x
+			return self
+		elif isinstance(other,Resource):
+			other = _ResourceAffine(other) #transform into _ResourceAffine
+			self.resources_req = [ RA for RA in self.resources_req if str(RA) != str(other) ]
+			return self
+		elif isinstance(other,_ResourceAffine):
+			self.resources_req = [ RA for RA in self.resources_req if str(RA) != str(other) ]
+			return self
+		raise Exception('ERROR: cant subtract object to task')
+
 	def __setitem__(self, key, value):
 		setattr(self,str(key),value)
 
@@ -814,7 +828,6 @@ class Resource(_SchedElement) :
 	"""
 	A resource which can process at most one task per time step
 	"""
-
 	def __init__(self,name=None,size=1) :
 		_SchedElement.__init__(self,name)
 		self.size = size
@@ -823,17 +836,7 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self).__iadd__(other)
 
 	def __or__(self,other) :
-		'''
-		if isinstance(other,ResourceReq) :
-			other._resources = self | other._resources
-			return other
-		'''
 		return _ResourceAffine(self) | other
-
-	'''
-	def __mod__(self,other) :
-		return _ResourceAffine(self) % other
-	'''
 
 	def __getitem__(self, key):
 		C = _Capacity(resource=self)
@@ -844,6 +847,15 @@ class Resource(_SchedElement) :
 
 	def __ge__(self,other):
 		return _Capacity(resource=self) >= other
+
+	def diff(self):
+		return _Capacity(resource=self).diff()
+
+	def inc(self):
+		return _Capacity(resource=self).inc()
+
+	def dec(self):
+		return _Capacity(resource=self).dec()
 
 
 
