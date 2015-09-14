@@ -31,6 +31,8 @@ python package to formulate and solve resource-constrained scheduling problems
 from collections import OrderedDict as _DICT_TYPE
 import types
 import functools
+import copy
+import uuid
 
 try: # allow Python 2 vs 3 compatibility
 	_maketrans = str.maketrans
@@ -64,7 +66,7 @@ def alt(*args) :
 
 class _SchedElement(object):
 
-	def __init__(self,name) :
+	def __init__(self,name='') :
 		if type(name) is not str:
 			raise Exception('ERROR: name %s is not a string'%str(name))
 		trans = _maketrans("-+[] ->/","________")
@@ -678,7 +680,7 @@ class _TaskAffine(_SchedElementAffine) :
 class _Constraint(_SchedElement) :
 
 	def __init__(self) :
-		_SchedElement.__init__(self,name='')
+		_SchedElement.__init__(self)
 
 	def tasks(self):
 		return []
@@ -845,21 +847,22 @@ class Resource(_SchedElement) :
 
 	def __getitem__(self, key):
 		C = _Capacity(resource=self)
+		return C[key]
+		'''
 		if isinstance(key,slice) or isinstance(key,int):
+			C = _Capacity(resource=self)
 			return C[key]
-		elif isinstance(key,str):
-			C.param = key
+		elif isinstance(key,str) or hasattr(key, '__call__'):
+			C = _Capacity(resource=self,weight=key)
 			return C
 		raise Exception('ERROR: index not correct')
+		'''
 
 	def __le__(self,other):
 		return _Capacity(resource=self) <= other
 
 	def __ge__(self,other):
 		return _Capacity(resource=self) >= other
-
-	def __invert__(self):
-		return _Capacity(resource=self,diff=True)
 
 
 
@@ -940,21 +943,22 @@ class ResourceReq(_Constraint) :
 
 class _Capacity(_Constraint):
 
-	def __init__(self,resource,param='length',bound=None,start=None,end=None,comp_operator=None,diff=False):
+	def __init__(self,resource):
 		_Constraint.__init__(self)
 		self.resource = resource
-		self.param = param
-		self.start = start
-		self.end = end
-		self.bound = bound
-		self.comp_operator = comp_operator
-		self.diff = diff
+		self.weight = lambda T,t : 1
+		self._param = 'length'
+		self._start = None
+		self._end = None
+		self.bound = None
+		self.comp_operator = None
+		self.kind = 'sum'
 
 	def __ge__(self, other):
 		if not _isnumeric(other):
 			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityLow
-		if self.diff:
+		if 'diff' in self.kind:
 			self.__class__ = CapacityDiffLow
 		self.comp_operator = '>='
 		self.bound = other
@@ -964,40 +968,84 @@ class _Capacity(_Constraint):
 		if not _isnumeric(other):
 			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
 		self.__class__ = CapacityUp
-		if self.diff:
+		if 'diff' in self.kind:
 			self.__class__ = CapacityDiffUp
 		self.comp_operator = '<='
 		self.bound = other
 		return self
 
 	def __getitem__(self,key):
-		if isinstance(key,int):
-			self.start = key
-			self.end = key+1
-			return self
+		if isinstance(key,str):
+			self._param = key
+			weight_ = lambda T: T[self._param] if self._param in T else 0
+		elif isinstance(key,int):
+			weight_ = lambda t: 1 if t == key else 0
+			self._start = key
+			self._end = key+1
 		elif isinstance(key,slice):
-			self.start = key.start
-			self.end = key.stop
-			return self
-		raise Exception('ERROR: index is wrong')
+			self._start = key.start
+			self._end = key.stop
+			if self._start is not None and self._end is not None:
+				weight_ = lambda t: 1 if t >= self._start and t < self._end else 0
+			elif self._start is not None:
+				weight_ = lambda t: 1 if t >= self._start else 0
+			elif self._end is not None:
+				weight_ = lambda t: 1 if t < self._end else 0
+			else:
+				weight_ = lambda t: 1
+		elif hasattr(key, '__call__'):
+			self._param = uuid.uuid4()
+			weight_ = key
+		else:
+			raise Exception('ERROR: wrong slicing key for capacity')
+		# concatenate slicing functions
+		old_weight = copy.deepcopy(self.weight)
+		weight_ = copy.deepcopy(weight_)
+		if 'T' in weight_.__code__.co_varnames and 't' in weight_.__code__.co_varnames:
+			new_weight = lambda T,t: old_weight(T,t)*weight_(T,t)
+		elif 'T' in weight_.__code__.co_varnames:
+			new_weight = lambda T,t=0: old_weight(T,t)*weight_(T)
+		elif 't' in weight_.__code__.co_varnames:
+			new_weight = lambda T,t: old_weight(T,t)*weight_(t)
+		else:
+			raise Exception('ERROR: wrong parameters in capacity selection function')
+		self.weight = copy.deepcopy(new_weight)
+		return self
 
-	def __invert__(self):
-		self.diff = not self.diff
+	def diff(self):
+		self.kind = 'diff'
+		return self
+
+	def dec(self):
+		self.kind = 'diff_dec'
+		return self
+
+	def inc(self):
+		self.kind = 'diff_inc'
 		return self
 
 	def __str__(self):
+		param = self._param
+		if self.name is not None and self.name is not '':
+			param = self.name
 		slice = ''
-		if self.start is not None or self.end is not None:
+		if self._start is not None or self._end is not None:
 			slice = '['
-			if self.start is not None:
-				slice += str(self.start)
+			if self._start is not None:
+				slice += str(self._start)
 			slice += ':'
-			if self.end is not None: #large number
-				slice += str(self.end)
+			if self._end is not None: #large number
+				slice += str(self._end)
 			slice += ']'
-		s = '%s[\'%s\']%s %s %s' % (str(self.resource),str(self.param),slice,str(self.comp_operator),str(self.bound))
-		if self.diff:
-			s = '~'+s
+		operator = ''
+		if self.kind == 'diff':
+			operator = '.diff()'
+		elif self.kind == 'diff_inc':
+			operator = '.inc()'
+		elif self.kind == 'diff_dec':
+			operator = '.dec()'
+		s = '%s[\'%s\']%s%s %s %s' % (str(self.resource),str(param),slice,operator,
+									  str(self.comp_operator),str(self.bound))
 		return s
 
 	def __repr__(self):
@@ -1009,8 +1057,8 @@ class CapacityLow(_Capacity):
 	"""
 	A lower capacity bound on one resource in an interval
 	"""
-	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='>=')
+	def __init__(self,resource):
+		_Capacity.__init__(self,resource)
 
 
 
@@ -1018,8 +1066,8 @@ class CapacityDiffLow(_Capacity):
 	"""
 	A lower bound on the number of on/off-switches for the capacity
 	"""
-	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<<')
+	def __init__(self,resource):
+		_Capacity.__init__(self,resource)
 
 
 
@@ -1027,8 +1075,8 @@ class CapacityUp(_Capacity):
 	"""
 	An upper capacity bound on one resource in an interval
 	"""
-	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<=')
+	def __init__(self,resource):
+		_Capacity.__init__(self,resource)
 
 
 
@@ -1036,8 +1084,8 @@ class CapacityDiffUp(_Capacity):
 	"""
 	An upper bound on the number of on/off-switches for the capacity
 	"""
-	def __init__(self,resource,param='length',bound=None,start=None,end=None):
-		_Capacity.__init__(self,resource,param,bound,start,end,comp_operator='<<')
+	def __init__(self,resource):
+		_Capacity.__init__(self,resource)
 
 
 

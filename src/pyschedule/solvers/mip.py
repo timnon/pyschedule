@@ -223,6 +223,7 @@ class ContinuousMIP(object):
 		for P in S.bounds_low_tight():
 			mip += x[P.task] == P.bound
 
+		'''
 		# capacity lower bounds
 		for C in S.capacity_low():
 			if C.start is not None or C.end is not None:
@@ -233,7 +234,9 @@ class ContinuousMIP(object):
 			if not tasks:
 				continue
 			mip += sum([ x[(T,R)]*getattr(T,param) for T in tasks ]) >= C.bound
+		'''
 
+		'''
 		# capacity upper bounds
 		for C in S.capacity_up():
 			if C.start is not None or C.end is not None:
@@ -243,7 +246,8 @@ class ContinuousMIP(object):
 			tasks = [ T for T in S.tasks(resource=R) if param in T ]
 			if not tasks:
 				continue
-			mip += sum([ x[(T,R)]*getattr(T,param) for T in tasks ]) <= C.bound
+			mip += sum([ x[(T,C.resource)]*C.weight(T,0) for T in tasks ]) <= C.bound
+		'''
 
 		self.mip = mip
 		self.x = x
@@ -450,6 +454,7 @@ class DiscreteMIP(object):
 				cons.append(_con(x[P.task, max(P.bound-P.task.length,0)], sense=0, rhs=len(self.task_groups[T])))
 				cons.append(_con(x[P.task, max(P.bound-P.task.length+1,0)], sense=0, rhs=0))
 
+		'''
 		# capacity lower bounds
 		for C in S.capacity_low():
 			R = C.resource
@@ -485,6 +490,7 @@ class DiscreteMIP(object):
 			affine = [(x[T, R, start], getattr(T,param)) for T in tasks ]+\
 			         [(x[T, R, end], -getattr(T,param)) for T in tasks ]
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
+		'''
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], T.completion_time_cost*t) for T in S.tasks()
@@ -747,91 +753,50 @@ class DiscreteMIPUnit(object):
 
 		# capacity lower bounds
 		for C in S.capacity_low():
-			R = C.resource
-			param = C.param
-			start = C.start
-			if start is None:
-				start = 0
-			end = C.end
-			if end is None:
-				end = self.horizon
-			affine = [(x[T, R, t],  getattr(T,param)) for T in self.task_groups for t in range(start,end)
-			                                  if (T,R,t) in x and param in T]
+			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
+					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
 			if not affine:
 				continue
 			cons.append(_con(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
 		for C in S.capacity_up():
-			R = C.resource
-			param = C.param
-			start = C.start
-			if start is None:
-				start = 0
-			end = C.end
-			if end is None:
-				end = self.horizon
-			affine = [(x[T, R, t], getattr(T,param)) for T in self.task_groups for t in range(start,end)
-			                                 if (T,R,t) in x and param in T]
+			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
+					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
 			if not affine:
 				continue
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
 
 		# capacity switch bounds
+		count = 0
 		for C in S.capacity_diff_up():
 			R = C.resource
-			param = C.param
-			# fix start and end
-			start = C.start
-			out_start=False
-			if start is not None and start < 0:
-				out_start = True
-			if start is None or start < 0:
-				start = 0
-			end = C.end
-			out_end = False
-			if end is not None and end > self.horizon:
-				out_end = True
-			if end is None or end > self.horizon:
-				end = self.horizon
-			# create variables if necessary
-			'''
-			x.update({ (R,t) : pl.LpVariable(str((R, t)), 0, 1)
-					   for t in range(start,end) if (R,t) not in x })
-			'''
-			x.update({ (R,t,'switch') : pl.LpVariable(str((R, t, 'switch')), 0, 1)
-			           for t in range(start,end-1) if (R,t,'switch') not in x })
-			# sync resource variable TODO: replace by expression
-			'''
-			for t in range(start,end):
-				affine = [ (x[R,t],1) ] + [ (x[T,R,t],-1) for T in self.task_groups ]
-				cons.append(_con(affine, sense=0, rhs=0))
-			'''
-			for t in range(start,end-1):
-				#affine = [(x[R,t,'switch'],1), (x[R,t],-1), (x[R,t+1],1)]
+			# get affected periods
+			periods = list(set([ t for t in range(self.horizon) for T in self.task_groups if C.weight(T,t) ]))
+			periods = sorted(periods)
+			x.update({ ('switch_%i'%count,R,t) : pl.LpVariable(str(('switch_%i'%count,R, t)), 0, 1)
+			           for t in periods })
+			# define switch variables
+			for t in periods[:-1]:
 				# decrease switch
-				affine = [ (x[R,t,'switch'],1) ] +\
-						 [ (x[T,R,t-T.length+1],-1) for T in self.task_groups
-						   if (T,R,t-T.length+1) in x and param in T ] +\
-				         [ (x[T,R,t+1],1) for T in self.task_groups
-						   if (T,R,t+1) in x and param in T ]
-				cons.append(_con(affine, sense=1, rhs=0))
-				#affine = [(x[R,t,'switch'],1), (x[R,t],1), (x[R,t+1],-1)]
+				if C.kind == 'diff' or C.kind == 'diff_dec':
+					affine = [ (x['switch_%i'%count,R,t],1) ] +\
+							 [ (x[T,R,t-T.length+1],-1) for T in self.task_groups
+							   if (T,R,t-T.length+1) in x and C.weight(T,t) ] +\
+							 [ (x[T,R,t+1],1) for T in self.task_groups
+							   if (T,R,t+1) in x and C.weight(T,t+1) ]
+					cons.append(_con(affine, sense=1, rhs=0))
 				# increase switch
-				affine = [ (x[R,t,'switch'],1) ] +\
-						 [ (x[T,R,t-T.length+1],1) for T in self.task_groups
-						   if (T,R,t-T.length+1) in x and param in T ] +\
-				         [ (x[T,R,t+1],-1) for T in self.task_groups
-						   if (T,R,t+1) in x and param in T ]
-				cons.append(_con(affine, sense=1, rhs=0))
-			affine = [ (x[R,t,'switch'],1) for t in range(start,end-1) ]
-			if out_start:
-				affine += [ (x[T,R,0],1) for T in self.task_groups
-							if (T,R,0) in x and param in T ] #[ (x[R,0],1) ]
-			if out_end:
-				affine += [ (x[T,R,self.horizon-1],1) for T in self.task_groups
-							if (T,R,self.horizon-1) in x and param in T ] #[ (x[R,self.horizon-1],1) ]
+				if C.kind == 'diff' or C.kind == 'diff_inc':
+					affine = [ (x['switch_%i'%count,R,t],1) ] +\
+							 [ (x[T,R,t-T.length+1],1) for T in self.task_groups
+							   if (T,R,t-T.length+1) in x and C.weight(T,t) ] +\
+							 [ (x[T,R,t+1],-1) for T in self.task_groups
+							   if (T,R,t+1) in x and C.weight(T,t+1) ]
+					cons.append(_con(affine, sense=1, rhs=0))
+			affine = [ (x['switch_%i'%count,R,t],1) for t in periods[:-1] if ('switch_%i'%count,R,t) in x ]
 			cons.append(_con(affine, sense=-1, rhs=C.bound))
+			count += 1
 
 		# objective
 		mip += pl.LpAffineExpression([(x[T, t], T.completion_time_cost*t) for T in S.tasks()

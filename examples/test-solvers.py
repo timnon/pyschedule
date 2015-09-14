@@ -6,7 +6,7 @@ import copy, collections, traceback
 horizon = 10
 
 # solver feedback
-msg = 0
+msg = 1
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario) :
@@ -141,7 +141,7 @@ def CAPDIFF():
 	S += S['T2'] % S['R1']
 	S.clear_objective()
 	S += S['T1'] - S['T2']*2
-	S += ~S['R1']['length'] <= 1
+	S += S['R1']['length'].diff() <= 1
 	sols = ['[(T1, R1, 8, 9), (T2, R1, 9, 10)]']
 	return S,sols
 
@@ -151,8 +151,8 @@ def CAPDIFFSLICE():
 	S += S['T2'] % S['R1']
 	S.clear_objective()
 	S += S['T1'] - S['T2']*2
-	S += ~S['R1']['length'][5:] <= 0
-	S += ~S['R1']['length'][:5] <= 1
+	S += S['R1']['length'][5:].diff() <= 0
+	S += S['R1']['length'][:5].diff() <= 1
 	sols = ['[(T1, R1, 3, 4), (T2, R1, 4, 5)]']
 	return S,sols
 
@@ -178,7 +178,7 @@ CAPDIFF,
 CAPDIFFSLICE
 ]
 
-#scenario_methods = [CAPDIFFSLICE]
+#scenario_methods = [CAPDIFF]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
@@ -195,7 +195,7 @@ for scenario_method in scenario_methods :
 		solve_method = solve_method_names[solve_method_name]
 		S_ = copy.deepcopy(S)
 		try :
-			solve_method(S_)
+			solve_method(S_,msg=msg)
 			sol = str(S_.solution())
 			valid = ( sol in sols )
 			row.append(valid)
