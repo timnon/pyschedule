@@ -22,7 +22,6 @@ more specifically, pyschedule ...
 pyschedule tries to gain the best of two worlds by supporting classical MIP-models (Mixed Integer) as well as CP solvers (Constraint Programming). All solvers interfaces are in the solvers subpackage:
 
 - **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK"). CBC is part of pulp and hence works out of the box.
-- **mip.solve_mon(scenario,kind) :** time-indexed MIP-formulation that is slightly better for tasks of length > 1.
 - **mip.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
 - **ortools.solve(scenario) :** the open source CP-solver of Google, a little restricted but good to ensure feasibility of larger models. Make sure that package [ortools](https://github.com/google/or-tools) is installed.
 - **cpoptimizer.solve(scenario) :** [IBM CP Optimizer](http://www-01.ibm.com/software/commerce/optimization/cplex-cp-optimizer/), requires command "oplrun" to be executable. Industrial-scale solver that runs fast on very large problems.
@@ -34,14 +33,14 @@ There is one pre-defined heuristic (meta-solver):
 - **listsched.solve(scenario,solve_method,task_list,batch_size) :** all tasks are added in the order of task_list and integrated in the current schedule using solve_method. If task_list is not specified, then an ordering according to the precedence constraints is used as default.
 
 
-pyschedule has been tested with python 2.7 and 3.4. All solvers support a parameter "msg" to switch feedback on/off. Moreover, solvers.mip.solve, solvers.mip.solve_discrete and solvers.ortools.solve support a parameter "time_limit" to limit the running time.
+pyschedule has been tested with python 2.7 and 3.4. All solvers support a parameter "msg" to switch feedback on/off. Moreover, solvers.pulp.solve, solvers.pulp.solve_discrete and solvers.ortools.solve support a parameter "time_limit" to limit the running time.
 
 ### Constraints
 
 #### Basic Test Cases
 basic test cases that are not really constraints but still represent different capabilities:
 - **ZERO :** tasks of length zero are allwed, e.g. `T1 = S.Task(length=0)`.
-- **NUNUNIT :** tasks of lenght > 1 are allowed, e.g. `T1 = S.Task(length=3)`.
+- **NONUNIT :** tasks of lenght > 1 are allowed, e.g. `T1 = S.Task(length=3)`.
 
 #### Precedences
 - **BOUND :** normal bounds, e.g. `T1 > 3` or `T1 < 5`, T1 starts after time step 3 or ends before time step 5, respectively.
@@ -55,14 +54,14 @@ basic test cases that are not really constraints but still represent different c
 
 #### Resources
 each task needs at least one resource. To keep the syntax concise, pyschedule used % as an operator to connect tasks and resources
-- **MULT :** multiple resources, e.g. `S += T1 % [R1,R2]`, T1 uses R1 and R2.
-- **ALT :** alternative resources, e.g. `S += T1 % R1|R2`, T1 uses either R1 or R2. For a list of resources L it is also possible to write `S += T1 % alt(L)` or `S += T1 % alt( R for R in L )`.
-- **ALTMULT :** alternative resources which are similar for different tasks, e.g. `S += R1|R2 % [T1,T2]`, T1 and T2 either use R1 or R2, but they both use the same one.
-- **CUMUL :** cumulative resources, e.g. `R1 = S.Resource('R1',size=3); S += T1 % R1*2`, R1 has size 3 and T1 uses 2 units of that size whenever run. This can be used to model worker pools or any other resource with a high multiplicity. Using a resource of size n instead n resources of size 1 often helps the solver.
-- **CAP :** capacities, e.g. `R1 <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
-- **CAPSLICE :** capacities, e.g. `R1[:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 1 to 9 must be at most 4.
-- **CAPDIFF :** change in capacity over time like a derivate, e.g. `~R1 <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `~R1['work'] <= 4`.
-- **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `~R1[:10] <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
+- **MULT :** multiple resources, e.g. `T1 += [R1,R2]`, T1 uses R1 and R2.
+- **ALT :** alternative resources, e.g. `T1 += R1|R2`, T1 uses either R1 or R2. For a list of resources L it is also possible to write `T1 += pyschedule.alt(L)` or `T1 += pyschedule.alt( R for R in L )`.
+- **ALTMULT :** alternative resources which are similar for different tasks, e.g. `A = R1|R2; T1 += A; T2 += A`, T1 and T2 either use R1 or R2, but they both use the same one.
+- **CUMUL :** cumulative resources, e.g. `R1 = S.Resource('R1',size=3); T1 += R1*2`, R1 has size 3 and T1 uses 2 units of that size whenever run. This can be used to model worker pools or any other resource with a high multiplicity. Using a resource of size n instead n resources of size 1 often helps the solver.
+- **CAP :** capacities, e.g. `R1['length'] <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
+- **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 1 to 9 must be at most 4.
+- **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
+- **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
 
 
 
@@ -73,15 +72,13 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>mip.solve</th>
-      <th>mip.solve_mon</th>
-      <th>mip.solve_bigm</th>
+      <th>pulp.solve</th>
+      <th>pulp.solve_bigm</th>
       <th>ortools.solve</th>
       <th>cpoptimizer.solve_docloud</th>
     </tr>
     <tr>
       <th>scenario</th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -92,14 +89,12 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     <tr>
       <th>ZERO</th>
       <td> True</td>
-      <td> True</td>
       <td>  True</td>
       <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
       <th>NONUNIT</th>
-      <td> True</td>
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
@@ -110,13 +105,11 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
       <th>BOUNDTIGHT</th>
       <td> True</td>
-      <td>  True</td>
       <td>  True</td>
       <td>  True</td>
       <td> True</td>
@@ -126,13 +119,11 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
       <th>LAXPLUS</th>
       <td> True</td>
-      <td>  True</td>
       <td>  True</td>
       <td> False</td>
       <td> True</td>
@@ -142,20 +133,17 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
       <th>TIGHTPLUS</th>
       <td> True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> False</td>
       <td> True</td>
     </tr>
     <tr>
       <th>COND</th>
-      <td> True</td>
       <td> True</td>
       <td>  True</td>
       <td> False</td>
@@ -166,7 +154,6 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
@@ -174,12 +161,10 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
-      <td>  True</td>
       <td> True</td>
     </tr>
     <tr>
       <th>ALTMULT</th>
-      <td> True</td>
       <td> True</td>
       <td>  True</td>
       <td>  True</td>
@@ -188,7 +173,6 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     <tr>
       <th>CUMUL</th>
       <td> True</td>
-      <td>  True</td>
       <td> False</td>
       <td> False</td>
       <td> True</td>
@@ -196,7 +180,6 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     <tr>
       <th>CAP</th>
       <td> True</td>
-      <td>  True</td>
       <td> False</td>
       <td> False</td>
       <td> True</td>
@@ -204,15 +187,13 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     <tr>
       <th>CAPSLICE</th>
       <td> True</td>
-      <td>  True</td>
       <td> False</td>
       <td> False</td>
-      <td> True</td>
+      <td> False</td>
     </tr>
         <tr>
       <th>CAPDIFF</th>
       <td> True</td>
-      <td>  False</td>
       <td> False</td>
       <td> False</td>
       <td> False</td>
@@ -220,7 +201,6 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     <tr>
       <th>CAPDIFFSLICE</th>
       <td> True</td>
-      <td>  False</td>
       <td> False</td>
       <td> False</td>
       <td> False</td>
@@ -235,6 +215,5 @@ True means that the constraint is working, False means that the constraint has n
 Constraints that are only partially implemented or on the TODO list:
 
 - **FIRST :** first/last tasks on resources, the envisioned syntax is `S += R1[3:7] < T1` to ensure that T1 is the last task on R1 in between 3 and 7
-- resource-dependent precedences, the envisioned syntax is `S += R1 % T1 + 3 << T2` which ensures that only on resource R1 the conditional precedence `T1 + 3 << T2` holds. This would make conditional precedences more applicable
 - soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
-- addition of capacities, `R[:10] + R[20:22] + ~R[20:22]`
+- turn solvers.pulp into solvers.mip which is agnostic of the python mip package

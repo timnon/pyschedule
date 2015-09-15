@@ -848,15 +848,6 @@ class Resource(_SchedElement) :
 	def __ge__(self,other):
 		return _Capacity(resource=self) >= other
 
-	def diff(self):
-		return _Capacity(resource=self).diff()
-
-	def inc(self):
-		return _Capacity(resource=self).inc()
-
-	def dec(self):
-		return _Capacity(resource=self).dec()
-
 
 
 class _ResourceAffine(_SchedElementAffine) :
@@ -940,14 +931,17 @@ class _Capacity(_Constraint):
 		self.weight = copy.deepcopy(new_weight)
 		return self
 
+	@property
 	def diff(self):
 		self.kind = 'diff'
 		return self
 
+	@property
 	def dec(self):
 		self.kind = 'diff_dec'
 		return self
 
+	@property
 	def inc(self):
 		self.kind = 'diff_inc'
 		return self

@@ -16,6 +16,7 @@ pip install pyschedule
 
 Here is a hello world example, you can also find this document as a <a href="https://github.com/timnon/pyschedule-notebooks/blob/master/README.ipynb">notebook</a>. There are more example notebooks <a href="https://github.com/timnon/pyschedule-notebooks/">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">here</a>.
 
+
 ```python
 # Load pyschedule and create a scenario with ten steps planning horizon
 from pyschedule import Scenario, solvers, plotters
@@ -29,9 +30,9 @@ cook, wash, clean = S.Task('cook',1), S.Task('wash',2), S.Task('clean',3)
 
 # Assign tasks to resources, either Alice or Bob,
 # the %-operator connects tasks and resource
-S += cook % Alice|Bob
-S += wash % Alice|Bob
-S += clean % Alice|Bob
+cook += Alice|Bob
+wash += Alice|Bob
+clean += Alice|Bob
 
 # Solve and print solution
 S.use_makespan_objective()
@@ -41,7 +42,7 @@ solvers.mip.solve(S,msg=1)
 print(S.solution())
 ```
 
-    INFO: execution time for solving mip (sec) = 0.029283761978149414
+    INFO: execution time for solving mip (sec) = 0.025879621505737305
     INFO: objective = 3.0
     [(clean, Alice, 0, 3), (cook, Bob, 0, 1), (wash, Bob, 1, 3), (MakeSpan, Alice, 3, 4)]
 
@@ -51,12 +52,12 @@ In this example we use a makespan objective which means that we want to minimize
 
 
 ```python
-%matplotlib inline 
+%matplotlib inline
 plotters.matplotlib.plot(S,fig_size=(10,5))
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_9_0.png)
+![png](pics/output_9_0.png)
 
 
 pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
@@ -106,11 +107,11 @@ Each task can be done by either Alice or Bob. Note that we use the %-operator to
 
 
 ```python
-S += green_paint % Alice|Bob
-S += green_post % Alice|Bob
+green_paint += Alice|Bob
+green_post += Alice|Bob
 
-S += red_paint % Alice|Bob
-S += red_post % Alice|Bob
+red_paint += Alice|Bob
+red_post += Alice|Bob
 ```
 
 So lets have a look at the scenario:
@@ -125,17 +126,23 @@ print(S)
     
     SCENARIO: bike_paint_shop / horizon: 10
     
-    OBJECTIVE: 
+    OBJECTIVE: None
     
     RESOURCES:
     Alice
     Bob
     
     TASKS:
-    green_paint : [green_paint % Alice|Bob]
-    red_paint : [red_paint % Alice|Bob]
-    green_post : [green_post % Alice|Bob]
-    red_post : [red_post % Alice|Bob]
+    green_paint : Alice|Bob
+    red_paint : Alice|Bob
+    green_post : Alice|Bob
+    red_post : Alice|Bob
+    
+    JOINT RESOURCES:
+    Alice|Bob : red_paint
+    Alice|Bob : red_post
+    Alice|Bob : green_paint
+    Alice|Bob : green_post
     
     LAX PRECEDENCES:
     green_paint < green_post
@@ -165,11 +172,17 @@ print(S)
     Bob
     
     TASKS:
-    green_paint : [green_paint % Alice|Bob]
-    red_paint : [red_paint % Alice|Bob]
-    green_post : [green_post % Alice|Bob]
-    red_post : [red_post % Alice|Bob]
-    MakeSpan : [MakeSpan % Alice]
+    green_paint : Alice|Bob
+    red_paint : Alice|Bob
+    green_post : Alice|Bob
+    red_post : Alice|Bob
+    MakeSpan : Alice
+    
+    JOINT RESOURCES:
+    Alice|Bob : red_paint
+    Alice|Bob : red_post
+    Alice|Bob : green_paint
+    Alice|Bob : green_post
     
     LAX PRECEDENCES:
     green_paint < green_post
@@ -207,7 +220,7 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_29_0.png)
+![png](pics/output_29_0.png)
 
 
 Bob is annoyed, if he paints the red bike, he also wants to do the post-processing, switching bikes takes too much time. We use the following constraints to ensure this. They ensure that painting and post-processing the red bike will both be done by either Alice or Bob. The same holds for the green one:
@@ -215,19 +228,24 @@ Bob is annoyed, if he paints the red bike, he also wants to do the post-processi
 
 ```python
 # First remove the old resource to task assignments
-S -= green_paint % Alice|Bob
-S -= green_post % Alice|Bob
-S -= red_paint % Alice|Bob
-S -= red_post % Alice|Bob
+green_paint -= Alice|Bob
+green_post -= Alice|Bob
+red_paint -= Alice|Bob
+red_post -= Alice|Bob
 
-# Add new ones
-S += Alice|Bob % {green_paint, green_post}
-S += Alice|Bob % {red_paint, red_post}
+# Add new shared ones
+green_resource = Alice|Bob
+green_paint += green_resource
+green_post += green_resource
+
+red_resource = Alice|Bob
+red_paint += red_resource
+red_post += red_resource
 run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_31_0.png)
+![png](pics/output_31_0.png)
 
 
 This schedule completes after four hours and suggests to paint both bikes at the same time. However, Alice and Bob have only a single paint shop which they need to share:
@@ -235,13 +253,13 @@ This schedule completes after four hours and suggests to paint both bikes at the
 
 ```python
 Paint_Shop = S.Resource('Paint_Shop')
-S += red_paint % Paint_Shop
-S += green_paint % Paint_Shop
+red_paint += Paint_Shop
+green_paint += Paint_Shop
 run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_33_0.png)
+![png](pics/output_33_0.png)
 
 
 Great, everybody can still go home after five hours and have a late lunch! Unfortunately, Alice receives a call that the red bike will only arrive after two hours:
@@ -253,66 +271,34 @@ run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_35_0.png)
+![png](pics/output_35_0.png)
 
 
-Still everybody can go home after six hours, but we encounter another problem, it is actually quite hard to switch the paint shop from green to red because the green color is quite sticky, this takes two hours of external cleaning. We model this with the following conditional precedence constraint, which says that there needs to be a break of two hours if the red painting follows the green one:
-
-
-```python
-S += green_paint + 2 << red_paint
-run(S)
-```
-
-
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_37_0.png)
-
-
-Damn, we have a full day of seven hours, this requires a lunch between the third and the fifth hour:
+Too bad, everything takes now size hours to finish. Therefore Alica and Bob decide to schedule a lunch after the third hour and before the fifth hour:
 
 
 ```python
 Lunch = S.Task('Lunch')
+Lunch += {Alice, Bob}
 S += Lunch > 3, Lunch < 5
-S += Lunch % {Alice, Bob}
 task_colors[Lunch] = '#7EA7D8'
 run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_39_0.png)
+![png](pics/output_37_0.png)
 
 
-Our goal so far is to minimize the MakeSpan, the final completion time of any task. We can also make this more explicit:
+Finally, Alice is a morning person and  wants to finish three hours of work before lunch, that is, before the third hour:
 
 
 ```python
-# First we remove the old MakeSpan (and all corresponding constraints)
-S -= S['MakeSpan']
-
-# Then we create our own MakeSpan
-MakeSpan = S.Task('MakeSpan')
-S += MakeSpan % Alice
-S += MakeSpan > {green_post,red_post}
-S += MakeSpan*1 # add the makespan (*1) to scenario for use as objective
-task_colors[MakeSpan] = '#7EA7D8'
+S += Alice['length'][:3] >= 3
 run(S)
 ```
 
 
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_41_0.png)
-
-
-Alice is a morning person and  wants to finish three hours of work before lunch, that is, before the third hour:
-
-
-```python
-S += Alice[:3] >= 3
-run(S)
-```
-
-
-![png](https://github.com/timnon/pyschedule/blob/master/pics/output_43_0.png)
+![png](pics/output_39_0.png)
 
 
 All this sounds quite trivial, but think about the same problem with many bikes and many persons!
