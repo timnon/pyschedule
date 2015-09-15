@@ -78,29 +78,25 @@ def _get_dat_filename(scenario,msg=0) :
 	TaskTaskResources = list()
 	for T in tasks :				
 		Tasks.append( (task_to_id[T],int(T.length)) )
-
-	# resource requirements
-	for RA in S.resources_req() :
-		tasks = RA.tasks()
-		# check if one of resources in RA is fixed
-		for T in tasks :
+		single_resources = { R for RA in T.resources_req if len(RA) < 2 for R in RA }
+		for RA in T.resources_req:
 			# do not consider tasks which appear in a single resorce
-			if len(RA.resources()) > 1 and set(RA.resources()) & set(S.resources(task=T,single_resource=True)):
+			if len(RA) > 1 and set(RA) & set(single_resources):
 				continue
+			task_resource_group_id = T.resources_req.index(RA)
 			for R in RA :
 				task_id = task_to_id[T]
 				resource_id = resource_to_id[R]
 				if R.size == 1 :
-					T_RAs = S.resources_req(task=T)
-					task_resource_group_id = T_RAs.index(RA) #T.resources_req.index(RA)
 					TaskResources.append( (task_id,resource_id,
 					                      T.length,task_resource_group_id) )
 					if (task_id,task_resource_group_id) not in TaskResourceGroups :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
 					TaskCumulResources.append( (task_id,resource_id,RA[R]) )
-
-		# fixing similar tasks to resources
+	ra_to_tasks = S.joint_resources()
+	for RA in ra_to_tasks:
+		tasks = list(ra_to_tasks[RA])
 		T = tasks[0]
 		for T_ in tasks[1:] :
 			task_id_1 = task_to_id[T]
@@ -118,60 +114,60 @@ def _get_dat_filename(scenario,msg=0) :
 	Precedences = list()
 	for P in S.precs_lax() :
 		if P.offset >= 0:
-			Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+			Precedences.append(( task_to_id[P.task_left],task_to_id[P.task_right],P.offset))
 		elif P.offset < 0:
-			Precedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset-P.left.length-P.right.length))
+			Precedences.append(( task_to_id[P.task_left],task_to_id[P.task_right],P.offset-P.task_left.length-P.task_right.length))
 
 	TightPrecedences = list()
 	for P in S.precs_tight() :
 		if P.offset >= 0:
-			TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+			TightPrecedences.append(( task_to_id[P.task_left],task_to_id[P.task_right],P.offset))
 		elif P.offset < 0:
-			TightPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset-P.left.length-P.right.length))
+			TightPrecedences.append(( task_to_id[P.task_left],task_to_id[P.task_right],P.offset-P.task_left.length-P.task_right.length))
 
 	CondPrecedences = list()
 	for P in S.precs_cond() :
-		CondPrecedences.append(( task_to_id[P.left],task_to_id[P.right],P.offset))
+		CondPrecedences.append(( task_to_id[P.task_left],task_to_id[P.task_right],P.offset))
 
 	LowerBounds = list()
 	for P in S.bounds_low() :
-		LowerBounds.append((task_to_id[P.task],P.right))
+		LowerBounds.append((task_to_id[P.task],P.bound))
 
 	UpperBounds = list()
 	for P in S.bounds_up() :
-		UpperBounds.append((task_to_id[P.task],P.right))
+		UpperBounds.append((task_to_id[P.task],P.bound))
 	if S.horizon is not None:
 		for T in S.tasks():
 			UpperBounds.append((task_to_id[T],S.horizon))
 
 	FixBounds = list()
 	for P in S.bounds_low_tight() :
-		FixBounds.append((task_to_id[P.task],P.right))
+		FixBounds.append((task_to_id[P.task],P.bound))
 	for P in S.bounds_up_tight() :
-		FixBounds.append((task_to_id[P.task],P.right-P.task.length))
+		FixBounds.append((task_to_id[P.task],P.bound-P.task.length))
 			
 	# upper capacity bounds
 	CapacityUps = list()
 	CapacityUpTasks = list()
-
 	CapacitySliceUps = list()
 	CapacitySliceUpTasks = list()
 	count = 0
 	for C in S.capacity_up() :
-		if C.start is None and C.end is None:
+		if C._start is None and C._end is None:
 			CapacityUps.append((count,resource_to_id[C.resource],C.bound,-1,-1))
-		else:
-			start = C.start
+			for T in S.tasks() :
+				if C.weight(T):
+					CapacityUpTasks.append((count,task_to_id[T],C.weight(T)))
+			'''
+			else:
+			start = C._start
 			if start is None:
 				start = 0
-			end = C.end
+			end = C._end
 			if end is None:
 				end = S.horizon
 			CapacitySliceUps.append((count,resource_to_id[C.resource],C.bound,start,end))
-
-		for T in S.tasks() :
-			if C.param in T:
-				CapacityUpTasks.append((count,task_to_id[T],T[C.param]))
+			'''
 		count += 1
 
 	# objective
