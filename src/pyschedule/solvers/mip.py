@@ -32,12 +32,6 @@ import pulp as pl
 def _isnumeric(var):
 	return isinstance(var, (int))  # only integers are accepted
 
-def _con(affine,sense,rhs):
-	return pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
-
-def _var(name,low,up,cat):
-	return pl.LpVariable(name, low, up, cat=cat)
-
 
 def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 	start_time = time.time()
@@ -295,6 +289,69 @@ class ContinuousMIP(object):
 		if msg:
 			print('ERROR: no solution found')
 		return 0
+
+
+
+class MIP(object):
+
+	import pulp as pl
+	def __init__(self,name,kind='Minimze'):
+		kinds = {'Minimize':pl.LpMinimize, 'Maximize':pl.LpMaximize}
+		self.mip = pl.LpProblem(str(S), kinds[kind])
+
+	def var(self,name,low=0,up=0,cat='Binary'):
+		return pl.LpVariable(name, low, up, cat=cat)
+
+	def con(self,affine,sense,rhs):
+		return pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
+
+	def add_con(self,con):
+		self.mip += con
+
+	def solve(self,msg=0,**kwarg):
+		kind = 'CBC'
+		if 'kind' in kwarg:
+			kind = kwarg['kind']
+		start_time = time.time()
+		# select solver for pl
+		if kind == 'CPLEX':
+			if 'time_limit' in kwarg:
+				# pulp does currently not support a timelimit in 1.5.9
+				self.mip.solve(pl.CPLEX_CMD(msg=msg, timelimit=kwarg['time_limit']))
+			else:
+				self.mip.solve(pl.CPLEX_CMD(msg=msg))
+		elif kind == 'GLPK':
+			self.mip.solve(pl.GLPK_CMD(msg=msg))
+		elif kind == 'CBC':
+			options = []
+			if 'time_limit' in kwarg:
+				options.extend(['sec', str(kwarg['time_limit'])])
+			if 'random_seed' in kwarg:
+				options.extend(['randomSeed', str(kwarg['random_seed'])])
+				options.extend(['randomCbcSeed', str(kwarg['random_seed'])])
+			self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
+		else:
+			raise Exception('ERROR: solver ' + kind + ' not known')
+
+		if msg:
+			print('INFO: execution time for solving mip (sec) = ' + str(time.time() - start_time))
+		if self.mip.status == 1 and msg:
+			print('INFO: objective = ' + str(pl.value(self.mip.objective)))
+
+	def status(self):
+		return self.mip.status
+
+	def var_value(self,var):
+		return var.varValue
+
+
+
+def _con(affine,sense,rhs):
+	return pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
+
+def _var(name,low,up,cat):
+	return pl.LpVariable(name, low, up, cat=cat)
+
 
 
 
@@ -594,6 +651,8 @@ class DiscreteMIP(object):
 		if msg:
 			print('ERROR: no solution found')
 		return 0
+
+
 
 
 
