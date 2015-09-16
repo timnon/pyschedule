@@ -32,7 +32,7 @@ import pulp as pl
 def _isnumeric(var):
 	return isinstance(var, (int))  # only integers are accepted
 
-
+'''
 def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 	start_time = time.time()
 	# select solver for pl
@@ -59,6 +59,7 @@ def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
 		print('INFO: execution time for solving mip (sec) = ' + str(time.time() - start_time))
 	if mip.status == 1 and msg:
 		print('INFO: objective = ' + str(pl.value(mip.objective)))
+'''
 
 
 
@@ -163,46 +164,58 @@ class ContinuousMIP(object):
 
 	def __init__(self):
 		self.scenario = None
+		self.horizon = None
 		self.bigm = None
 		self.mip = None
 		self.x = None  # mip variables shortcut
 
 
-	def build_mip_from_scenario(self, task_groups=None, msg=0):
+	def build_mipfrom_scenario(self, task_groups=None, msg=0):
 
 		S = self.scenario
 		BIGM = self.bigm
-		mip = pl.LpProblem(str(S), pl.LpMinimize)
+
+		#mip = pl.LpProblem(str(S), pl.LpMinimize)
+		mip = MIP(str(S), 'Minimize')
+		cons = list()
 
 		# task variables
 		x = dict()
 
 		for T in S.tasks():
-			x[T] = pl.LpVariable(str(T), 0)
-
+			x[T] = mip.var(str(T),up=S.horizon,cat='Continuous')#pl.LpVariable(str(T), 0)
 			# add task vs resource variabls
 			for RA in T.resources_req:
 				for R in RA:
-					x[(T, R)] = pl.LpVariable(str((T, R)), 0, 1, cat=pl.LpBinary)
+					x[(T, R)] = mip.var(str((T, R))) #pl.LpVariable(str((T, R)), 0, 1, cat=pl.LpBinary)
 
 		# resources req
 		for T in S.tasks():
 			for RA in T.resources_req:
 				if len(RA) > 1:
 					continue
-				mip += sum([x[(T, R)] for R in RA]) == 1
+				affine = [ (x[(T, R)], 1) for R in RA ]
+				cons.append(mip.con(affine,sense=0,rhs=1))
+				#mip += sum([x[(T, R)] for R in RA]) == 1
 		ra_to_tasks = S.joint_resources()
 		for RA in ra_to_tasks:
 			tasks = list(ra_to_tasks[RA])
 			T = tasks[0]
-			mip += sum([x[(T, R)] for R in RA]) == 1
+			affine = [ (x[(T, R)], 1) for R in RA ]
+			cons.append(mip.con(affine,sense=0,rhs=1))
+			#mip += sum([x[(T, R)] for R in RA]) == 1
 			for T_ in tasks[1:]:
 				for R in RA:
-					mip += x[(T, R)] == x[(T_, R)]
+					affine = [ (x[(T, R)],1), (x[(T_, R)],-1) ]
+					cons.append(mip.con(affine,sense=0,rhs=0))
+					#mip += x[(T, R)] == x[(T_, R)]
 
 		# objective
-		mip += pl.LpAffineExpression([ (x[T], T.completion_time_cost) for T in S.tasks()
-		                                        if 'completion_time_cost' in T and T in x ])
+		affine = [ (x[T], T.completion_time_cost) for T in S.tasks()
+				   if 'completion_time_cost' in T and T in x ]
+		mip.set_obj(affine)
+		#mip += pl.LpAffineExpression([ (x[T], T.completion_time_cost) for T in S.tasks()
+		#                                        if 'completion_time_cost' in T and T in x ])
 
 		# same resource variable
 		task_pairs = [(T, T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_)]
@@ -219,61 +232,96 @@ class ContinuousMIP(object):
 
 			# TODO: restrict the number of variables
 			if shared_resources:
-				x[(T, T_, 'SameResource')] = \
-					pl.LpVariable(str((T, T_, 'SameResource')), lowBound=0)  # ,cat=pl.LpInteger)
-				x[(T_, T, 'SameResource')] = \
-					pl.LpVariable(str((T_, T, 'SameResource')), lowBound=0)  # ,cat=pl.LpInteger)
-				mip += x[(T, T_, 'SameResource')] == x[(T_, T, 'SameResource')]
-				for R in shared_resources:
-					mip += x[(T, R)] + x[(T_, R)] - 1 <= x[(T, T_, 'SameResource')]
-				# ordering variables
-				x[(T, T_)] = pl.LpVariable(str((T, T_)), 0, 1, cat=pl.LpBinary)
-				x[(T_, T)] = pl.LpVariable(str((T_, T)), 0, 1, cat=pl.LpBinary)
-				mip += x[(T, T_)] + x[(T_, T)] == 1
 
-				mip += x[T] + T.length <= x[T_] + \
-			               (1 - x[(T, T_)]) * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
-				mip += x[T_] + T_.length <= x[T] + \
-				        x[(T, T_)] * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
+
+				x[(T, T_, 'SameResource')] = \
+					mip.var(str((T, T_, 'SameResource')),up=S.horizon,cat='Integer')
+				#	pl.LpVariable(str((T, T_, 'SameResource')), lowBound=0)  # ,cat=pl.LpInteger)
+				x[(T_, T, 'SameResource')] = \
+					mip.var(str((T_, T, 'SameResource')),up=S.horizon,cat='Integer')
+				#	pl.LpVariable(str((T_, T, 'SameResource')), lowBound=0)  # ,cat=pl.LpInteger)
+				affine = [ (x[(T, T_, 'SameResource')],1), (x[(T_, T, 'SameResource')],-1) ]
+				cons.append(mip.con(affine,sense=0,rhs=0))
+				#mip += x[(T, T_, 'SameResource')] == x[(T_, T, 'SameResource')]
+				for R in shared_resources:
+					affine = [ (x[(T, R)],1), (x[(T_, R)],1), (x[(T, T_, 'SameResource')],-1)]
+					cons.append(mip.con(affine,sense=-1,rhs=1))
+					#mip += x[(T, R)] + x[(T_, R)] - 1 <= x[(T, T_, 'SameResource')]
+				# ordering variables
+				x[(T, T_)] = mip.var(str((T, T_)))#pl.LpVariable(str((T, T_)), 0, 1, cat=pl.LpBinary)
+				x[(T_, T)] = mip.var(str((T_, T)))#pl.LpVariable(str((T_, T)), 0, 1, cat=pl.LpBinary)
+				affine = [ (x[(T, T_)],1), (x[(T_, T)],1)]
+				cons.append(mip.con(affine,sense=0,rhs=1))
+				#mip += x[(T, T_)] + x[(T_, T)] == 1
+
+				affine = [ (x[T],1), (x[T_],-1), (x[(T, T_)],BIGM), (x[(T, T_, 'SameResource')], BIGM) ]
+				cons.append(mip.con(affine,sense=-1,rhs=2*BIGM-T.length))
+				#mip += x[T] + T.length <= x[T_] + \
+			    #           (1 - x[(T, T_)]) * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
+				affine = [ (x[T_],1), (x[T],-1), (x[(T, T_)],-BIGM), (x[(T, T_, 'SameResource')], BIGM) ]
+				cons.append(mip.con(affine,sense=-1,rhs=BIGM-T_.length))
+				#mip += x[T_] + T_.length <= x[T] + \
+				#        x[(T, T_)] * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
 
 		# precedence constraints
 		for P in S.precs_lax():
 			if P.offset >= 0:
-				mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right]
+				affine = [ (x[P.task_left],1), (x[P.task_right],-1) ]
+				cons.append(mip.con(affine,sense=-1,rhs=-P.task_left.length-P.offset))
+				#mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right]
 			elif P.offset < 0:
-				mip += x[P.task_left] <= x[P.task_right] + P.task_right.length - P.offset	
+				affine = [ (x[P.task_left],1), (x[P.task_right],-1) ]
+				cons.append(mip.con(affine,sense=-1,rhs=P.task_right.length-P.offset))
+				#mip += x[P.task_left] <= x[P.task_right] + P.task_right.length - P.offset
 
 		# tight precedence constraints
 		for P in S.precs_tight():
 			if P.offset >= 0:
-				mip += x[P.task_left] + P.task_left.length + P.offset == x[P.task_right]
+				affine = [ (x[P.task_left],1), (x[P.task_right],-1) ]
+				cons.append(mip.con(affine,sense=0,rhs=-P.task_left.length-P.offset))
+				#mip += x[P.task_left] + P.task_left.length + P.offset == x[P.task_right]
 			elif P.offset < 0:
-				mip += x[P.task_left] == x[P.task_right] + P.task_right.length - P.offset	
+				affine = [ (x[P.task_left],1), (x[P.task_right],-1) ]
+				cons.append(mip.con(affine,sense=0,rhs=P.task_right.length-P.offset))
+				#mip += x[P.task_left] == x[P.task_right] + P.task_right.length - P.offset
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
-			mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right] + \
-                               (1 - x[(P.task_left, P.task_right)]) * BIGM + (1 - x[
-				(P.task_left, P.task_right, 'SameResource')]) * BIGM
+			affine = [ (x[P.task_left],1), (x[P.task_right],-1), (x[(P.task_left, P.task_right)],BIGM),
+					   (x[(P.task_left, P.task_right, 'SameResource')],BIGM) ]
+			cons.append(mip.con(affine,sense=-1,rhs=-P.task_left.length-P.offset+2*BIGM))
+			#mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right] + \
+            #                   (1 - x[(P.task_left, P.task_right)]) * BIGM + (1 - x[
+			#	(P.task_left, P.task_right, 'SameResource')]) * BIGM
 
 		# upper bounds
 		for P in S.bounds_up():
-			mip += x[P.task] + P.task.length <= P.bound
+			affine = [ (x[P.task],1) ]
+			cons.append(mip.con(affine,sense=-1,rhs=P.bound-P.task.length))
+			#mip += x[P.task] + P.task.length <= P.bound
+		'''
 		if S.horizon is not None:
 			for T in S.tasks():
 				mip += x[T] <= S.horizon-1
+		'''
 
 		# lower bounds
 		for P in S.bounds_low():
-			mip += x[P.task] >= P.bound
+			affine = [ (x[P.task],1) ]
+			cons.append(mip.con(affine,sense=1,rhs=P.bound))
+			#mip += x[P.task] >= P.bound
 
-		# upper bounds
+		# tight upper bounds
 		for P in S.bounds_up_tight():
-			mip += x[P.task] + P.task.length == P.bound
+			affine = [ (x[P.task],1) ]
+			cons.append(mip.con(affine,sense=0,rhs=P.bound-P.task.length))
+			#mip += x[P.task] + P.task.length == P.bound
 
-		# lower bounds
+		# tight lower bounds
 		for P in S.bounds_low_tight():
-			mip += x[P.task] == P.bound
+			affine = [ (x[P.task],1) ]
+			cons.append(mip.con(affine,sense=0,rhs=P.bound))
+			#mip += x[P.task] == P.bound
 
 		'''
 		# capacity lower bounds
@@ -300,6 +348,8 @@ class ContinuousMIP(object):
 				continue
 			mip += sum([ x[(T,C.resource)]*C.weight(T,0) for T in tasks ]) <= C.bound
 		'''
+		for con in cons:
+			mip.add_con(con)
 
 		self.mip = mip
 		self.x = x
@@ -311,7 +361,7 @@ class ContinuousMIP(object):
 				resources = T.resources
 			else:
 				resources = self.scenario.resources(task=T)
-			T.resources = [R for R in resources if self.x[(T, R)].varValue > 0]
+			T.resources = [R for R in resources if self.mip.var_value(self.x[(T, R)]) > 0]
 
 
 	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
@@ -332,16 +382,18 @@ class ContinuousMIP(object):
 		"""
 		self.scenario = scenario
 		self.bigm = bigm
-		self.build_mip_from_scenario(msg=msg)
+		self.build_mipfrom_scenario(msg=msg)
 
 		params = dict()
 		if time_limit is not None:
 			params['time_limit'] = str(time_limit)
 		if random_seed is not None:
 			params['random_seed'] = str(random_seed)
-		_solve_mip(self.mip, kind=kind, params=params, msg=msg)
+		params['kind']=kind
+		self.mip.solve(msg=msg,**params)
+		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
-		if self.mip.status == 1:
+		if self.mip.status() == 1:
 			self.read_solution_from_mip(msg=msg)
 			return 1
 		if msg:
@@ -362,7 +414,7 @@ class DiscreteMIP(object):
 		self.mip = None
 		self.x = None  # mip variables shortcut
 
-	def build_mip_from_scenario(self, msg=0):
+	def build_mipfrom_scenario(self, msg=0):
 		S = self.scenario
 		mip = MIP(str(S),'Minimize')
 		self.task_groups = _get_task_groups(self.scenario)
@@ -624,7 +676,7 @@ class DiscreteMIP(object):
 			raise Exception('ERROR: solver pulp.solve_unit requires scenarios with defined horizon')
 			return 0
 		self.horizon = self.scenario.horizon
-		self.build_mip_from_scenario(msg=msg)
+		self.build_mipfrom_scenario(msg=msg)
 
 		# if time_limit :
 		#	options += ['sec',str(time_limit),'ratioGap',str(0.1),'cuts','off',
