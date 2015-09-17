@@ -24,62 +24,29 @@ under the License.
 '''
 
 import time
-import copy
 import collections
+
+
+# a backend-agnostic mip-solver interface
 import pulp as pl
+class _MIP_pulp(object):
+	"""
+	Interface to pulp mip solver
+	"""
 
-
-def _isnumeric(var):
-	return isinstance(var, (int))  # only integers are accepted
-
-'''
-def _solve_mip(mip, kind='CBC', params=dict(), msg=0):
-	start_time = time.time()
-	# select solver for pl
-	if kind == 'CPLEX':
-		if 'time_limit' in params:
-			# pulp does currently not support a timelimit in 1.5.9
-			mip.solve(pl.CPLEX_CMD(msg=msg, timelimit=params['time_limit']))
-		else:
-			mip.solve(pl.CPLEX_CMD(msg=msg))
-	elif kind == 'GLPK':
-		mip.solve(pl.GLPK_CMD(msg=msg))
-	elif kind == 'CBC':
-		options = []
-		if 'time_limit' in params:
-			options.extend(['sec', str(params['time_limit'])])
-		if 'random_seed' in params:
-			options.extend(['randomSeed', str(params['random_seed'])])
-			options.extend(['randomCbcSeed', str(params['random_seed'])])
-		mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
-	else:
-		raise Exception('ERROR: solver ' + kind + ' not known')
-
-	if msg:
-		print('INFO: execution time for solving mip (sec) = ' + str(time.time() - start_time))
-	if mip.status == 1 and msg:
-		print('INFO: objective = ' + str(pl.value(mip.objective)))
-'''
-
-
-
-class MIP(object):
-
-	import pulp as pl
-	def __init__(self,name,kind='Minimze'):
+	def __init__(self,name,kind='Minimize'):
 		kinds = {'Minimize':pl.LpMinimize, 'Maximize':pl.LpMaximize}
 		self.mip = pl.LpProblem(name, kinds[kind])
 
 	def var(self,name,low=0,up=0,cat='Binary'):
 		return pl.LpVariable(name, low, up, cat=cat)
 
-	def con(self,affine,sense,rhs):
-		return pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
-
-	def add_con(self,con):
+	def con(self,affine,sense=0,rhs=0):
+		con = pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
 		self.mip += con
+		return con
 
-	def set_obj(self,affine):
+	def obj(self,affine):
 		self.mip += pl.LpAffineExpression(affine)
 
 	def solve(self,msg=0,**kwarg):
@@ -115,10 +82,13 @@ class MIP(object):
 	def status(self):
 		return self.mip.status
 
-	def var_value(self,var):
+	def value(self,var):
 		return var.varValue
 
 
+
+def _isnumeric(var):
+	return isinstance(var, (int))  # only integers are accepted
 
 def _get_task_groups(scenario):
 	"""
@@ -146,14 +116,16 @@ def solve(scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
 	Shortcut to discrete mip unit
 	"""
 	scenario.check()
-	return DiscreteMIP().solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
+	mip = _MIP_pulp(str(scenario))
+	return DiscreteMIP(mip).solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
 
 def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
 	"""
 	Shortcut to continuous mip
 	"""
 	scenario.check()
-	return ContinuousMIP().solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
+	mip = _MIP_pulp(str(scenario))
+	return ContinuousMIP(mip).solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
 
 
 
@@ -162,28 +134,28 @@ class ContinuousMIP(object):
 	An interface to the pulp MIP solver package, supported are CPLEX, GLPK, CBC
 	"""
 
-	def __init__(self):
+	def __init__(self,mip):
+		self.mip = mip
 		self.scenario = None
 		self.horizon = None
 		self.bigm = None
-		self.mip = None
 		self.x = None  # mip variables shortcut
 
 
-	def build_mipfrom_scenario(self, task_groups=None, msg=0):
+	def build_mip_from_scenario(self, task_groups=None, msg=0):
 
 		S = self.scenario
 		BIGM = self.bigm
 
+		mip = self.mip
 		#mip = pl.LpProblem(str(S), pl.LpMinimize)
-		mip = MIP(str(S), 'Minimize')
-		cons = list()
+		cons = list() # log of constraints for debugging
 
 		# task variables
 		x = dict()
 
 		for T in S.tasks():
-			x[T] = mip.var(str(T),up=S.horizon,cat='Continuous')#pl.LpVariable(str(T), 0)
+			x[T] = mip.var(str(T),up=self.horizon,cat='Continuous')#pl.LpVariable(str(T), 0)
 			# add task vs resource variabls
 			for RA in T.resources_req:
 				for R in RA:
@@ -213,7 +185,7 @@ class ContinuousMIP(object):
 		# objective
 		affine = [ (x[T], T.completion_time_cost) for T in S.tasks()
 				   if 'completion_time_cost' in T and T in x ]
-		mip.set_obj(affine)
+		mip.obj(affine)
 		#mip += pl.LpAffineExpression([ (x[T], T.completion_time_cost) for T in S.tasks()
 		#                                        if 'completion_time_cost' in T and T in x ])
 
@@ -348,8 +320,10 @@ class ContinuousMIP(object):
 				continue
 			mip += sum([ x[(T,C.resource)]*C.weight(T,0) for T in tasks ]) <= C.bound
 		'''
+		'''
 		for con in cons:
 			mip.add_con(con)
+		'''
 
 		self.mip = mip
 		self.x = x
@@ -361,7 +335,7 @@ class ContinuousMIP(object):
 				resources = T.resources
 			else:
 				resources = self.scenario.resources(task=T)
-			T.resources = [R for R in resources if self.mip.var_value(self.x[(T, R)]) > 0]
+			T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
 
 
 	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
@@ -381,8 +355,9 @@ class ContinuousMIP(object):
 			None if solving was not successful
 		"""
 		self.scenario = scenario
+		self.horizon = self.scenario.horizon
 		self.bigm = bigm
-		self.build_mipfrom_scenario(msg=msg)
+		self.build_mip_from_scenario(msg=msg)
 
 		params = dict()
 		if time_limit is not None:
@@ -407,20 +382,20 @@ class DiscreteMIP(object):
 	pulp with time discretisation
 	"""
 
-	def __init__(self):
+	def __init__(self,mip):
+		self.mip = mip
 		self.scenario = None
 		self.horizon = None
 		self.task_groups = None
-		self.mip = None
 		self.x = None  # mip variables shortcut
 
-	def build_mipfrom_scenario(self, msg=0):
+	def build_mip_from_scenario(self, msg=0):
 		S = self.scenario
-		mip = MIP(str(S),'Minimize')
+		mip = self.mip
 		self.task_groups = _get_task_groups(self.scenario)
 
 		x = dict()  # mip variables
-		cons = list()  # mip constraints
+		cons = list()  # log of constraints for debugging
 		for T in self.task_groups:
 			task_group_size = len(self.task_groups[T])
 			# base time-indexed variables
@@ -621,9 +596,11 @@ class DiscreteMIP(object):
 		affine = [(x[T, t], T.completion_time_cost*t) for T in S.tasks()
 		                                        if T in self.task_groups and 'completion_time_cost' in T
 		                                        for t in range(self.horizon)]
-		mip.set_obj(affine)
+		mip.obj(affine)
+		'''
 		for con in cons:
 			mip.add_con(con)
+		'''
 		self.mip = mip
 		self.x = x
 
@@ -633,7 +610,7 @@ class DiscreteMIP(object):
 		for T in self.task_groups:
 			# get all possible starts with combined resources
 			starts = [ (t,R) for t in range(self.horizon) for R in self.scenario.resources()
-				       if (T,R,t) in self.x for i in range(int(self.mip.var_value(self.x[(T, R, t)]))) ]
+				       if (T,R,t) in self.x for i in range(int(self.mip.value(self.x[(T, R, t)]))) ]
 
 			# iteratively assign starts and resources
 			for T_ in self.task_groups[T]:
@@ -676,7 +653,7 @@ class DiscreteMIP(object):
 			raise Exception('ERROR: solver pulp.solve_unit requires scenarios with defined horizon')
 			return 0
 		self.horizon = self.scenario.horizon
-		self.build_mipfrom_scenario(msg=msg)
+		self.build_mip_from_scenario(msg=msg)
 
 		# if time_limit :
 		#	options += ['sec',str(time_limit),'ratioGap',str(0.1),'cuts','off',
