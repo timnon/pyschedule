@@ -94,7 +94,7 @@ def _get_dat_filename(scenario,msg=0) :
 						TaskResourceGroups.append((task_id,task_resource_group_id))
 				else :
 					TaskCumulResources.append( (task_id,resource_id,RA[R]) )
-	ra_to_tasks = S.joint_resources()
+	ra_to_tasks = S.resources_req_tasks()
 	for RA in ra_to_tasks:
 		tasks = list(ra_to_tasks[RA])
 		T = tasks[0]

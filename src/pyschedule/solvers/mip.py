@@ -23,67 +23,8 @@ specific language governing permissions and limitations
 under the License.
 '''
 
-import time
+from .mip_pulp import MIP
 import collections
-
-
-# a backend-agnostic mip-solver interface
-import pulp as pl
-class _MIP_pulp(object):
-	"""
-	Interface to pulp mip solver
-	"""
-
-	def __init__(self,name,kind='Minimize'):
-		kinds = {'Minimize':pl.LpMinimize, 'Maximize':pl.LpMaximize}
-		self.mip = pl.LpProblem(name, kinds[kind])
-
-	def var(self,name,low=0,up=0,cat='Binary'):
-		return pl.LpVariable(name, low, up, cat=cat)
-
-	def con(self,affine,sense=0,rhs=0):
-		con = pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
-		self.mip += con
-		return con
-
-	def obj(self,affine):
-		self.mip += pl.LpAffineExpression(affine)
-
-	def solve(self,msg=0,**kwarg):
-		kind = 'CBC'
-		if 'kind' in kwarg:
-			kind = kwarg['kind']
-		start_time = time.time()
-		# select solver for pl
-		if kind == 'CPLEX':
-			if 'time_limit' in kwarg:
-				# pulp does currently not support a timelimit in 1.5.9
-				self.mip.solve(pl.CPLEX_CMD(msg=msg, timelimit=kwarg['time_limit']))
-			else:
-				self.mip.solve(pl.CPLEX_CMD(msg=msg))
-		elif kind == 'GLPK':
-			self.mip.solve(pl.GLPK_CMD(msg=msg))
-		elif kind == 'CBC':
-			options = []
-			if 'time_limit' in kwarg:
-				options.extend(['sec', str(kwarg['time_limit'])])
-			if 'random_seed' in kwarg:
-				options.extend(['randomSeed', str(kwarg['random_seed'])])
-				options.extend(['randomCbcSeed', str(kwarg['random_seed'])])
-			self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
-		else:
-			raise Exception('ERROR: solver ' + kind + ' not known')
-
-		if msg:
-			print('INFO: execution time for solving mip (sec) = ' + str(time.time() - start_time))
-		if self.mip.status == 1 and msg:
-			print('INFO: objective = ' + str(pl.value(self.mip.objective)))
-
-	def status(self):
-		return self.mip.status
-
-	def value(self,var):
-		return var.varValue
 
 
 
@@ -111,21 +52,47 @@ def _get_task_groups(scenario):
 	                             if T not in tasks_in_task_groups ])
 	return task_groups
 
-def solve(scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
+def solve(scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
 	"""
-	Shortcut to discrete mip unit
-	"""
-	scenario.check()
-	mip = _MIP_pulp(str(scenario))
-	return DiscreteMIP(mip).solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
+	Solves the given scenario using a discrete MIP
 
-def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
-	"""
-	Shortcut to continuous mip
+	Args:
+		scenario:            scenario to solve
+		kind:                MIP-solver to use: CPLEX, GLPK, CBC
+		time_limit:          a time limit, only for CPLEX and CBC
+		random_seed:         random seed
+		gap:                 lp-gap
+		msg:                 0 means no feedback (default) during computation, 1 means feedback
+
+	Returns:
+		1 if solving was successful
+		0 if solving was not successful
 	"""
 	scenario.check()
-	mip = _MIP_pulp(str(scenario))
-	return ContinuousMIP(mip).solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed, msg=msg)
+	mip = MIP(str(scenario))
+	return DiscreteMIP(mip).solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, gap=gap, msg=msg)
+
+def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
+	"""
+	Solves the given scenario using a bigm-type MIP
+
+	Args:
+		scenario:    scenario to solve
+		kind:        MIP-solver to use: CPLEX, GLPK, CBC
+		bigm :       a large number to allow a big-m type model
+		time_limit:  a time limit, only for CPLEX and CBC
+		random_seed: random_seed
+		gap:         lp-gap
+		msg:         0 means no feedback (default) during computation, 1 means feedback
+
+	Returns:
+		scenario is solving was successful
+		None if solving was not successful
+	"""
+	scenario.check()
+	mip = MIP(str(scenario))
+	return ContinuousMIP(mip).solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed,
+									gap=gap, msg=msg)
 
 
 
@@ -169,7 +136,7 @@ class ContinuousMIP(object):
 				affine = [ (x[(T, R)], 1) for R in RA ]
 				cons.append(mip.con(affine,sense=0,rhs=1))
 				#mip += sum([x[(T, R)] for R in RA]) == 1
-		ra_to_tasks = S.joint_resources()
+		ra_to_tasks = S.resources_req_tasks()
 		for RA in ra_to_tasks:
 			tasks = list(ra_to_tasks[RA])
 			T = tasks[0]
@@ -204,8 +171,6 @@ class ContinuousMIP(object):
 
 			# TODO: restrict the number of variables
 			if shared_resources:
-
-
 				x[(T, T_, 'SameResource')] = \
 					mip.var(str((T, T_, 'SameResource')),up=S.horizon,cat='Integer')
 				#	pl.LpVariable(str((T, T_, 'SameResource')), lowBound=0)  # ,cat=pl.LpInteger)
@@ -271,11 +236,6 @@ class ContinuousMIP(object):
 			affine = [ (x[P.task],1) ]
 			cons.append(mip.con(affine,sense=-1,rhs=P.bound-P.task.length))
 			#mip += x[P.task] + P.task.length <= P.bound
-		'''
-		if S.horizon is not None:
-			for T in S.tasks():
-				mip += x[T] <= S.horizon-1
-		'''
 
 		# lower bounds
 		for P in S.bounds_low():
@@ -338,22 +298,8 @@ class ContinuousMIP(object):
 			T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
 
 
-	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, msg=0):
-		"""
-		Solves the given scenario using a continous MIP via the pulp package
+	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
 
-		Args:
-			scenario:    scenario to solve
-			kind:        MIP-solver to use: CPLEX, GLPK, CBC
-			bigm :       a large number to allow a big-m type model
-			time_limit:  a time limit, only for CPLEX and CBC
-			random_seed: random_seed
-			msg:         0 means no feedback (default) during computation, 1 means feedback
-	
-		Returns:
-			scenario is solving was successful
-			None if solving was not successful
-		"""
 		self.scenario = scenario
 		self.horizon = self.scenario.horizon
 		self.bigm = bigm
@@ -365,6 +311,7 @@ class ContinuousMIP(object):
 		if random_seed is not None:
 			params['random_seed'] = str(random_seed)
 		params['kind']=kind
+		params['ratioGap'] = str(gap)
 		self.mip.solve(msg=msg,**params)
 		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
@@ -426,7 +373,7 @@ class DiscreteMIP(object):
 					   for R in RA for t in range(self.horizon) })
 
 		# synchronize in RA with multiple tasks
-		ra_to_tasks = S.joint_resources()
+		ra_to_tasks = S.resources_req_tasks()
 		for RA in ra_to_tasks:
 			tasks = list(set(ra_to_tasks[RA]) & set(self.task_groups))
 			if not tasks:
@@ -542,8 +489,10 @@ class DiscreteMIP(object):
 			for R in shared_resources:
 				for t in range(self.horizon):
 					affine = [(x[P.task_left, R, t], 1)] +\
-					         [(x[P.task_right, R, t_],1) for t_ in range(t,min(t+P.task_left.length+P.offset,self.horizon))]
-					cons.append(mip.con(affine, sense=-1, rhs=(len(self.task_groups[P.task_left])+len(self.task_groups[P.task_right])/2.0)))
+					         [(x[P.task_right, R, t_],1)
+					          for t_ in range(t,min(t+P.task_left.length+P.offset,self.horizon))]
+					rhs = (len(self.task_groups[P.task_left])+len(self.task_groups[P.task_right])/2.0)
+					cons.append(mip.con(affine, sense=-1, rhs=rhs))
 
 		# capacity lower bounds
 		for C in S.capacity_low():
@@ -568,7 +517,7 @@ class DiscreteMIP(object):
 			# get affected periods
 			periods = list(set([ t for t in range(self.horizon) for T in self.task_groups if C.weight(T,t) ]))
 			periods = sorted(periods)
-			x.update({ ('switch_%i'%count,R,t) : pl.LpVariable(str(('switch_%i'%count,R, t)), 0, 1)
+			x.update({ ('switch_%i'%count,R,t) : mip.var(str(('switch_%i'%count,R, t)), 0, 1)
 			           for t in periods })
 			# define switch variables
 			for t in periods[:-1]:
@@ -631,26 +580,11 @@ class DiscreteMIP(object):
 					T_.resources.append(R)
 
 
-	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, msg=0):
-		"""
-		Solves the given scenario using a discrete MIP via the pulp package
-
-		Args:
-			scenario:            scenario to solve
-			kind:                MIP-solver to use: CPLEX, GLPK, CBC
-			horizon :            the number of time steps to model
-			time_limit:          a time limit, only for CPLEX and CBC
-			random_seed:         random seed
-			msg:                 0 means no feedback (default) during computation, 1 means feedback
-
-		Returns:
-			1 if solving was successful
-			0 if solving was not successful
-		"""
+	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
 
 		self.scenario = scenario
 		if self.scenario.horizon is None:
-			raise Exception('ERROR: solver pulp.solve_unit requires scenarios with defined horizon')
+			raise Exception('ERROR: solver requires scenarios with defined horizon')
 			return 0
 		self.horizon = self.scenario.horizon
 		self.build_mip_from_scenario(msg=msg)
@@ -665,7 +599,7 @@ class DiscreteMIP(object):
 		if random_seed is not None:
 			params['random_seed'] = str(random_seed)
 		#params['cuts'] = 'off'
-		#params['ratioGap'] = str(0.1)
+		params['ratioGap'] = str(gap)
 		params['kind'] = kind
 		self.mip.solve(msg=msg,**params)
 		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)

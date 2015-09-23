@@ -68,7 +68,7 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 					ort_solver.Add( I_.PerformedExpr() == 1 )
 			# one resource needs to get selected
 			ort_solver.Add(ort_solver.Sum([ I_.PerformedExpr() for I_ in RA_tasks ]) == 1)
-	ra_to_tasks = S.joint_resources()
+	ra_to_tasks = S.resources_req_tasks()
 	for RA in ra_to_tasks:
 		tasks = list(ra_to_tasks[RA])
 		T = tasks[0]

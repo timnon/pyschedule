@@ -56,10 +56,8 @@ def alt(*args) :
 	Method to reduce the given elements with the or-operator
 	e.g. alt(R1,R2,R3) = alt( R for R in [R1,R2,R3] ) = alt([R1,R2,R3]) = R1|R2|R3
 	"""
-	l = [ functools.reduce(lambda x,y: x|y, a) for a in args if _isiterable(a)
-	                                    or isinstance(a, types.GeneratorType)] +\
-            [ a for a in args if not _isiterable(a) 
-	                         and not isinstance(a, types.GeneratorType)  ]
+	l = [ functools.reduce(lambda x,y: x|y, a) for a in args if _isiterable(a) or isinstance(a, types.GeneratorType)]
+	l += [ a for a in args if not _isiterable(a) and not isinstance(a, types.GeneratorType)  ]
 	return functools.reduce(lambda x,y: x|y, l)
 
 
@@ -102,7 +100,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 		elif isinstance(unknown,list) :
 			self.update(_DICT_TYPE(unknown))
 		else :
-			raise Exception('ERROR: cant init %s from %s' % (str(self),str(unknown)))
+			raise Exception('ERROR: cant init %s from %s'%(str(self),str(unknown)))
 
 	def __add__(self,other) :
 		if _isiterable(other) :
@@ -117,7 +115,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 			return new
 		elif isinstance(other,self.element_class) or _isnumeric(other):
 			return self + type(self)(other)
-		raise Exception('ERROR: you cannot add %s to %s' % (str(other),str(self)))
+		raise Exception('ERROR: you cannot add %s to %s'%(str(other),str(self)))
 
 	def __sub__(self,other) :
 		if _isiterable(other) :
@@ -140,7 +138,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 				for key in self :
 					new[key] *= other[1]
 			else :
-				raise Exception('ERROR: multipy %s only with integer but not with %s'(str(self),str(other)))
+				raise Exception('ERROR: can multipy %s only with integer but not with %s'%(str(self),str(other)))
 			return new
 		else :
 			return self * type(self)(other)
@@ -217,14 +215,16 @@ class Scenario(_SchedElement):
 		else :
 			return list({ R for RA in task.resources_req for R in RA })
 
-	def joint_resources(self):
+	def resources_req_tasks(self,min_size=2):
 		"""
-		Returns a mapping of resource alternatives to tasks
+		Returns a mapping of resource requirements to tasks. This is helpful if resources requirements
+		are jointly used by different tasks. Only resource requiremenets
+		min_size : the minimum number of tasks in resources req, default is 2
 		"""
 		ra_to_tasks = dict()
 		for T in self.tasks():
 			for RA in T.resources_req:
-				if len(RA) < 2:
+				if len(RA) < min_size:
 					continue
 				if RA not in ra_to_tasks:
 					ra_to_tasks[RA] = {T}
@@ -266,7 +266,7 @@ class Scenario(_SchedElement):
 			del self._tasks['MakeSpan']
 		tasks = self.tasks() # save tasks before adding makespan
 		makespan = self.Task('MakeSpan')
-		makespan += self.resources()[0] # add some random resource, every task needs one
+		makespan += self.resources()[0] # add first resource, every task needs one
 		for T in tasks :
 			self += T < makespan
 		self.clear_objective()
@@ -294,13 +294,12 @@ class Scenario(_SchedElement):
 		Removes all objective annotations
 		"""
 		for T in self.tasks():
-			if '_completion_time_cost' in T:
-				del T['_completion_time_cost']
+			T.completion_time_cost = None
 
-	def constraints(self,constraint_type=None):
-		if constraint_type is None:
+	def constraints(self,constraint_class=None):
+		if constraint_class is None:
 			return self._constraints
-		return [ C for C in self._constraints if isinstance(C,constraint_type) ]
+		return [ C for C in self._constraints if isinstance(C,constraint_class) ]
 
 	def precs_lax(self):
 		return self.constraints(PrecedenceLax)
@@ -416,7 +415,7 @@ class Scenario(_SchedElement):
 		elif isinstance(other,_Constraint):
 			self.remove_constraint(other)
 		else:
-			raise Exception('ERROR: task with name %s is not contained in scenario %s'%(str(other),str(self.name)))
+			raise Exception('ERROR: cant subtract %s to scenario %s'%(str(other),str(self.name)))
 		return self
 
 	def __contains__(self, item):
@@ -428,9 +427,6 @@ class Scenario(_SchedElement):
 			raise Exception('ERROR: %s cannot be checked for containment in scenario %s'%(str(item),str(self.name)))
 		return self
 
-	def __iter__(self):
-		return self._tasks.values().__iter__()
-
 	def __getitem__(self, item):
 		if item not in self._tasks and item not in self._resources:
 			raise Exception('ERROR: task or resource with name %s is not contained in scenario %s'%
@@ -439,7 +435,7 @@ class Scenario(_SchedElement):
 			return self._tasks[item]
 		return self._resources[item]
 
-	def __setitem__(self,key,item):
+	def __setitem__(self,key,item): # getitem does not work without having also setitem?
 		return self
 
 	def check(self):
@@ -473,8 +469,10 @@ class Scenario(_SchedElement):
 		s += '\n'
 
 		s += 'JOINT RESOURCES:\n'
-		ra_to_tasks = self.joint_resources()
+		ra_to_tasks = self.resources_req_tasks()
 		for RA in ra_to_tasks:
+			if len(RA) < 2:
+				continue
 			s += '%s : %s\n'%(str(RA),','.join([ str(T) for T in ra_to_tasks[RA] ]))
 		s += '\n'
 
@@ -552,6 +550,13 @@ class Task(_SchedElement) :
 	def __radd__(self,other) :
 		return _TaskAffine(self) + other
 
+	def add_resources_req(self,RA):
+		self.resources_req.append(RA)
+
+	def remove_resources_req(self,RA):
+		self.resources_req = [ RA_ for RA_ in self.resources_req if str(RA_) != str(RA) ]
+		return self
+
 	def __iadd__(self,other):
 		if _isiterable(other):
 			for x in other:
@@ -559,12 +564,12 @@ class Task(_SchedElement) :
 			return self
 		elif isinstance(other,Resource):
 			other = _ResourceAffine(other) #transform into _ResourceAffine
-			self.resources_req.append(other)
+			self.add_resources_req(other)
 			return self
 		elif isinstance(other,_ResourceAffine):
-			self.resources_req.append(other)
+			self.add_resources_req(other)
 			return self
-		raise Exception('ERROR: cant add object to task')
+		raise Exception('ERROR: cant add %s to task %s'%(str(other),str(self)))
 
 	def __isub__(self,other):
 		if _isiterable(other):
@@ -573,12 +578,12 @@ class Task(_SchedElement) :
 			return self
 		elif isinstance(other,Resource):
 			other = _ResourceAffine(other) #transform into _ResourceAffine
-			self.resources_req = [ RA for RA in self.resources_req if str(RA) != str(other) ]
+			self.remove_resources_req(other)
 			return self
 		elif isinstance(other,_ResourceAffine):
-			self.resources_req = [ RA for RA in self.resources_req if str(RA) != str(other) ]
+			self.remove_resources_req(other)
 			return self
-		raise Exception('ERROR: cant subtract object to task')
+		raise Exception('ERROR: cant subtract %s from task %s'%(str(other),str(self)))
 
 	def __setitem__(self, key, value):
 		setattr(self,str(key),value)
@@ -693,10 +698,10 @@ class _Constraint(_SchedElement) :
 		_SchedElement.__init__(self)
 
 	def tasks(self):
-		return []
+		return list()
 
 	def resources(self):
-		return []
+		return list()
 
 
 
@@ -826,7 +831,7 @@ class PrecedenceCond(_Precedence) :
 
 class Resource(_SchedElement) :
 	"""
-	A resource which can process at most one task per time step
+	A resource which can processes tasks
 	"""
 	def __init__(self,name=None,size=1) :
 		_SchedElement.__init__(self,name)
@@ -1008,13 +1013,6 @@ class CapacityDiffUp(_Capacity):
 	"""
 	def __init__(self,resource):
 		_Capacity.__init__(self,resource)
-
-
-
-
-
-
-
 
 
 
