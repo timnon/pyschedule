@@ -56,23 +56,34 @@ class MIP(object):
 		kind = 'CBC'
 		if 'kind' in kwarg:
 			kind = kwarg['kind']
+		time_limit = None
+		if 'time_limit' in kwarg:
+			time_limit = kwarg['time_limit']
+		random_seed = None
+		if 'random_seed' in kwarg:
+			random_seed = kwarg['random_seed']
+		ratio_gap = None
+		if 'ratio_gap' in kwarg:
+			ratio_gap = kwarg['ratio_gap']
 		start_time = time.time()
 		# select solver for pl
 		if kind == 'CPLEX':
-			if 'time_limit' in kwarg:
+			if time_limit is not None:
 				# pulp does currently not support a timelimit in 1.5.9
-				self.mip.solve(pl.CPLEX_CMD(msg=msg, timelimit=kwarg['time_limit']))
+				self.mip.solve(pl.CPLEX_CMD(msg=msg, timelimit=time_limit))
 			else:
 				self.mip.solve(pl.CPLEX_CMD(msg=msg))
 		elif kind == 'GLPK':
 			self.mip.solve(pl.GLPK_CMD(msg=msg))
 		elif kind == 'CBC':
 			options = []
-			if 'time_limit' in kwarg:
-				options.extend(['sec', str(kwarg['time_limit'])])
-			if 'random_seed' in kwarg:
-				options.extend(['randomSeed', str(kwarg['random_seed'])])
-				options.extend(['randomCbcSeed', str(kwarg['random_seed'])])
+			if time_limit is not None:
+				options.extend(['sec', str(time_limit)])
+			if random_seed is not None:
+				options.extend(['randomSeed', str(random_seed)])
+				options.extend(['randomCbcSeed', str(random_seed)])
+			if ratio_gap is not None:
+				options.extend(['ratio', str(ratio_gap)])
 			self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
 		else:
 			raise Exception('ERROR: solver ' + kind + ' not known')

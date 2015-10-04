@@ -52,7 +52,7 @@ def _get_task_groups(scenario):
 	                             if T not in tasks_in_task_groups ])
 	return task_groups
 
-def solve(scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
+def solve(scenario, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 	"""
 	Solves the given scenario using a discrete MIP
 
@@ -61,7 +61,7 @@ def solve(scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=
 		kind:                MIP-solver to use: CPLEX, GLPK, CBC
 		time_limit:          a time limit, only for CPLEX and CBC
 		random_seed:         random seed
-		gap:                 lp-gap
+		ratio_gap:           MIP-gap
 		msg:                 0 means no feedback (default) during computation, 1 means feedback
 
 	Returns:
@@ -70,9 +70,9 @@ def solve(scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=
 	"""
 	scenario.check()
 	mip = MIP(str(scenario))
-	return DiscreteMIP(mip).solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, gap=gap, msg=msg)
+	return DiscreteMIP(mip).solve(scenario, kind=kind, time_limit=time_limit, random_seed=random_seed, ratio_gap=ratio_gap, msg=msg)
 
-def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
+def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 	"""
 	Solves the given scenario using a bigm-type MIP
 
@@ -82,7 +82,7 @@ def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=No
 		bigm :       a large number to allow a big-m type model
 		time_limit:  a time limit, only for CPLEX and CBC
 		random_seed: random_seed
-		gap:         lp-gap
+		ratio_gap:   MIP-gap
 		msg:         0 means no feedback (default) during computation, 1 means feedback
 
 	Returns:
@@ -92,7 +92,7 @@ def solve_bigm(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=No
 	scenario.check()
 	mip = MIP(str(scenario))
 	return ContinuousMIP(mip).solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed,
-									gap=gap, msg=msg)
+									ratio_gap=ratio_gap, msg=msg)
 
 
 
@@ -298,7 +298,7 @@ class ContinuousMIP(object):
 			T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
 
 
-	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
+	def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 
 		self.scenario = scenario
 		self.horizon = self.scenario.horizon
@@ -310,8 +310,8 @@ class ContinuousMIP(object):
 			params['time_limit'] = str(time_limit)
 		if random_seed is not None:
 			params['random_seed'] = str(random_seed)
-		params['kind']=kind
-		params['ratioGap'] = str(gap)
+		params['kind']= kind
+		params['ratio_gap'] = str(ratio_gap)
 		self.mip.solve(msg=msg,**params)
 		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
@@ -580,7 +580,7 @@ class DiscreteMIP(object):
 					T_.resources.append(R)
 
 
-	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, gap=0.0, msg=0):
+	def solve(self, scenario, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 
 		self.scenario = scenario
 		if self.scenario.horizon is None:
@@ -599,7 +599,7 @@ class DiscreteMIP(object):
 		if random_seed is not None:
 			params['random_seed'] = str(random_seed)
 		#params['cuts'] = 'off'
-		params['ratioGap'] = str(gap)
+		params['ratio_gap'] = str(ratio_gap)
 		params['kind'] = kind
 		self.mip.solve(msg=msg,**params)
 		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)
