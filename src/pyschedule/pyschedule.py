@@ -172,7 +172,7 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1) :
+	def Task(self,name,length=1,group=None) :
 		"""
 		Adds a new task to the scenario
 		name      : unique task name, must not contain special characters
@@ -180,7 +180,7 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		task = Task(name,length=length)
+		task = Task(name,length=length,group=group)
 		self.add_task(task)
 		return task
 
@@ -503,7 +503,7 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1) :
+	def __init__(self,name,length=1,group=None) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
@@ -512,7 +512,7 @@ class Task(_SchedElement) :
 		self.resources = None # should be filled by solver
 		self.resources_req = list() # required resources
 		self.completion_time_cost = None # cost on the final completion time
-		self.group = None # group exchangeable tasks
+		self.group = group # group exchangeable tasks
 
 	def __len__(self) :
 		return self.length

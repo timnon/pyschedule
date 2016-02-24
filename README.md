@@ -3,7 +3,7 @@
 
   
 
-# pyschedule - resource-constrained scheduling in python
+# pyschedule - resource scheduling in python
 
 ![](https://github.com/timnon/pyschedule/blob/master/pics/gantt.png)
 
@@ -29,7 +29,6 @@ Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
 cook, wash, clean = S.Task('cook',1), S.Task('wash',2), S.Task('clean',3)
 
 # Assign tasks to resources, either Alice or Bob,
-# the %-operator connects tasks and resource
 cook += Alice|Bob
 wash += Alice|Bob
 clean += Alice|Bob
@@ -103,7 +102,7 @@ Clearly, one can only do the post-processing after the painting with an arbitrar
 S += green_paint < green_post, red_paint + 1 <= red_post
 ```
 
-Each task can be done by either Alice or Bob. Note that we use the %-operator to assign resources to tasks:
+Each task can be done by either Alice or Bob.
 
 
 ```python

@@ -6,10 +6,10 @@ import copy, collections, traceback
 horizon = 10
 
 # solver feedback
-msg = 0
+msg = 1
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
-def solve_docloud(scenario) :
+def solve_docloud(scenario,msg=0) :
 	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
 solve_methods = [
@@ -17,7 +17,7 @@ solvers.mip.solve,
 solvers.mip.solve_bigm,
 solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
-solve_docloud
+#solve_docloud
 ]
 
 def two_task_scenario() :
@@ -190,7 +190,7 @@ CAPDIFF,
 CAPDIFFSLICE
 ]
 
-#scenario_methods = [ALT]
+#scenario_methods = [CAPSLICE]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
@@ -234,6 +234,7 @@ try :
 	# take last two elements in method name
 	df.columns = ['scenario'] + [ '.'.join(x.split('.')[-2:]) for x in table[0][1:] ]
 	df = df.set_index('scenario')
+	df = df.replace(True,'X').replace(False,'')
 	print(df)
 	with open('tmp.html','w') as f:
 		f.write(df.to_html())

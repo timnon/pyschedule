@@ -72,14 +72,12 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>pulp.solve</th>
-      <th>pulp.solve_bigm</th>
+      <th>mip.solve</th>
+      <th>mip.solve_bigm</th>
       <th>ortools.solve</th>
-      <th>cpoptimizer.solve_docloud</th>
     </tr>
     <tr>
       <th>scenario</th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -88,127 +86,110 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
   <tbody>
     <tr>
       <th>ZERO</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>NONUNIT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>BOUND</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>BOUNDTIGHT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>LAX</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>LAXPLUS</th>
-      <td> True</td>
-      <td>  True</td>
-      <td> False</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td></td>
     </tr>
     <tr>
       <th>TIGHT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>TIGHTPLUS</th>
-      <td> True</td>
-      <td>  True</td>
-      <td> False</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td></td>
     </tr>
     <tr>
       <th>COND</th>
-      <td> True</td>
-      <td>  True</td>
-      <td> False</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td></td>
     </tr>
     <tr>
       <th>ALT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>MULT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>ALTMULT</th>
-      <td> True</td>
-      <td>  True</td>
-      <td>  True</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td>X</td>
     </tr>
     <tr>
       <th>CUMUL</th>
-      <td> True</td>
-      <td> False</td>
-      <td> False</td>
-      <td> True</td>
+      <td>X</td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>CAP</th>
-      <td> True</td>
-      <td> False</td>
-      <td> False</td>
-      <td> True</td>
+      <td>X</td>
+      <td>X</td>
+      <td></td>
     </tr>
     <tr>
       <th>CAPSLICE</th>
-      <td> True</td>
-      <td> False</td>
-      <td> False</td>
-      <td> False</td>
+      <td>X</td>
+      <td></td>
+      <td></td>
     </tr>
-        <tr>
+    <tr>
       <th>CAPDIFF</th>
-      <td> True</td>
-      <td> False</td>
-      <td> False</td>
-      <td> False</td>
+      <td>X</td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>CAPDIFFSLICE</th>
-      <td> True</td>
-      <td> False</td>
-      <td> False</td>
-      <td> False</td>
+      <td>X</td>
+      <td></td>
+      <td></td>
     </tr>
   </tbody>
 </table>
 
-True means that the constraint is working, False means that the constraint has no effect, and Error means that it produces an error when using it (to be fixed).
+X means that the constraint is working and Error means that it produces an error when using it (to be fixed).
 
 ### Outlook
 

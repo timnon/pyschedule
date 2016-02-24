@@ -200,6 +200,7 @@ class ContinuousMIP(object):
 				#mip += x[T_] + T_.length <= x[T] + \
 				#        x[(T, T_)] * BIGM + (1 - x[(T, T_, 'SameResource')]) * BIGM
 
+
 		# precedence constraints
 		for P in S.precs_lax():
 			if P.offset >= 0:
@@ -255,31 +256,28 @@ class ContinuousMIP(object):
 			cons.append(mip.con(affine,sense=0,rhs=P.bound))
 			#mip += x[P.task] == P.bound
 
-		'''
 		# capacity lower bounds
 		for C in S.capacity_low():
-			if C.start is not None or C.end is not None:
+			# ignore sliced capacity constraints
+			if C._start != None or C._end != None:
 				continue
-			R = C.resource
-			param = C.param
-			tasks = [ T for T in S.tasks(resource=R) if param in T ]
-			if not tasks:
+			affine = [ (x[T, C.resource], C.weight(T=T,t=0)) for T in S.tasks()
+					   if (T,C.resource) in x and C.weight(T=T,t=0) ]
+			if not affine:
 				continue
-			mip += sum([ x[(T,R)]*getattr(T,param) for T in tasks ]) >= C.bound
-		'''
+			cons.append(mip.con(affine, sense=1, rhs=C.bound))
 
-		'''
 		# capacity upper bounds
 		for C in S.capacity_up():
-			if C.start is not None or C.end is not None:
+			# ignore sliced capacity constraints
+			if C._start != None or C._end != None:
 				continue
-			R = C.resource
-			param = C.param
-			tasks = [ T for T in S.tasks(resource=R) if param in T ]
-			if not tasks:
+			affine = [ (x[T, C.resource], C.weight(T=T,t=0)) for T in S.tasks()
+					   if (T,C.resource) in x and C.weight(T=T,t=0) ]
+			if not affine:
 				continue
-			mip += sum([ x[(T,C.resource)]*C.weight(T,0) for T in tasks ]) <= C.bound
-		'''
+			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
+
 		'''
 		for con in cons:
 			mip.add_con(con)
