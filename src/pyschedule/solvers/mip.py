@@ -494,16 +494,32 @@ class DiscreteMIP(object):
 
 		# capacity lower bounds
 		for C in S.capacity_low():
+			# weight gets proportionally assigned according to overlap
+			affine = [ (x[T, C.resource, t_], C.weight(T=T,t=t)/float(T.length) )
+					  for t in range(self.horizon)
+					  for T in self.task_groups
+					  for t_ in range(max(0,t-T.length+1),t+1)
+					  if (T,C.resource,t_) in x and C.weight(T=T,t=t) ]
+			'''
 			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
 					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
+			'''
 			if not affine:
 				continue
 			cons.append(mip.con(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
 		for C in S.capacity_up():
+			# weight gets proportionally assigned according to overlap
+			affine = [ (x[T, C.resource, t_], C.weight(T=T,t=t)/float(T.length) )
+					  for t in range(self.horizon)
+					  for T in self.task_groups
+					  for t_ in range(max(0,t-T.length+1),t+1)
+					  if (T,C.resource,t_) in x and C.weight(T=T,t=t) ]
+			'''
 			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
 					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
+			'''
 			if not affine:
 				continue
 			cons.append(mip.con(affine, sense=-1, rhs=C.bound))

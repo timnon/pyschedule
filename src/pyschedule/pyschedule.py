@@ -261,6 +261,9 @@ class Scenario(_SchedElement):
 		"""
 		Set the objective to the makespan of all included tasks
 		"""
+		self.clear_objective()
+		if not self.tasks():
+			return
 		if 'MakeSpan' in self._tasks :
 			self._constraints = [ C for C in self._constraints if self._tasks['MakeSpan'] not in C.tasks() ]
 			del self._tasks['MakeSpan']
@@ -269,7 +272,6 @@ class Scenario(_SchedElement):
 		makespan += self.resources()[0] # add first resource, every task needs one
 		for T in tasks :
 			self += T < makespan
-		self.clear_objective()
 		self += makespan*1
 
 	def use_flowtime_objective(self) :
@@ -277,6 +279,8 @@ class Scenario(_SchedElement):
 		Sets the objective to a uniform flow-time objective
 		"""
 		self.clear_objective()
+		if not self.tasks():
+			return
 		A = sum([ T*1 for T in self.tasks() ])
 		del A[1] #remove 1 due to sum
 		self += A

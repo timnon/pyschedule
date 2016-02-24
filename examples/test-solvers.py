@@ -6,7 +6,7 @@ import copy, collections, traceback
 horizon = 10
 
 # solver feedback
-msg = 1
+msg = 0
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
 def solve_docloud(scenario,msg=0) :

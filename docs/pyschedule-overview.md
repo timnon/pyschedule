@@ -59,7 +59,7 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **ALTMULT :** alternative resources which are similar for different tasks, e.g. `A = R1|R2; T1 += A; T2 += A`, T1 and T2 either use R1 or R2, but they both use the same one.
 - **CUMUL :** cumulative resources, e.g. `R1 = S.Resource('R1',size=3); T1 += R1*2`, R1 has size 3 and T1 uses 2 units of that size whenever run. This can be used to model worker pools or any other resource with a high multiplicity. Using a resource of size n instead n resources of size 1 often helps the solver.
 - **CAP :** capacities, e.g. `R1['length'] <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
-- **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 1 to 9 must be at most 4.
+- **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
 - **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
 
