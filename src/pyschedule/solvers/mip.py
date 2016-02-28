@@ -506,6 +506,11 @@ class DiscreteMIP(object):
 			'''
 			if not affine:
 				continue
+			# sum up (pulp doesnt do this)
+			affine_ = { a:0 for a,b in affine }
+			for a,b in affine:
+				affine_[a] += b
+			affine = [ (a,affine_[a]) for a in affine_ ]
 			cons.append(mip.con(affine, sense=1, rhs=C.bound))
 
 		# capacity upper bounds
@@ -522,6 +527,11 @@ class DiscreteMIP(object):
 			'''
 			if not affine:
 				continue
+			# sum up (pulp doesnt do this)
+			affine_ = { a:0 for a,b in affine }
+			for a,b in affine:
+				affine_[a] += b
+			affine = [ (a,affine_[a]) for a in affine_ ]
 			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
 
 		# capacity switch bounds
