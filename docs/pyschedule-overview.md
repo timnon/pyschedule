@@ -62,7 +62,7 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
 - **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
-
+- **REQUIRED :** make a task optional, e.g. `T1.required = False`
 
 
 ### Solvers vs Constraints
@@ -182,6 +182,12 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
     </tr>
     <tr>
       <th>CAPDIFFSLICE</th>
+      <td>X</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>REQUIRED</th>
       <td>X</td>
       <td></td>
       <td></td>

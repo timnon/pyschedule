@@ -349,7 +349,10 @@ class DiscreteMIP(object):
 				cat = 'Integer'
 			x.update({ (T,t) : mip.var(str((T, t)), 0, task_group_size, cat) for t in range(self.horizon) })
 			affine = [(x[T, t], 1) for t in range(self.horizon) ]
-			cons.append(mip.con(affine, sense=0, rhs=task_group_size))
+
+			# check if task is required
+			if T.required == True:
+				cons.append(mip.con(affine, sense=0, rhs=task_group_size))
 
 			for RA in T.resources_req:
 				# check if contains a single resource
@@ -360,7 +363,8 @@ class DiscreteMIP(object):
 				           for R in RA for t in range(self.horizon) if (T,R,t) not in x})
 				# enough position needs to get selected
 				affine = [(x[T, R, t], 1) for R in RA for t in range(self.horizon) ]
-				cons.append(mip.con(affine, sense=0, rhs=task_group_size))
+				# TODO: can the next line be removed?
+				# cons.append(mip.con(affine, sense=0, rhs=task_group_size))
 				# synchronize with base variables
 				for t in range(self.horizon):
 					affine = [(x[T, R, t], 1) for R in RA] + [(x[T,t],-1)]
@@ -587,13 +591,12 @@ class DiscreteMIP(object):
 
 			# iteratively assign starts and resources
 			for T_ in self.task_groups[T]:
+				# in case of not required tasks, there might be less starts than tasks
+				if not starts:
+					break
 				# consider single resources first
 				RAs = [ RA for RA in T_.resources_req if len(RA) == 1 ] + \
 					  [ RA for RA in T_.resources_req if len(RA) > 1  ]
-				'''
-					  self.scenario.resources_req(task=T,single_resource=True) + \
-       				      self.scenario.resources_req(task=T,single_resource=False)
-       			'''
 				T_.start_value = [ t for (t, R) in starts ][0]
 				T_.resources = list()
 				for RA in RAs :

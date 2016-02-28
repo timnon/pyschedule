@@ -168,6 +168,15 @@ def CAPDIFFSLICE():
 	sols = ['[(T1, R1, 3, 4), (T2, R1, 4, 5)]']
 	return S,sols
 
+def REQUIRED():
+	S = two_task_scenario()
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
+	S['T1'].required = False
+	S['T2'].required = False
+	S += S['R1']['length'] >= 1
+	sols = ['[(T2, R1, 0, 1)]']
+	return S,sols
 
 
 scenario_methods = [
@@ -187,10 +196,11 @@ CUMUL,
 CAP,
 CAPSLICE,
 CAPDIFF,
-CAPDIFFSLICE
+CAPDIFFSLICE,
+REQUIRED
 ]
 
-#scenario_methods = [CAPSLICE]
+#scenario_methods = [REQUIRED]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

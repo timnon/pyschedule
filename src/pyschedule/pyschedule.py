@@ -172,7 +172,7 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,group=None,**kwargs) :
+	def Task(self,name,length=1,group=None,required=True,**kwargs) :
 		"""
 		Adds a new task to the scenario
 		name      : unique task name, must not contain special characters
@@ -180,7 +180,7 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		task = apply(Task,(name,length,group),kwargs)
+		task = apply(Task,(name,length,group,required),kwargs)
 		#task = Task(name,length=length,group=group,**kwargs)
 		self.add_task(task)
 		return task
@@ -237,8 +237,9 @@ class Scenario(_SchedElement):
 		"""
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
-		solution = [ (T,R,T.start_value,T.start_value+T.length) \
-                     for T in self.tasks() for R in T.resources ]
+		solution = [ (T,R,T.start_value,T.start_value+T.length)
+                     for T in self.tasks() if T.start_value != None and T.resources != None
+					 for R in T.resources  ]
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 
@@ -508,16 +509,20 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,**kwargs) :
+	def __init__(self,name,length=1,group=None,required=True,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
-		self.length = length
+		# base parameters
+		self.length = length # length of task
+		self.group = group # group exchangeable tasks
+		self.required = True # does this job need to get scheduled, False makes sense if it has negative cap requirement
+
+		# additional parameters
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
 		self.resources_req = list() # required resources
 		self.completion_time_cost = None # cost on the final completion time
-		self.group = group # group exchangeable tasks
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
 
