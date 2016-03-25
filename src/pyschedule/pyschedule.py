@@ -180,8 +180,7 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		task = apply(Task,(name,length,group,required),kwargs)
-		#task = Task(name,length=length,group=group,**kwargs)
+		task = Task(name=name,length=length,group=group,**kwargs)
 		self.add_task(task)
 		return task
 
