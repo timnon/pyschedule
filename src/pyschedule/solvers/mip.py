@@ -437,11 +437,12 @@ class DiscreteMIP(object):
 			# 0: not yet    1: finished
 			# Example: T (T0 and T1) runs at [2,4] and [5,7]
 			# (T,t,'finished')=1 when t>=7, else 0
-			for t in range(self.horizon):
-				x[(P.task_left, t, 'finished')] = mip.var(str((P.task_left, t, 'finished')), 0, 1, 'Binary')
-				affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/len(self.task_groups[P.task_left])) for t_ in range(max(t-P.task_left.length+1,0))]
-				cons.append(mip.con(affine, sense=-1, rhs=0))
-				cons.append(mip.con(affine, sense=1, rhs=-0.999))
+			if (P.task_left, 0, 'finished') not in x:
+				for t in range(self.horizon):
+					x[(P.task_left, t, 'finished')] = mip.var(str((P.task_left, t, 'finished')), 0, 1, 'Binary')
+					affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/len(self.task_groups[P.task_left])) for t_ in range(max(t-P.task_left.length+1,0))]
+					cons.append(mip.con(affine, sense=-1, rhs=0))
+					cons.append(mip.con(affine, sense=1, rhs=-0.999))
 			
 			# if task_left is not finished, sum(task_right, t) must be 0 (considering offset)
 			for t in range(min(self.horizon-1-P.offset, self.horizon)):
