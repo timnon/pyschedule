@@ -440,9 +440,10 @@ class DiscreteMIP(object):
 			if (P.task_left, 0, 'finished') not in x:
 				for t in range(self.horizon):
 					x[(P.task_left, t, 'finished')] = mip.var(str((P.task_left, t, 'finished')), 0, 1, 'Binary')
-					affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/len(self.task_groups[P.task_left])) for t_ in range(max(t-P.task_left.length+1,0))]
+					task_group_size = len(self.task_groups[P.task_left])
+					affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/task_group_size) for t_ in range(max(t-P.task_left.length+1,0))]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
-					cons.append(mip.con(affine, sense=1, rhs=-0.999))
+					cons.append(mip.con(affine, sense=1, rhs=(-1+1/(task_group_size+1))))
 			
 			# if task_left is not finished, sum(task_right, t) must be 0 (considering offset)
 			for t in range(min(self.horizon-1-P.offset, self.horizon)):
@@ -480,9 +481,10 @@ class DiscreteMIP(object):
 			if (P.task_left, 0, 'finished') not in x:
 				for t in range(self.horizon):
 					x[(P.task_left, t, 'finished')] = mip.var(str((P.task_left, t, 'finished')), 0, 1, 'Binary')
-					affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/len(self.task_groups[P.task_left])) for t_ in range(max(t-P.task_left.length+1,0))]
+					task_group_size = len(self.task_groups[P.task_left])
+					affine = [(x[(P.task_left, t, 'finished')],1)] + [(x[P.task_left, t_],-1/task_group_size) for t_ in range(max(t-P.task_left.length+1,0))]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
-					cons.append(mip.con(affine, sense=1, rhs=-0.999))
+					cons.append(mip.con(affine, sense=1, rhs=(-1+1/(task_group_size+1))))
 			
 			# if task_left is not finished, sum(task_right, t) must be 0 (considering offset)
 			# and task_right have to start immediately when task_left finished
