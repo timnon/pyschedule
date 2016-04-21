@@ -466,7 +466,7 @@ class DiscreteMIP(object):
 		for P in S.bounds_up():
 			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.task, t],1) for t in range(P.bound,self.horizon)]
+			affine = [(x[P.task, t],1) for t in range(max(P.bound-P.task.length+1,0),self.horizon)]
 			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# tight low bounds
