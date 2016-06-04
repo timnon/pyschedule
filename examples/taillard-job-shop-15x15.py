@@ -5,7 +5,7 @@ import math
 # Taillards 15x15 job-shop instance downloaded from
 # http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/jobshop.dir/tai15_15.txt
 # columns = jobs, rows = machines
-proc ='\
+proc = '\
 94 66 10 53 26 15 65 82 10 27 93 92 96 70 83\n\
 74 31 88 51 57 78  8  7 91 79 18 51 18 99 33\n\
  4 82 40 86 50 54 21  6 54 68 82 20 39 35 68\n\
@@ -22,7 +22,7 @@ proc ='\
 28 21 51 75 17 89 59 56 63 18 17 30 16  7 35\n\
 57 16 42 34 37 26 68 73  5  8 12 87 83 20 97'
 
-mach ='\
+mach = '\
  7 13  5  8  4  3 11 12  9 15 10 14  6  1  2\n\
  5  6  8 15 14  9 12 10  7 11  1  4 13  2  3\n\
  2  9 10 13  7 12 14  6  1  3  8 11  5  4 15\n\
@@ -39,25 +39,27 @@ mach ='\
  9 15  5 14  6  7 10  2 13  8 12 11  4  3  1\n\
 11  9 13  7  5  2 14 15 12  1  8  4  3 10  6'
 
-proc_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
-proc_table = [ [ int(math.ceil( int(x)/10.0 )) for x in row.replace('  ',' ').strip().split(' ') ] for row in proc.split('\n') ]
-mach_table = [ [ int(x) for x in row.replace('  ',' ').strip().split(' ') ] for row in mach.split('\n') ]
-n = 6 #len(proc_table)
+proc_table = [[int(x) for x in row.replace('  ', ' ').strip().split(' ')]
+              for row in proc.split('\n')]
+proc_table = [[int(math.ceil(int(x) / 10.0)) for x in row.replace('  ',
+                                                                  ' ').strip().split(' ')] for row in proc.split('\n')]
+mach_table = [[int(x) for x in row.replace('  ', ' ').strip().split(' ')]
+              for row in mach.split('\n')]
+n = 6  # len(proc_table)
 
 S = pyschedule.Scenario('Taillards_Job_Shop_15x15')
-T = { (i,j) : S.Task('T_%i_%i'%(i,j),length=proc_table[i][j]) for i in range(n) for j in range(n) }
-R = { j : S.Resource('R_%i'%j) for j in range(n) }
+T = {(i, j): S.Task('T_%i_%i' % (i, j), length=proc_table[
+    i][j]) for i in range(n) for j in range(n)}
+R = {j: S.Resource('R_%i' % j) for j in range(n)}
 
-S += [ T[i,j] < T[i,j+1] for i in range(n) for j in range(n-1) ]
-for i in range(n) :
-	for j in range(n) :
-		T[i,j] += R[mach_table[i][j] % n]
+S += [T[i, j] < T[i, j + 1] for i in range(n) for j in range(n - 1)]
+for i in range(n):
+    for j in range(n):
+        T[i, j] += R[mach_table[i][j] % n]
 
 S.use_makespan_objective()
-if pyschedule.solvers.mip.solve_bigm(S,time_limit=120,msg=1):
-	pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S._tasks['MakeSpan']])
+if pyschedule.solvers.mip.solve_bigm(S, time_limit=120, msg=1):
+    pyschedule.plotters.matplotlib.plot(
+        S, resource_height=100.0, hide_tasks=[S._tasks['MakeSpan']])
 else:
-	print('no solution found')
-
-
-
+    print('no solution found')
