@@ -1,6 +1,7 @@
 #! /usr/bin/python
 import pyschedule
-import math, sys
+import math
+import sys
 
 cities = '\
 Aachen 50.45 6.06\n\
@@ -280,14 +281,19 @@ Wuppertal 51.16 7.12\n\
 Wurzburg 49.46 9.55'
 
 # euclidean distance computation
-def eucl_dist(orig,dest) :
-	return math.sqrt( (orig[0]-dest[0])**2 + (orig[1]-dest[1])**2 )
+
+
+def eucl_dist(orig, dest):
+    return math.sqrt((orig[0] - dest[0])**2 + (orig[1] - dest[1])**2)
 
 # get cities table
-cities_table = [ row.split(' ') for row in cities.split('\n') ]
-cities_table = [ (city,float(lon),float(lat)) for city,lon,lat in cities_table ]
-n = 10 # use only few cities to test, more cities take a lone time #len(cities_table)
-coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in range(n) }
+cities_table = [row.split(' ') for row in cities.split('\n')]
+cities_table = [(city, float(lon), float(lat))
+                for city, lon, lat in cities_table]
+# use only few cities to test, more cities take a lone time #len(cities_table)
+n = 10
+coords = {cities_table[i][0]: (cities_table[i][2], cities_table[
+                               i][1]) for i in range(n)}
 cities = list(coords)
 
 # add coordinates of vitual start and end at the first city in list
@@ -297,57 +303,44 @@ coords['end'] = coords[start_city]
 
 # scenario and city tasks
 S = pyschedule.Scenario('TSP_Germany')
-T = { city : S.Task(city) for city in coords  }
+T = {city: S.Task(city) for city in coords}
 Car = S.Resource('Car')
 
 # the car has to pass every city
 for city in coords:
-	T[city] += Car
+    T[city] += Car
 
 # make sure that the tour start and ends at start_city
-S += T['start'] < { T[city] for city in coords if city != 'start' }
-S += T['end'] > { T[city] for city in coords if city != 'end' }
+S += T['start'] < {T[city] for city in coords if city != 'start'}
+S += T['end'] > {T[city] for city in coords if city != 'end'}
 
 # add euclidean distances as conditional precedences
-S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
-       for city in coords for city_ in coords if city != city_ ]
+S += [T[city] + int(eucl_dist(coords[city], coords[city_])) << T[city_]
+      for city in coords for city_ in coords if city != city_]
 
-# objective: minimze the end of the trip (multiply with 1 to turn into affine combination of tasks)
-S += T['end']*1
+# objective: minimze the end of the trip (multiply with 1 to turn into
+# affine combination of tasks)
+S += T['end'] * 1
 
-if not pyschedule.solvers.mip.solve_bigm(S,time_limit=30,msg=1):
-	print('no solution found')
-	sys.exit()
+if not pyschedule.solvers.mip.solve_bigm(S, time_limit=30, msg=1):
+    print('no solution found')
+    sys.exit()
 
-pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,show_task_labels=True,color_prec_groups=False)
+pyschedule.plotters.matplotlib.plot(
+    S, resource_height=1.0, show_task_labels=True, color_prec_groups=False)
 
 # plot tours
 import pylab
 sol = S.solution()
-tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords ]
-pylab.plot([ x for x,y in tour ],[ y for x,y in tour],linewidth=2.0,color='blue')
+tour = [coords[str(city)] for (city, resource, start, end)
+        in sol if str(city) in coords]
+pylab.plot([x for x, y in tour], [y for x, y in tour],
+           linewidth=2.0, color='blue')
 
 # plot city names
-for city in cities : pylab.text(coords[city][0], coords[city][1], city,color='black',fontsize=10)
+for city in cities:
+    pylab.text(coords[city][0], coords[city][1],
+               city, color='black', fontsize=10)
 
 pylab.title('TSP Germany')
 pylab.show()
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
