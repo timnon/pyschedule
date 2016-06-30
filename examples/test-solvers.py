@@ -125,8 +125,8 @@ def ALTMULT() :
 
 def CUMUL() :
 	S = two_task_scenario()
-	S['R1'].size = 2
-	S['T1'] += S['R1']
+	S['R1'].size = 3
+	S['T1'] += S['R1']*2
 	S['T2'] += S['R1']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 0, 1)]']
 	return S,sols
@@ -200,7 +200,7 @@ CAPDIFFSLICE,
 REQUIRED
 ]
 
-#scenario_methods = [REQUIRED]
+scenario_methods = [CUMUL]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

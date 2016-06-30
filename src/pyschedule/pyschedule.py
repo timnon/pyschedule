@@ -849,7 +849,7 @@ class Resource(_SchedElement) :
 		self.size = size
 
 	def __mul__(self,other) :
-		return _ResourceAffine(self).__iadd__(other)
+		return _ResourceAffine(self).__mul__(other)
 
 	def __or__(self,other) :
 		return _ResourceAffine(self) | other
