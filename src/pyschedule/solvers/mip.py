@@ -408,27 +408,35 @@ class DiscreteMIP(object):
 		for P in S.precs_lax():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-			'''
-			if P.offset >= 0:
-				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
-				         [(x[P.task_right, t],-t) for t in range(self.horizon)]
-				pulpmip.cons(affine, sense=-1, rhs=-(P.task_left.length + P.offset))
-			elif P.offset < 0:
-				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
-					     [(x[P.task_right, t],-t) for t in range(self.horizon)]
-				pulpmip.cons(affine, sense=-1, rhs= P.task_right.length-P.offset )
-			# TODO: add second constraints, they seem to help??
-			'''
-			if P.offset >= 0:
-				for t in range(self.horizon):
+
+			# cover the cases that the task groups have different sizes
+			# usually it is expected that they are similar
+			if len(self.task_groups[P.task_left]) >= len(self.task_groups[P.task_right]) :
+				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)) :
+					'''
 					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
 						 [(x[P.task_right, t_],-1) for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)]
+					cons.append(mip.con(affine, sense=-1, rhs=0 ))
+					'''
+					affine = [(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length-P.offset)] + \
+						[(x[P.task_right, t_],-1) for t_ in range(t)]
+					cons.append(mip.con(affine, sense=1, rhs=0))
+			else :
+				for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
+					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
+						[(x[P.task_right, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
-			elif P.offset < 0:
-				for t in range(self.horizon):
-					affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
-						 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
-					cons.append(mip.con(affine, sense=-1, rhs=0))
+
+			#elif P.offset < 0:
+			#	for t in range(max(P.task_left.length+P.offset,0),self.horizon+P.task_left.length-P.offset):
+			'''
+			affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
+				 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
+			cons.append(mip.con(affine, sense=-1, rhs=0))
+			'''
+			#		affine = [(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length+P.offset)] + \
+			#			 [(x[P.task_right, t_],-1) for t_ in range(t)]
+			#		cons.append(mip.con(affine, sense=1, rhs=0))
 
 		# tight precedence constraints
 		for P in S.precs_tight():
