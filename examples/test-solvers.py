@@ -200,7 +200,7 @@ CAPDIFFSLICE,
 REQUIRED
 ]
 
-scenario_methods = [CUMUL]
+#scenario_methods = [CUMUL]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
