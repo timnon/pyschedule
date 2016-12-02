@@ -1,0 +1,3 @@
+# This is used to install pyschedule locally with pip install -r requirements
+# Used in testing.
+.
