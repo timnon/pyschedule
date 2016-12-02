@@ -273,7 +273,7 @@ run(S)
 ![png](pics/output_35_0.png)
 
 
-Too bad, everything takes now size hours to finish. Therefore Alica and Bob decide to schedule a lunch after the third hour and before the fifth hour:
+Too bad, everything takes now six hours to finish. Therefore Alice and Bob decide to schedule a lunch after the third hour and before the fifth hour:
 
 
 ```python
