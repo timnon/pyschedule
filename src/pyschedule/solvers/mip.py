@@ -288,13 +288,15 @@ class ContinuousMIP(object):
 
     def read_solution_from_mip(self, msg=0):
         for T in self.scenario.tasks():
-            if self.x[T].varValue is not None:
+            if self.x[T].varValue is None:
+                T.start_value = 0
+            else:
                 T.start_value = int(self.x[T].varValue)
-                if T.resources:
-                    resources = T.resources
-                else:
-                    resources = self.scenario.resources(task=T)
-                T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
+            if T.resources:
+                resources = T.resources
+            else:
+                resources = self.scenario.resources(task=T)
+            T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
 
 
     def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
