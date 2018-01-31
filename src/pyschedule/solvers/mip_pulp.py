@@ -40,7 +40,8 @@ class MIP(object):
 
     def __init__(self,name,kind='Minimize'):
         kinds = {'Minimize':pl.LpMinimize, 'Maximize':pl.LpMaximize}
-        self.mip = pl.LpProblem(name, kinds[kind])
+        # self.mip = pl.LpProblem(name, kinds[kind])
+        self.mip = pl.LpProblem('Integer Program', kinds[kind])
 
     def var(self,name,low=0,up=0,cat='Binary'):
         return pl.LpVariable(name, low, up, cat=cat)
@@ -54,7 +55,7 @@ class MIP(object):
         self.mip += pl.LpAffineExpression(affine)
 
     def solve(self,msg=0,**kwarg):
-        kind = 'CBC'
+        # kind = 'CBC'
         if 'kind' in kwarg:
             kind = kwarg['kind']
         time_limit = None
@@ -77,7 +78,7 @@ class MIP(object):
         elif kind == 'GLPK':
             self.mip.solve(pl.GLPK_CMD(msg=msg))
         elif kind == 'SCIP':
-                self.mip.solve(SCIP_CMD(msg=msg))
+            self.mip.solve(SCIP_CMD(msg=msg))
         elif kind == 'CBC':
             options = []
             if time_limit is not None:
