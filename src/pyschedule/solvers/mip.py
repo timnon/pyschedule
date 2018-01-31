@@ -296,8 +296,13 @@ class ContinuousMIP(object):
                 resources = T.resources
             else:
                 resources = self.scenario.resources(task=T)
-            T.resources = [R for R in resources if self.mip.value(self.x[(T, R)]) > 0]
 
+            task_resources = []
+            for resource in resources:
+                value = self.mip.value(self.x[(T,resource)])
+                if value != None and value > 0:
+                    task_resources.append(resource)
+            T.resources = task_resources
 
     def solve(self, scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 
