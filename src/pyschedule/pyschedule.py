@@ -67,6 +67,8 @@ class _SchedElement(object):
 	def __init__(self,name='') :
 		if type(name) is not str:
 			raise Exception('ERROR: name %s is not a string'%str(name))
+		if 'start' in name or 'end' in name:
+			raise Exception('ERROR: avoid the substring "start" and "end" in any names, this will cause problems with solvers')
 		trans = _maketrans("-+[] ->/","________")
 		if name.translate(trans) != name:
 			raise Exception('ERROR: name %s contains one of the following characters: -+[] ->/'%name)
@@ -236,9 +238,13 @@ class Scenario(_SchedElement):
 		"""
 		Returns the last computed solution in tabular form with columns: task, resource, start, end
 		"""
-		solution = [ (T,R,T.start_value,T.start_value+T.length)
-                     for T in self.tasks() if T.start_value != None and T.resources != None
-					 for R in T.resources  ]
+		solution = \
+			[ (T,R,T.start_value,T.start_value+T.length)
+        	for T in self.tasks()
+			if T.start_value != None and T.resources != None
+			for R in T.resources
+			]
+
 		solution = sorted(solution, key = lambda x : (x[2],str(x[0]),str(x[1])) ) # sort according to start and name
 		return solution
 

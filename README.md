@@ -1,7 +1,7 @@
 
-  
 
-  
+
+
 
 # pyschedule - resource scheduling in python
 
@@ -59,7 +59,16 @@ plotters.matplotlib.plot(S,fig_size=(10,5))
 ![png](pics/output_9_0.png)
 
 
-pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have CPLEX installed (command "cplex" must be running), you can easily switch to CPLEX using:
+pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/pyschedule-overview.md">overview notebook</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have <a href="http://scip.zib.de/">SCIP</a> installed (command "scip" must be running), you can easily switch to SCIP using:
+
+
+
+```python
+solvers.mip.solve(S,kind='SCIP')
+```
+
+
+Similarly, if you have <a href="https://www.ibm.com/analytics/data-science/prescriptive-analytics/cplex-optimizer">CPLEX</a> installed (command "cplex" must be running), you can switch to CPLEX using:
 
 
 
@@ -122,33 +131,33 @@ print(S)
 ```
 
     ###############################################
-    
+
     SCENARIO: bike_paint_shop / horizon: 10
-    
+
     OBJECTIVE: None
-    
+
     RESOURCES:
     Alice
     Bob
-    
+
     TASKS:
     green_paint : Alice|Bob
     red_paint : Alice|Bob
     green_post : Alice|Bob
     red_post : Alice|Bob
-    
+
     JOINT RESOURCES:
     Alice|Bob : red_paint
     Alice|Bob : red_post
     Alice|Bob : green_paint
     Alice|Bob : green_post
-    
+
     LAX PRECEDENCES:
     green_paint < green_post
-    
+
     TIGHT PRECEDENCES:
     red_paint + 1 <= red_post
-    
+
     ###############################################
 
 
@@ -161,38 +170,38 @@ print(S)
 ```
 
     ###############################################
-    
+
     SCENARIO: bike_paint_shop / horizon: 10
-    
+
     OBJECTIVE: MakeSpan
-    
+
     RESOURCES:
     Alice
     Bob
-    
+
     TASKS:
     green_paint : Alice|Bob
     red_paint : Alice|Bob
     green_post : Alice|Bob
     red_post : Alice|Bob
     MakeSpan : Alice
-    
+
     JOINT RESOURCES:
     Alice|Bob : red_paint
     Alice|Bob : red_post
     Alice|Bob : green_paint
     Alice|Bob : green_post
-    
+
     LAX PRECEDENCES:
     green_paint < green_post
     green_paint < MakeSpan
     red_paint < MakeSpan
     green_post < MakeSpan
     red_post < MakeSpan
-    
+
     TIGHT PRECEDENCES:
     red_paint + 1 <= red_post
-    
+
     ###############################################
 
 
@@ -202,7 +211,7 @@ Hence, we want to minimize the position of the MakeSpan task subject to the cons
 ```python
 # Set some colors for the tasks
 task_colors = { green_paint   : '#A1D372',
-                green_post    : '#A1D372', 
+                green_post    : '#A1D372',
                 red_paint     : '#EB4845',
                 red_post      : '#EB4845',
                 S['MakeSpan'] : '#7EA7D8'}
