@@ -1,4 +1,6 @@
 #! /usr/bin/python
+import sys
+sys.path.append('../src')
 import pyschedule
 import math, sys
 
@@ -15,8 +17,8 @@ Aschersleben 51.45 11.29\n\
 Augsburg 48.25 20.20\n\
 Aurich 53.28 07.28\n\
 BadKissingen 50.11 10.04\n\
-Baden-Baden 48.44 08.13\n\
-Baden-Wurttemberg 48.20 08.40\n\
+BadenBaden 48.44 08.13\n\
+BadenWurttemberg 48.20 08.40\n\
 Bamberg 49.54 10.54\n\
 Bautzen 51.10 14.26\n\
 Bavaria/Bayern 48.50 12.00\n\
@@ -292,9 +294,9 @@ coords = { cities_table[i][0] : (cities_table[i][2],cities_table[i][1]) for i in
 cities = list(coords)
 
 # add coordinates of vitual start and end at the first city in list
-start_city = cities_table[0][0]
-coords['start'] = coords[start_city]
-coords['end'] = coords[start_city]
+orig_city = cities_table[0][0]
+coords['orig'] = coords[orig_city]
+coords['dest'] = coords[orig_city]
 
 # create scenario, city visit tasks, and start and end tasks of blue and red vehicle
 S = pyschedule.Scenario('VRP_Germany',horizon=30)
@@ -305,31 +307,31 @@ T = { city : S.Task(city) for city in cities }
 R_blue, R_red = S.Resource('blue'), S.Resource('red')
 
 # tasks
-T['start'] = S.Task('start')
-T['end'] = S.Task('end')
+T['orig'] = S.Task('orig')
+T['dest'] = S.Task('dest')
 
 # precedences
-S += T['start'] < { T[city] for city in cities if city != 'start' }
-S += T['end'] > { T[city] for city in cities if city != 'end' }
+S += T['orig'] < { T[city] for city in cities if city != 'orig' }
+S += T['dest'] > { T[city] for city in cities if city != 'dest' }
 
 # resource assignments
-T['start'] += [ R_blue, R_red ]
-T['end'] += [ R_blue, R_red ]
+T['orig'] += [ R_blue, R_red ]
+T['dest'] += [ R_blue, R_red ]
 for city in cities :
 	T[city] += R_blue|R_red
 
 # distances
 S += [ T[city] + int(eucl_dist(coords[city],coords[city_])) << T[city_] \
        for city in cities for city_ in cities if city != city_ ]
-S += [ T['start'] + int(eucl_dist(coords['start'],coords[city])) << T[city] for city in cities ]
-S += [ T[city] + int(eucl_dist(coords['start'],coords[city])) << T['start'] for city in cities ]
+S += [ T['orig'] + int(eucl_dist(coords['orig'],coords[city])) << T[city] for city in cities ]
+S += [ T[city] + int(eucl_dist(coords['orig'],coords[city])) << T['orig'] for city in cities ]
 
 # capacities (+2 because start and end)
 S += R_blue['length'] <= capacity+2
 S += R_red['length'] <= capacity+2
 
 # objective
-S += T['end']*1
+S += T['dest']*1
 
 if not pyschedule.solvers.mip.solve_bigm(S,kind='CBC',time_limit=60,msg=1):
 	print('no solution found')
@@ -341,9 +343,9 @@ pyschedule.plotters.matplotlib.plot(S,resource_height=1.0,)
 import pylab
 sol = S.solution()
 
-blue_tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords and str(resource) == 'blue' ]
+blue_tour = [ coords[str(city)] for (city,resource,orig,dest) in sol if str(city) in coords and str(resource) == 'blue' ]
 pylab.plot([ x for x,y in blue_tour ],[ y for x,y in blue_tour],linewidth=2.0,color='blue')
-red_tour = [ coords[str(city)] for (city,resource,start,end) in sol if str(city) in coords if str(resource) == 'red' ]
+red_tour = [ coords[str(city)] for (city,resource,orig,dest) in sol if str(city) in coords if str(resource) == 'red' ]
 pylab.plot([ x for x,y in red_tour ],[ y for x,y in red_tour],linewidth=2.0,color='red')
 
 # plot city names

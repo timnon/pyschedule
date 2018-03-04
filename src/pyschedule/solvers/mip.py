@@ -48,7 +48,7 @@ def _get_task_groups(scenario):
                                              _task_groups[task_group_name])
                                           for task_group_name in _task_groups])
     tasks_in_task_groups = [ T_ for T in task_groups for T_ in task_groups[T] ]
-    task_groups.update([ (T,[T]) for T in scenario.tasks() 
+    task_groups.update([ (T,[T]) for T in scenario.tasks()
                                  if T not in tasks_in_task_groups ])
     return task_groups
 
@@ -601,8 +601,13 @@ class DiscreteMIP(object):
     def read_solution_from_mip(self, msg=0):
         for T in self.task_groups:
             # get all possible starts with combined resources
-            starts = [ (t,R) for t in range(self.horizon) for R in self.scenario.resources()
-                       if (T,R,t) in self.x for i in range(int(self.mip.value(self.x[(T, R, t)]))) ]
+            starts = \
+                [ (t,R)
+                for t in range(self.horizon)
+                for R in self.scenario.resources()
+                if (T,R,t) in self.x and self.mip.value(self.x[T, R, t]) is not None
+                for i in range(int(self.mip.value(self.x[T, R, t])))
+                ]
 
             # iteratively assign starts and resources
             for T_ in self.task_groups[T]:
@@ -652,8 +657,3 @@ class DiscreteMIP(object):
         if msg:
             print('ERROR: no solution found')
         return 0
-
-
-
-
-

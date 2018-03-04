@@ -1,6 +1,7 @@
 import os
 from time import clock
 import re
+import subprocess
 import pulp
 import pulp.solvers
 
@@ -83,7 +84,7 @@ class SCIP_CMD(pulp.solvers.LpSolver_CMD):
             if statusString not in scipStatus:
                 raise pulp.PulpSolverError("Unknown status returned by SCIP")
             status = scipStatus[statusString]
-            f.readline() # objective value: 
+            f.readline() # objective value:
             values = {}
             for line in f:
                 name, val, _ = line.split()
