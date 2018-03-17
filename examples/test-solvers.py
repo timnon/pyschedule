@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import sys
+sys.path.append('../src')
 from pyschedule import Scenario, Task, Resource, solvers, plotters
 import copy, collections, traceback
 
@@ -9,13 +11,28 @@ horizon = 10
 msg = 0
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
-def solve_docloud(scenario,msg=0) :
-	solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
+def solve_docloud(scenario,msg=0):
+	return solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
+
+def solve_cbc(scenario,msg=0):
+	return solvers.mip.solve(scenario,kind='CBC')
+
+def solve_cbc_bigm(scenario,msg=0):
+	return solvers.mip.solve_bigm(scenario,kind='CBC')
+
+def solve_scip(scenario,msg=0):
+	return solvers.mip.solve(scenario,kind='SCIP')
+
+def solve_scip_bigm(scenario,msg=0):
+	return solvers.mip.solve_bigm(scenario,kind='SCIP')
+
 
 solve_methods = [
-solvers.mip.solve,
-solvers.mip.solve_bigm,
-solvers.ortools.solve,
+solve_cbc,
+solve_cbc_bigm,
+#solve_scip,
+#solve_scip_bigm,
+#solvers.ortools.solve,
 #solvers.cpoptimizer.solve,
 #solve_docloud
 ]
@@ -200,7 +217,7 @@ CAPDIFFSLICE,
 REQUIRED
 ]
 
-#scenario_methods = [CUMUL]
+#scenario_methods = [ZERO]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
@@ -252,6 +269,3 @@ try :
 except :
 	print('INFO: install pandas to get nicer table plot')
 	print(s)
-
-
-

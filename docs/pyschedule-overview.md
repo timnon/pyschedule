@@ -1,5 +1,5 @@
 
-   
+
 
 # pyschedule overview
 
@@ -21,8 +21,11 @@ more specifically, pyschedule ...
 
 pyschedule tries to gain the best of two worlds by supporting classical MIP-models (Mixed Integer) as well as CP solvers (Constraint Programming). All solvers interfaces are in the solvers subpackage:
 
-- **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK"). CBC is part of pulp and hence works out of the box.
+- **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK", "SCIP"). CBC is part of pulp and hence works out of the box. For CBC, CPLEX and SCIP, you can pass parameters "time_limit" or "ratio_gap" (only CBC and SCIP) to limit the running time and receive suboptimal solutions.
 - **mip.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
+
+There are some more solvers not based on MIPs, but they are not supported that well yet:
+
 - **ortools.solve(scenario) :** the open source CP-solver of Google, a little restricted but good to ensure feasibility of larger models. Make sure that package [ortools](https://github.com/google/or-tools) is installed.
 - **cpoptimizer.solve(scenario) :** [IBM CP Optimizer](http://www-01.ibm.com/software/commerce/optimization/cplex-cp-optimizer/), requires command "oplrun" to be executable. Industrial-scale solver that runs fast on very large problems.
 - **cpoptimizer.solve_docloud(scenario,api_key) :** IBM CP Optimizer hosted in the cloud, you need to provide an "api_key" which you can get [here](https://developer.ibm.com/docloud/) for a trial.
@@ -201,6 +204,7 @@ X means that the constraint is working and Error means that it produces an error
 
 Constraints that are only partially implemented or on the TODO list:
 
+- price-collecting objective: reward for every scheduled job, but some jobs can be omitted
 - **FIRST :** first/last tasks on resources, the envisioned syntax is `S += R1[3:7] < T1` to ensure that T1 is the last task on R1 in between 3 and 7
 - soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
 - turn solvers.pulp into solvers.mip which is agnostic of the python mip package
