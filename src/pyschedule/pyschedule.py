@@ -162,7 +162,7 @@ class _SchedElementAffine(_DICT_TYPE) :
 		return self.__repr__().__hash__()
 
 
-	
+
 class Scenario(_SchedElement):
 	"""
 	The base scenario class
@@ -174,15 +174,19 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,group=None,required=True,**kwargs) :
+	def Task(self,name,length=1,group=None,reward=None,**kwargs) :
 		"""
 		Adds a new task to the scenario
-		name      : unique task name, must not contain special characters
-    	length    : length of task, default is 1
+		name : unique task name, must not contain special characters
+		length : length of task, default is 1
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		task = Task(name=name,length=length,group=group,**kwargs)
+		task = Task(name=name,
+			length=length,
+			group=group,
+			reward=reward,
+			**kwargs)
 		self.add_task(task)
 		return task
 
@@ -200,7 +204,7 @@ class Scenario(_SchedElement):
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
 		size   : the size of the resource, if size > 1, then we get a cumulative resource that can process
-		         different tasks in parallel
+		 		different tasks in parallel
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
@@ -240,7 +244,7 @@ class Scenario(_SchedElement):
 		"""
 		solution = \
 			[ (T,R,T.start_value,T.start_value+T.length)
-        	for T in self.tasks()
+			for T in self.tasks()
 			if T.start_value != None and T.resources != None
 			for R in T.resources
 			]
@@ -262,7 +266,7 @@ class Scenario(_SchedElement):
 		Returns the value of the objective
 		"""
 		return sum([ T['_completion_time_cost']*(T.start_value+T.length) for T in self.tasks()
-		                                                                 if '_completion_time_cost' in T])
+		 			if '_completion_time_cost' in T])
 
 	def use_makespan_objective(self) :
 		"""
@@ -384,7 +388,7 @@ class Scenario(_SchedElement):
 	def add_resource(self,resource):
 		if resource.name in self._resources and resource is not self._resources[resource.name]:
 			raise Exception('ERROR: resource with name %s already contained in scenario %s'%
-			                (str(resource.name),str(self.name)))
+						(str(resource.name),str(self.name)))
 		elif resource not in self.resources():
 			self._resources[resource.name] = resource
 
@@ -393,7 +397,7 @@ class Scenario(_SchedElement):
 			del self._resources[resource.name]
 		else:
 			raise Exception('ERROR: resource with name %s not contained in scenario %s'%
-			                (str(resource.name),str(self.name)))
+						(str(resource.name),str(self.name)))
 		self._constraints = [ C for C in self._constraints if resource not in C.resources() ]
 
 	def __iadd__(self,other) :
@@ -441,7 +445,7 @@ class Scenario(_SchedElement):
 	def __getitem__(self, item):
 		if item not in self._tasks and item not in self._resources:
 			raise Exception('ERROR: task or resource with name %s is not contained in scenario %s'%
-			                (str(item),str(self.name)))
+						(str(item),str(self.name)))
 		if item in self._tasks:
 			return self._tasks[item]
 		return self._resources[item]
@@ -514,20 +518,21 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,required=True,**kwargs) :
+	def __init__(self,name,length=1,group=None,reward=None,completion_time_cost=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
 		# base parameters
 		self.length = length # length of task
 		self.group = group # group exchangeable tasks
-		self.required = True # does this job need to get scheduled, False makes sense if it has negative cap requirement
 
 		# additional parameters
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
 		self.resources_req = list() # required resources
-		self.completion_time_cost = None # cost on the final completion time
+		self.completion_time_cost = completion_time_cost # cost on the final completion time
+		self.reward = reward # in case not None, then the task is optional and substracts the reward from the cost
+
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
 
@@ -1030,18 +1035,3 @@ class CapacityDiffUp(_Capacity):
 	"""
 	def __init__(self,resource):
 		_Capacity.__init__(self,resource)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

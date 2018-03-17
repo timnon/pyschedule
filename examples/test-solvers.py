@@ -8,23 +8,23 @@ import copy, collections, traceback
 horizon = 10
 
 # solver feedback
-msg = 0
+msg = 1
 
 # cloud-substitute for cpoptimizer.solve, requires api_key in variable space
-def solve_docloud(scenario,msg=0):
+def solve_docloud(scenario):
 	return solvers.cpoptimizer.solve_docloud(scenario,api_key=api_key,msg=msg)
 
-def solve_cbc(scenario,msg=0):
-	return solvers.mip.solve(scenario,kind='CBC')
+def solve_cbc(scenario):
+	return solvers.mip.solve(scenario,kind='CBC',msg=msg)
 
-def solve_cbc_bigm(scenario,msg=0):
-	return solvers.mip.solve_bigm(scenario,kind='CBC')
+def solve_cbc_bigm(scenario):
+	return solvers.mip.solve_bigm(scenario,kind='CBC',msg=msg)
 
-def solve_scip(scenario,msg=0):
-	return solvers.mip.solve(scenario,kind='SCIP')
+def solve_scip(scenario):
+	return solvers.mip.solve(scenario,kind='SCIP',msg=msg)
 
-def solve_scip_bigm(scenario,msg=0):
-	return solvers.mip.solve_bigm(scenario,kind='SCIP')
+def solve_scip_bigm(scenario):
+	return solvers.mip.solve_bigm(scenario,kind='SCIP',msg=msg)
 
 
 solve_methods = [
@@ -185,14 +185,14 @@ def CAPDIFFSLICE():
 	sols = ['[(T1, R1, 3, 4), (T2, R1, 4, 5)]']
 	return S,sols
 
-def REQUIRED():
+def REWARD():
 	S = two_task_scenario()
 	S['T1'] += S['R1']
 	S['T2'] += S['R1']
-	S['T1'].required = False
-	S['T2'].required = False
-	S += S['R1']['length'] >= 1
-	sols = ['[(T2, R1, 0, 1)]']
+	S['T1'].reward = 2
+	S['T2'].reward = 1
+	S += S['R1']['length'] <= 1
+	sols = ['[(T1, R1, 0, 1)]']
 	return S,sols
 
 
@@ -214,7 +214,7 @@ CAP,
 CAPSLICE,
 CAPDIFF,
 CAPDIFFSLICE,
-REQUIRED
+REWARD
 ]
 
 #scenario_methods = [ZERO]
@@ -234,7 +234,7 @@ for scenario_method in scenario_methods :
 		solve_method = solve_method_names[solve_method_name]
 		S_ = copy.deepcopy(S)
 		try :
-			solve_method(S_,msg=msg)
+			solve_method(S_)
 			sol = str(S_.solution())
 			valid = ( sol in sols )
 			row.append(valid)
