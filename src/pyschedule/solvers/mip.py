@@ -418,35 +418,35 @@ class DiscreteMIP(object):
 		for P in S.precs_lax():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-
-			# cover the cases that the task groups have different sizes
-			# usually it is expected that they are similar
-			if len(self.task_groups[P.task_left]) >= len(self.task_groups[P.task_right]) :
-				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)) :
-					'''
-					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
-						 [(x[P.task_right, t_],-1) for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)]
-					cons.append(mip.con(affine, sense=-1, rhs=0 ))
-					'''
-					affine = [(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length-P.offset)] + \
-						[(x[P.task_right, t_],-1) for t_ in range(t)]
-					cons.append(mip.con(affine, sense=1, rhs=0))
-			else :
+			left_size = float(len(self.task_groups[P.task_left]))
+			right_size = float(len(self.task_groups[P.task_right]))
+			#in the default case it is expected that the task groups have similar
+			#size, so the first task in the left task group must be scheduled before
+			#the first task in the right task group, and so on
+			if left_size == right_size:
 				for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
-					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
+					affine = \
+						[(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
 						[(x[P.task_right, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
-
-			#elif P.offset < 0:
-			#   for t in range(max(P.task_left.length+P.offset,0),self.horizon+P.task_left.length-P.offset):
-			'''
-			affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
-				 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
-			cons.append(mip.con(affine, sense=-1, rhs=0))
-			'''
-			#       affine = [(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length+P.offset)] + \
-			#            [(x[P.task_right, t_],-1) for t_ in range(t)]
-			#       cons.append(mip.con(affine, sense=1, rhs=0))
+			#covers the case that the right task group has size ones
+			#in which case this task should be scheduled after all tasks in the
+			#left task group
+			elif left_size == 1 or right_size == 1:
+				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
+					affine = \
+						[(x[P.task_left, t_],1/left_size) for t_ in range(t,self.horizon)] + \
+						[(x[P.task_right, t_],-1/right_size) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
+					cons.append(mip.con(affine, sense=-1, rhs=0))
+			#covers the cases that the task groups have different sizes != 1
+			#if the right task group is larger, then the  additonal tasks
+			#will have no contraints
+			else:
+				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
+					affine = \
+						[(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length-P.offset)] + \
+						[(x[P.task_right, t_],-1) for t_ in range(t)]
+					cons.append(mip.con(affine, sense=1, rhs=0))
 
 		# tight precedence constraints
 		for P in S.precs_tight():
@@ -594,7 +594,7 @@ class DiscreteMIP(object):
 			if T.reward is not None:
 				cost -= T.reward
 			return cost
-			
+
 		objective = [
 			(x[T, t], task2cost(T,t))
 			for T in S.tasks()
@@ -623,14 +623,16 @@ class DiscreteMIP(object):
 
 			# iteratively assign starts and resources
 			for T_ in self.task_groups[T]:
-				# in case of not required tasks (reward not None), there might be less starts than tasks
+				# reset values
+				T_.start_value = None
+				T_.resources = list()
+				# in case of not required tasks with reward, there might be less starts than tasks
 				if not starts:
 					break
 				# consider single resources first
 				RAs = [ RA for RA in T_.resources_req if len(RA) == 1 ] + \
 					  [ RA for RA in T_.resources_req if len(RA) > 1  ]
 				T_.start_value = [ t for (t, R) in starts ][0]
-				T_.resources = list()
 				for RA in RAs :
 					if set(T_.resources) & set(RA):
 						continue
