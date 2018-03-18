@@ -42,7 +42,7 @@ pyschedule has been tested with python 2.7 and 3.4. All solvers support a parame
 
 #### Basic Test Cases
 basic test cases that are not really constraints but still represent different capabilities:
-- **ZERO :** tasks of length zero are allwed, e.g. `T1 = S.Task(length=0)`.
+- **ZERO :** tasks of length zero are allowed, e.g. `T1 = S.Task(length=0)`.
 - **NONUNIT :** tasks of lenght > 1 are allowed, e.g. `T1 = S.Task(length=3)`.
 
 #### Precedences
@@ -64,8 +64,8 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **CAP :** capacities, e.g. `R1['length'] <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
 - **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
-- **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4
-- **REQUIRED :** make a task optional, e.g. `T1.required = False`
+- **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4.
+- **REWARD :** if reward is set, e.g. `T1.reward = 1`, then this task is optional, but the reward will be substracted from the objective. This is for situations where not all tasks can be scheduled, and hence the most valuable ones with the highest reward should be selected.
 
 
 ### Solvers vs Constraints
@@ -190,7 +190,7 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td></td>
     </tr>
     <tr>
-      <th>REQUIRED</th>
+      <th>REWARD</th>
       <td>X</td>
       <td></td>
       <td></td>
@@ -204,7 +204,6 @@ X means that the constraint is working and Error means that it produces an error
 
 Constraints that are only partially implemented or on the TODO list:
 
-- price-collecting objective: reward for every scheduled job, but some jobs can be omitted
 - **FIRST :** first/last tasks on resources, the envisioned syntax is `S += R1[3:7] < T1` to ensure that T1 is the last task on R1 in between 3 and 7
 - soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
 - turn solvers.pulp into solvers.mip which is agnostic of the python mip package
