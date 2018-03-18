@@ -55,6 +55,7 @@ class MIP(object):
 		self.mip += pl.LpAffineExpression(affine)
 
 	def solve(self,msg=0,**kwarg):
+		# kind = 'CBC'
 		if 'kind' in kwarg:
 			kind = kwarg['kind']
 		time_limit = None
@@ -78,7 +79,7 @@ class MIP(object):
 			self.mip.solve(pl.GLPK_CMD(msg=msg))
 		elif kind == 'SCIP':
 			self.mip.solve(SCIP_CMD(msg=msg,time_limit=time_limit,ratio_gap=ratio_gap))
-		elif kind == 'CBC':
+		elif kind == 'CBC' or kind == 'COIN':
 			options = []
 			if time_limit is not None:
 				options.extend(['sec', str(time_limit)])
@@ -87,7 +88,10 @@ class MIP(object):
 				options.extend(['randomCbcSeed', str(random_seed)])
 			if ratio_gap is not None:
 				options.extend(['ratio', str(ratio_gap)])
-			self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
+			if kind == 'CBC':
+				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
+			elif kind == 'COIN':
+				self.mip.solve(pl.COIN(msg=msg, options=options))
 		else:
 			raise Exception('ERROR: solver ' + kind + ' not known')
 
