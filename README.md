@@ -10,7 +10,7 @@ pyschedule is the easiest way to match tasks with resources. Do you need to plan
 pip install pyschedule
 ```
 
-Here is a hello world example, the <a href="https://github.com/timnon/pyschedule/docs/bike-shop.ipynb">bike shop</a> offers a more complete overview of the base features.
+Here is a hello world example, the <a href="https://github.com/timnon/pyschedule/tree/master/docs/bike-shop.ipynb">bike shop</a> offers a more complete overview of the base features.
 
 ```python
 # Load pyschedule and create a scenario with ten steps planning horizon
