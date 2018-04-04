@@ -199,7 +199,7 @@ class Scenario(_SchedElement):
 		else :
 			return list({ T for T in self.tasks() for RA in T.resources_req if resource in RA })
 
-	def Resource(self,name,size=1) :
+	def Resource(self,name,size=1,**kwargs) :
 		"""
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
@@ -208,7 +208,7 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		resource = Resource(name,size=size)
+		resource = Resource(name,size=size,**kwargs)
 		self.add_resource(resource)
 		return resource
 
@@ -855,9 +855,11 @@ class Resource(_SchedElement) :
 	"""
 	A resource which can processes tasks
 	"""
-	def __init__(self,name=None,size=1) :
+	def __init__(self,name=None,size=1,**kwargs) :
 		_SchedElement.__init__(self,name)
 		self.size = size
+		for key in kwargs:
+			self.__setattr__(key,kwargs[key])
 
 	def __mul__(self,other) :
 		return _ResourceAffine(self).__mul__(other)
