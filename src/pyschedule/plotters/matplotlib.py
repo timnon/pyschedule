@@ -25,7 +25,8 @@ under the License.
 
 
 def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
-         color_prec_groups=False,hide_tasks=[],hide_resources=[],task_colors=dict(),fig_size=(15,5)) :
+         color_prec_groups=False,hide_tasks=[],hide_resources=[],task_colors=dict(),fig_size=(15,5),
+		 vertical_text=False) :
 	"""
 	Plot the given solved scenario using matplotlib
 
@@ -63,7 +64,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 		return comps
 
 	tasks = [ T for T in S.tasks() if T not in hide_tasks ]
-	
+
 	# get connected components dict for coloring
 	# each task is mapping to an integer number which corresponds
 	# to its connected component
@@ -131,7 +132,13 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 				    )
 				)
 				if show_task_labels :
-					plt.text(x,y+0.1*resource_height,str(T.name),fontsize=14,color='black')
+					if vertical_text:
+						text_rotation = 90
+						y_ = y+0.9*resource_height
+					else:
+						text_rotation = 0
+						y_ = y+0.1*resource_height
+					plt.text(x,y_,str(T.name),fontsize=14,color='black',rotation=text_rotation)
 		resource_sizes_count += resource_size
 
 	# format graph
@@ -144,5 +151,3 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 		plt.savefig(img_filename,dpi=200,bbox_inches='tight')
 	else :
 		plt.show()
-
-
