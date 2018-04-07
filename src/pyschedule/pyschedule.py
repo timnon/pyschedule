@@ -579,6 +579,9 @@ class Task(_SchedElement) :
 		self.resources_req = [ RA_ for RA_ in self.resources_req if str(RA_) != str(RA) ]
 		return self
 
+	def get_resources_in_req(self):
+		return { R for RA in self.resources_req for R in RA }
+
 	def __iadd__(self,other):
 		if _isiterable(other):
 			for x in other:
@@ -892,7 +895,6 @@ class _Capacity(_Constraint):
 	def __init__(self,resource):
 		_Constraint.__init__(self)
 		self.resource = resource
-		self.weight = lambda T,t : 1
 		self._param = 'length'
 		self._start = None
 		self._end = None
@@ -923,40 +925,24 @@ class _Capacity(_Constraint):
 	def __getitem__(self,key):
 		if isinstance(key,str):
 			self._param = key
-			weight_ = lambda T: T[self._param] if self._param in T else 0
 		elif isinstance(key,int):
-			weight_ = lambda t: 1 if t == key else 0
 			self._start = key
 			self._end = key+1
 		elif isinstance(key,slice):
 			self._start = key.start
 			self._end = key.stop
-			if self._start is not None and self._end is not None:
-				weight_ = lambda t: 1 if t >= self._start and t < self._end else 0
-			elif self._start is not None:
-				weight_ = lambda t: 1 if t >= self._start else 0
-			elif self._end is not None:
-				weight_ = lambda t: 1 if t < self._end else 0
-			else:
-				weight_ = lambda t: 1
-		elif hasattr(key, '__call__'):
-			self._param = uuid.uuid4()
-			weight_ = key
-		else:
-			raise Exception('ERROR: wrong slicing key for capacity')
-		# concatenate slicing functions
-		old_weight = copy.deepcopy(self.weight)
-		weight_ = copy.deepcopy(weight_)
-		if 'T' in weight_.__code__.co_varnames and 't' in weight_.__code__.co_varnames:
-			new_weight = lambda T,t: old_weight(T,t)*weight_(T,t)
-		elif 'T' in weight_.__code__.co_varnames:
-			new_weight = lambda T,t=0: old_weight(T,t)*weight_(T)
-		elif 't' in weight_.__code__.co_varnames:
-			new_weight = lambda T,t: old_weight(T,t)*weight_(t)
-		else:
-			raise Exception('ERROR: wrong parameters in capacity selection function')
-		self.weight = copy.deepcopy(new_weight)
 		return self
+
+	def weight(self,T,t):
+		if not self._param in T:
+			return 0
+		if not self.resource in T.get_resources_in_req():
+			return 0
+		if self._start is not None and self._end is not None:
+			if t+T.length-1 < self._start or t >= self._end:
+				return 0
+		return T[self._param]
+
 
 	@property
 	def diff(self):

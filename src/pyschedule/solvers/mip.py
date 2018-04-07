@@ -514,78 +514,73 @@ class DiscreteMIP(object):
 					rhs = (len(self.task_groups[P.task_left])+len(self.task_groups[P.task_right])/2.0)
 					cons.append(mip.con(affine, sense=-1, rhs=rhs))
 
-		# capacity lower bounds
-		for C in S.capacity_low():
-			# weight gets proportionally assigned according to overlap
-			affine = [ (x[T, C.resource, t_], C.weight(T=T,t=t)/float(T.length) )
-					  for t in range(self.horizon)
-					  for T in self.task_groups
-					  for t_ in range(max(0,t-T.length+1),t+1)
-					  if (T,C.resource,t_) in x and C.weight(T=T,t=t) ]
-			'''
-			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
-					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
-			'''
-			if not affine:
-				continue
-			# sum up (pulp doesnt do this)
-			affine_ = { a:0 for a,b in affine }
-			for a,b in affine:
-				affine_[a] += b
-			affine = [ (a,affine_[a]) for a in affine_ ]
-			cons.append(mip.con(affine, sense=1, rhs=C.bound))
-
-		# capacity upper bounds
-		for C in S.capacity_up():
-			# weight gets proportionally assigned according to overlap
-			affine = [ (x[T, C.resource, t_], C.weight(T=T,t=t)/float(T.length) )
-					  for t in range(self.horizon)
-					  for T in self.task_groups
-					  for t_ in range(max(0,t-T.length+1),t+1)
-					  if (T,C.resource,t_) in x and C.weight(T=T,t=t) ]
-			'''
-			affine = [ (x[T, C.resource, t], C.weight(T=T,t=t)) for T in self.task_groups
-					  for t in range(self.horizon) if (T,C.resource,t) in x and C.weight(T=T,t=t) ]
-			'''
-			if not affine:
-				continue
-			# sum up (pulp doesnt do this)
-			affine_ = { a:0 for a,b in affine }
-			for a,b in affine:
-				affine_[a] += b
-			affine = [ (a,affine_[a]) for a in affine_ ]
-			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
-
-		# capacity switch bounds
-		count = 0
-		for C in S.capacity_diff_up():
+		# capacity upper and lower bounds
+		for C in S.capacity_up() + S.capacity_low():
 			R = C.resource
 			# get affected periods
-			periods = list(set([ t for t in range(self.horizon) for T in self.task_groups if C.weight(T,t) ]))
-			periods = sorted(periods)
-			x.update({ ('switch_%i'%count,R,t) : mip.var(str(('switch_%i'%count,R, t)), 0, 1)
+			if C._start is not None:
+				start = C._start
+			else:
+				start = 0
+			if C._end is not None:
+				end = C._end
+			else:
+				end = S.horizon
+			periods = range(start,end)
+			# weight gets proportionally assigned according to overlap
+			affine = [ (x[T, C.resource, t], C.weight(T,t)/float(T.length) )
+					  for t in periods
+					  for T in self.task_groups
+					  if (T,R,t) in x and C.weight(T,t) ]
+			if not affine:
+				continue
+			# sum up (pulp doesnt do this)
+			affine_ = { a:0 for a,b in affine }
+			for a,b in affine:
+				affine_[a] += b
+			affine = [ (a,affine_[a]) for a in affine_ ]
+			if C in S.capacity_up():
+				sense = -1
+			else:
+				sense = 1
+			cons.append(mip.con(affine, sense=sense, rhs=C.bound))
+
+		# capacity switch bounds
+		for count, C in enumerate(S.capacity_diff_up()):
+			R = C.resource
+			# get affected periods
+			if C._start is not None:
+				start = C._start
+			else:
+				start = 0
+			if C._end is not None:
+				end = C._end-1
+			else:
+				end = S.horizon-1
+			periods = range(start,end)
+			x.update({ ('switch_%i'%count,R,t) : mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
 					   for t in periods })
+
 			# define switch variables
-			for t in periods[:-1]:
+			for t in periods:
 				# decrease switch
 				if C.kind == 'diff' or C.kind == 'diff_dec':
-					affine = [ (x['switch_%i'%count,R,t],1) ] +\
-							 [ (x[T,R,t-T.length+1],-1) for T in self.task_groups
-							   if (T,R,t-T.length+1) in x and C.weight(T,t) ] +\
-							 [ (x[T,R,t+1],1) for T in self.task_groups
+					affine =  [ (x['switch_%i'%count,R,t],1) ]
+					affine += [ (x[T,R,t-T.length+1],-C.weight(T,t)) for T in self.task_groups
+							   if (T,R,t-T.length+1) in x and C.weight(T,t) ]
+					affine += [ (x[T,R,t+1],C.weight(T,t+1)) for T in self.task_groups
 							   if (T,R,t+1) in x and C.weight(T,t+1) ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
 				# increase switch
 				if C.kind == 'diff' or C.kind == 'diff_inc':
-					affine = [ (x['switch_%i'%count,R,t],1) ] +\
-							 [ (x[T,R,t-T.length+1],1) for T in self.task_groups
-							   if (T,R,t-T.length+1) in x and C.weight(T,t) ] +\
-							 [ (x[T,R,t+1],-1) for T in self.task_groups
+					affine =  [ (x['switch_%i'%count,R,t],1) ]
+					affine += [ (x[T,R,t-T.length+1],C.weight(T,t)) for T in self.task_groups
+							   if (T,R,t-T.length+1) in x and C.weight(T,t) ]
+					affine += [ (x[T,R,t+1],-C.weight(T,t+1)) for T in self.task_groups
 							   if (T,R,t+1) in x and C.weight(T,t+1) ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
-			affine = [ (x['switch_%i'%count,R,t],1) for t in periods[:-1] if ('switch_%i'%count,R,t) in x ]
+			affine = [ (x['switch_%i'%count,R,t],1) for t in periods if ('switch_%i'%count,R,t) in x ]
 			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
-			count += 1
 
 		def task2cost(T,t):
 			cost = 0
