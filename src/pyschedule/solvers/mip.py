@@ -517,9 +517,16 @@ class DiscreteMIP(object):
 		# capacity upper and lower bounds
 		for C in S.capacity_up() + S.capacity_low():
 			R = C.resource
-			# weight gets proportionally assigned according to
+			if C._start is not None:
+				start = C._start
+			else:
+				start = 0
+			if C._end is not None:
+				end = C._end
+			else:
+				end = S.horizon
 			affine = [ (x[T,R,t-T.length+1], C.weight(T,t-T.length+1))
-					  for t in range(C._start,C._end)
+					  for t in range(start,end)
 					  for T in self.task_groups
 					  if (T,R,t-T.length+1) in x and C.weight(T,t-T.length+1) ]
 			if not affine:
@@ -552,7 +559,15 @@ class DiscreteMIP(object):
 					return con
 				return None
 
-			for t in range(C._start,C._end-1):
+			if C._start is not None:
+				start = C._start
+			else:
+				start = 0
+			if C._end is not None:
+				end = C._end
+			else:
+				end = S.horizon
+			for t in range(start,end-1):
 				if C.kind == 'diff' or C.kind == 'diff_dec':
 					con = get_diff_con(count,C,t,-1)
 					if con is not None:

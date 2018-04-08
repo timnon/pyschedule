@@ -65,7 +65,7 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
 - **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4.
-- **REWARD :** if reward is set, e.g. `T1.reward = 1`, then this task is optional, but the reward will be substracted from the objective. This is for situations where not all tasks can be scheduled, and hence the most valuable ones with the highest reward should be selected.
+- **SCHEDULECOST :** if schedule_cost is set, e.g. `T1.schedule_cost = 1`, then this task is optional, but the schedule_cost will be added from the objective. This is for situations where not all tasks can be scheduled, and hence the most valuable ones with the lowest schedule_cost should be selected. Note that the schedule_cost can also be negative.
 
 
 ### Solvers vs Constraints
@@ -190,7 +190,7 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td></td>
     </tr>
     <tr>
-      <th>REWARD</th>
+      <th>SCHEDULECOST</th>
       <td>X</td>
       <td></td>
       <td></td>

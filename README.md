@@ -10,7 +10,7 @@ pyschedule is the easiest way to match tasks with resources. Do you need to plan
 pip install pyschedule
 ```
 
-Here is a hello world example, the <a href="https://github.com/timnon/pyschedule/tree/master/docs/bike-shop.ipynb">bike shop</a> offers a more complete overview of the base features.
+Here is a hello world example, the <a href="https://github.com/timnon/pyschedule/tree/master/example-notebooks/bike-shop.ipynb">bike shop</a> offers a more complete overview of the base features.
 
 ```python
 # Load pyschedule and create a scenario with ten steps planning horizon
@@ -52,7 +52,7 @@ plotters.matplotlib.plot(S,fig_size=(10,5))
 
 ![png](pics/hello-world.png)
 
-Post any question is this <a href="https://groups.google.com/forum/#!forum/pyschedule">google group</a>. There are more notebooks <a href="https://github.com/timnon/pyschedule-notebooks/">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to <a href="https://github.com/timnon/pyschedule/blob/master/docs/overview.md">here</a>.
+Post any question is this <a href="https://groups.google.com/forum/#!forum/pyschedule">google group</a>. There are more notebooks <a href="https://github.com/timnon/pyschedule/master/example-notebooks">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. For a technical overview go to <a href="https://github.com/timnon/pyschedule/blob/master/docs/overview.md">here</a>.
 
 
 pyschedule supports different solvers, classical <a href="https://en.wikipedia.org/wiki/Integer_programming">MIP</a>- as well as <a href="https://en.wikipedia.org/wiki/Constraint_programming">CP</a>-based ones. All solvers and their capabilities are listed in the <a href="https://github.com/timnon/pyschedule/blob/master/docs/overview.md">technical overview</a>. The default solver used above uses a standard MIP-model in combination with <a href="https://projects.coin-or.org/Cbc">CBC</a>, which is part of package <a href="https://pypi.python.org/pypi/PuLP">pulp</a>. If you have <a href="http://scip.zib.de/">SCIP</a> installed (command "scip" must be running), you can easily switch to SCIP using:
