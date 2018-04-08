@@ -359,7 +359,7 @@ class DiscreteMIP(object):
 			affine = [(x[T, t], 1) for t in range(self.horizon) ]
 
 			# check if task is required
-			if T.reward is None:
+			if T.schedule_cost is None:
 				cons.append(mip.con(affine, sense=0, rhs=task_group_size))
 			else:
 				cons.append(mip.con(affine, sense=-1, rhs=task_group_size))
@@ -517,21 +517,11 @@ class DiscreteMIP(object):
 		# capacity upper and lower bounds
 		for C in S.capacity_up() + S.capacity_low():
 			R = C.resource
-			# get affected periods
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end
-			else:
-				end = S.horizon
-			periods = range(start,end)
-			# weight gets proportionally assigned according to overlap
-			affine = [ (x[T, C.resource, t], C.weight(T,t)/float(T.length) )
-					  for t in periods
+			# weight gets proportionally assigned according to
+			affine = [ (x[T,R,t-T.length+1], C.weight(T,t-T.length+1))
+					  for t in range(C._start,C._end)
 					  for T in self.task_groups
-					  if (T,R,t) in x and C.weight(T,t) ]
+					  if (T,R,t-T.length+1) in x and C.weight(T,t-T.length+1) ]
 			if not affine:
 				continue
 			# sum up (pulp doesnt do this)
@@ -548,46 +538,39 @@ class DiscreteMIP(object):
 		# capacity switch bounds
 		for count, C in enumerate(S.capacity_diff_up()):
 			R = C.resource
-			# get affected periods
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end-1
-			else:
-				end = S.horizon-1
-			periods = range(start,end)
-			x.update({ ('switch_%i'%count,R,t) : mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
-					   for t in periods })
 
-			# define switch variables
-			for t in periods:
-				# decrease switch
+			def get_diff_con(count,C,t,flip):
+				affine_1 =  [ (x[T,R,t-T.length+1],flip*C.weight(T)) for T in self.task_groups
+						   if (T,R,t-T.length+1) in x and C.weight(T) ]
+				affine_2 = [ (x[T,R,t+1],-flip*C.weight(T)) for T in self.task_groups
+						   if (T,R,t+1) in x and C.weight(T) ]
+				if affine_1 and affine_2:
+					if ('switch_%i'%count,R,t) not in x:
+						x['switch_%i'%count,R,t] = mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
+					affine = affine_1 + affine_2 + [ (x['switch_%i'%count,R,t],1) ]
+					con = mip.con(affine, sense=1, rhs=0)
+					return con
+				return None
+
+			for t in range(C._start,C._end-1):
 				if C.kind == 'diff' or C.kind == 'diff_dec':
-					affine =  [ (x['switch_%i'%count,R,t],1) ]
-					affine += [ (x[T,R,t-T.length+1],-C.weight(T,t)) for T in self.task_groups
-							   if (T,R,t-T.length+1) in x and C.weight(T,t) ]
-					affine += [ (x[T,R,t+1],C.weight(T,t+1)) for T in self.task_groups
-							   if (T,R,t+1) in x and C.weight(T,t+1) ]
-					cons.append(mip.con(affine, sense=1, rhs=0))
-				# increase switch
+					con = get_diff_con(count,C,t,-1)
+					if con is not None:
+						cons.append(con)
 				if C.kind == 'diff' or C.kind == 'diff_inc':
-					affine =  [ (x['switch_%i'%count,R,t],1) ]
-					affine += [ (x[T,R,t-T.length+1],C.weight(T,t)) for T in self.task_groups
-							   if (T,R,t-T.length+1) in x and C.weight(T,t) ]
-					affine += [ (x[T,R,t+1],-C.weight(T,t+1)) for T in self.task_groups
-							   if (T,R,t+1) in x and C.weight(T,t+1) ]
-					cons.append(mip.con(affine, sense=1, rhs=0))
-			affine = [ (x['switch_%i'%count,R,t],1) for t in periods if ('switch_%i'%count,R,t) in x ]
-			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
+					con = get_diff_con(count,C,t,1)
+					if con is not None:
+						cons.append(con)
+			affine = [ (x['switch_%i'%count,R,t],1) for t in range(S.horizon) if ('switch_%i'%count,R,t) in x ]
+			if affine:
+				cons.append(mip.con(affine, sense=-1, rhs=C.bound))
 
 		def task2cost(T,t):
 			cost = 0
 			if T.completion_time_cost is not None:
 				cost += T.completion_time_cost*t
-			if T.reward is not None:
-				cost -= T.reward
+			if T.schedule_cost is not None:
+				cost += T.schedule_cost
 			return cost
 
 		objective = [
@@ -621,7 +604,7 @@ class DiscreteMIP(object):
 				# reset values
 				T_.start_value = None
 				T_.resources = list()
-				# in case of not required tasks with reward, there might be less starts than tasks
+				# in case of not required tasks with schedule_cost, there might be less starts than tasks
 				if not starts:
 					break
 				# consider single resources first

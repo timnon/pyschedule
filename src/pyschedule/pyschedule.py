@@ -174,7 +174,7 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,group=None,reward=None,**kwargs) :
+	def Task(self,name,length=1,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		"""
 		Adds a new task to the scenario
 		name : unique task name, must not contain special characters
@@ -185,7 +185,8 @@ class Scenario(_SchedElement):
 		task = Task(name=name,
 			length=length,
 			group=group,
-			reward=reward,
+			completion_time_cost=completion_time_cost,
+			schedule_cost=schedule_cost,
 			**kwargs)
 		self.add_task(task)
 		return task
@@ -518,7 +519,7 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,reward=None,completion_time_cost=None,**kwargs) :
+	def __init__(self,name,length=1,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
@@ -530,8 +531,8 @@ class Task(_SchedElement) :
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
 		self.resources_req = list() # required resources
+		self.schedule_cost = schedule_cost # in case not None, then the task is optional adds the schedule_cost to the objective if the task is scheduled
 		self.completion_time_cost = completion_time_cost # cost on the final completion time
-		self.reward = reward # in case not None, then the task is optional and substracts the reward from the cost
 
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
@@ -935,16 +936,28 @@ class _Capacity(_Constraint):
 			self._end = key.stop
 		return self
 
-	def weight(self,T,t):
+	def weight(self,T,t=None):
+		"""
+		t: start position of T. In this case we take weight proportional with overlap
+		"""
 		if not self._param in T:
 			return 0
-		if not self.resource in T.get_resources_in_req():
+		w = T[self._param]
+		if t is None:
+			return w
+		if self._start is None:
+			start = t
+		else:
+			start = self._start
+		if self._end is None:
+			end = t+T.length
+		else:
+			end = self._end
+		overlap = len(set(range(start,end)) & set(range(t,t+T.length)))
+		if not overlap:
 			return 0
-		if self._start is not None and self._end is not None:
-			if t+T.length-1 < self._start or t >= self._end:
-				return 0
-		return T[self._param]
-
+		w *= float(overlap)/float(T.length)
+		return w
 
 	@property
 	def diff(self):
