@@ -140,7 +140,7 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 	vars_phase = ort_solver.Phase([ort_objective_var],
 		            ort_solver.CHOOSE_FIRST_UNBOUND,
 		            ort_solver.ASSIGN_MIN_VALUE)
-	sequence_phase = ort_solver.Phase(sequences.values(),
+	sequence_phase = ort_solver.Phase(list(sequences.values()),
 		                ort_solver.SEQUENCE_DEFAULT)
 	main_phase = ort_solver.Compose([sequence_phase, vars_phase])
 
