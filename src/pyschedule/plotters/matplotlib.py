@@ -85,8 +85,13 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	for T in task_colors :
 		color_map[T] = task_colors[T]
 
+	for T in scenario.tasks():
+		if 'plot_color' in T:
+			color_map[T] = T['plot_color']
+
 	solution = S.solution()
-	hide_tasks_str = [ T for T in hide_tasks ]
+	hide_tasks_str = [ T for T in hide_tasks ] + \
+		[ T for T in scenario.tasks() if 'plot_hide' in T and T.plot_hide ]
 	solution = [ (T,R,x,y) for (T,R,x,y) in solution if T not in hide_tasks_str ] #tasks of zero length are not plotted
 
 	fig, ax = plt.subplots(1, 1, figsize=fig_size)
