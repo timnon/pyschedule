@@ -49,7 +49,7 @@ def _isiterable(var) :
 	"""
 	Test if var is iterable
 	"""
-	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple )
+	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple ) or ( type(var) is Tasks )
 
 def alt(*args) :
 	"""
@@ -190,6 +190,12 @@ class Scenario(_SchedElement):
 			**kwargs)
 		self.add_task(task)
 		return task
+
+	def Tasks(self,**kwargs) :
+		tasks = Tasks(**kwargs)
+		for T in tasks:
+			self.add_task(T)
+		return tasks
 
 	def tasks(self,resource=None) :
 		"""
@@ -623,6 +629,95 @@ class Task(_SchedElement) :
 		if getattr(self,key) is None:
 			return False
 		return True
+
+
+class Tasks(list):
+	"""
+	A group of tasks
+	"""
+	def __init__(self,**kwargs):
+		group = kwargs['group']
+		for i in range(kwargs['n_tasks']):
+			name = '%s_%i'%(group,i)
+			kwargs['name'] = name
+			self.append(Task(**kwargs))
+
+	def _pair_it(self,other):
+		if _isiterable(other):
+			return zip(self,other)
+		return ( (T,other) for T in self )
+
+	def __lt__(self,other) :
+		return [ T < T_ for (T,T_) in self._pair_it(other) ]
+
+	def __gt__(self,other) :
+		return [ T > T_ for (T,T_) in self._pair_it(other) ]
+
+	def __le__(self,other) :
+		return [ T <= T_ for (T,T_) in self._pair_it(other) ]
+
+	def __ge__(self,other) :
+		return [ T >= T_ for (T,T_) in self._pair_it(other) ]
+
+	def __ne__(self,other) :
+		return [ T != T_ for (T,T_) in self._pair_it(other) ]
+
+	def __lshift__(self,other) :
+		return [ T << T_ for (T,T_) in self._pair_it(other) ]
+
+	def __rshift__(self,other) :
+		return [ T >> T_ for (T,T_) in self._pair_it(other) ]
+
+	def __add__(self,other) :
+		return [ T + T_ for (T,T_) in self._pair_it(other) ]
+
+	def __sub__(self,other) :
+		return [ T - T_ for (T,T_) in self._pair_it(other) ]
+
+	def __mul__(self,other) :
+		return [ T * T_ for (T,T_) in self._pair_it(other) ]
+
+	def __radd__(self,other) :
+		return [ T + T_ for (T,T_) in self._pair_it(other) ]
+
+	def add_resources_req(self,RA):
+		for T in self:
+			T.add_resources_req(RA)
+
+	def remove_resources_req(self,RA):
+		for T in self:
+			T.remove_resources_req(RA)
+		return self
+
+	def __iadd__(self,other):
+		if _isiterable(other):
+			for T in self:
+				for x in other:
+					self += x
+				return self
+		elif isinstance(other,Resource):
+			other = _ResourceAffine(other) #transform into _ResourceAffine
+			self.add_resources_req(other)
+			return self
+		elif isinstance(other,_ResourceAffine):
+			self.add_resources_req(other)
+			return self
+		raise Exception('ERROR: cant add %s to tasks %s'%(str(other),str(self)))
+
+	def __isub__(self,other):
+		if _isiterable(other):
+			for T in self:
+				for x in other:
+					self += x
+				return self
+		elif isinstance(other,Resource):
+			other = _ResourceAffine(other) #transform into _ResourceAffine
+			self.remove_resources_req(other)
+			return self
+		elif isinstance(other,_ResourceAffine):
+			self.remove_resources_req(other)
+			return self
+		raise Exception('ERROR: cant subtract %s from tasks %s'%(str(other),str(self)))
 
 
 
