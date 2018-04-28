@@ -93,8 +93,8 @@ class MIP(object):
 			elif kind == 'COIN':
 				self.mip.solve(pl.COIN(msg=msg, options=options))
 		elif kind == 'GUROBI':
-			# TODO: Pass more solver options
-			self.mip.solve(pl.GUROBI_CMD(msg=msg))
+			# GUROBI_CMD does not support a timelimit or epgap
+			self.mip.solve(pl.GUROBI(msg=msg,time_limit=time_limit,epgap=ratio_gap))
 		else:
 			raise Exception('ERROR: solver ' + kind + ' not known')
 
