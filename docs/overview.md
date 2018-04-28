@@ -21,7 +21,7 @@ more specifically, pyschedule ...
 
 pyschedule tries to gain the best of two worlds by supporting classical MIP-models (Mixed Integer) as well as CP solvers (Constraint Programming). All solvers interfaces are in the solvers subpackage:
 
-- **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK", "SCIP"). CBC is part of pulp and hence works out of the box. For CBC, CPLEX and SCIP, you can pass parameters "time_limit" or "ratio_gap" (only CBC and SCIP) to limit the running time and receive suboptimal solutions.
+- **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK", "SCIP", "GUROBI"). CBC is part of pulp and hence works out of the box. For CBC, CPLEX and SCIP, you can pass parameters "time_limit" or "ratio_gap" (only CBC and SCIP) to limit the running time and receive suboptimal solutions.
 - **mip.solve_bigm(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
 
 There are some more solvers not based on MIPs, but they are not supported that well yet:

@@ -92,6 +92,9 @@ class MIP(object):
 				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
 			elif kind == 'COIN':
 				self.mip.solve(pl.COIN(msg=msg, options=options))
+		elif kind == 'GUROBI':
+			# TODO: Pass more solver options
+			self.mip.solve(pl.GUROBI_CMD(msg=msg))
 		else:
 			raise Exception('ERROR: solver ' + kind + ' not known')
 

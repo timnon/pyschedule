@@ -26,10 +26,14 @@ def solve_scip(scenario):
 def solve_scip_bigm(scenario):
 	return solvers.mip.solve_bigm(scenario,kind='SCIP',msg=msg)
 
+def solve_gurobi(scenario):
+	return solvers.mip.solve(scenario,kind='GUROBI',msg=msg)
+
 
 solve_methods = [
 solve_cbc,
 solve_cbc_bigm,
+solve_gurobi,
 #solve_scip,
 #solve_scip_bigm,
 #solvers.ortools.solve,

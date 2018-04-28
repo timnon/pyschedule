@@ -58,7 +58,7 @@ def solve(scenario, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0
 
 	Args:
 		scenario:            scenario to solve
-		kind:                MIP-solver to use: CPLEX, GLPK, CBC, SCIP
+		kind:                MIP-solver to use: CPLEX, GLPK, CBC, SCIP, GUROBI
 		time_limit:          a time limit, only for CPLEX, CBC and SCIP
 		random_seed:         random seed
 		ratio_gap:           MIP-gap
