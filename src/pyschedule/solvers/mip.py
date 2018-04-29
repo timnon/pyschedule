@@ -429,7 +429,7 @@ class DiscreteMIP(object):
 						[(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
 						[(x[P.task_right, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
-			#covers the case that the right task group has size ones
+			#covers the case that the right task group has size one
 			#in which case this task should be scheduled after all tasks in the
 			#left task group
 			elif left_size == 1 or right_size == 1:
@@ -452,16 +452,6 @@ class DiscreteMIP(object):
 		for P in S.precs_tight():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-			'''
-			if P.offset >= 0:
-				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] + \
-					 [(x[P.task_right, t],-t) for t in range(self.horizon)]
-				pulpmip.cons(affine, sense=0, rhs=-(P.task_left.length + P.offset))
-			elif P.offset < 0:
-				affine = [(x[P.task_left, t],t) for t in range(self.horizon)] +\
-					 [(x[P.task_right, t],-t) for t in range(self.horizon)]
-				pulpmip.cons(affine, sense=0, rhs= P.task_right.length-P.offset )
-			'''
 			if P.offset >= 0:
 				for t in range(self.horizon):
 					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
@@ -505,14 +495,26 @@ class DiscreteMIP(object):
 		for P in S.precs_cond():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
+			left_size = float(len(self.task_groups[P.task_left]))
+			right_size = float(len(self.task_groups[P.task_right]))
 			shared_resources = list(set(S.resources(task=P.task_left)) & set(S.resources(task=P.task_right)))
 			for R in shared_resources:
-				for t in range(self.horizon):
-					affine = [(x[P.task_left, R, t], 1)] +\
-							 [(x[P.task_right, R, t_],1)
-							  for t_ in range(t,min(t+P.task_left.length+P.offset,self.horizon))]
-					rhs = (len(self.task_groups[P.task_left])+len(self.task_groups[P.task_right])/2.0)
-					cons.append(mip.con(affine, sense=-1, rhs=rhs))
+				if left_size == 1:
+					for t in range(1,self.horizon):
+						affine = \
+							[(x[P.task_left, R, t_],1) for t_ in range(self.horizon)] + \
+							[(x[P.task_left, R, t_],-1) for t_ in range(t)] + \
+							[(x[P.task_right, R, t_],1/right_size) for t_ in range(t)]
+						cons.append(mip.con(affine, sense=-1, rhs=1))
+				elif right_size == 1:
+					for t in range(self.horizon):
+						affine = \
+							[(x[P.task_right, R, t_],1) for t_ in range(self.horizon)] + \
+							[(x[P.task_left, R, t_],1/left_size) for t_ in range(t,self.horizon)] + \
+							[(x[P.task_right, R, t_],-1) for t_ in range(t,self.horizon)]
+						cons.append(mip.con(affine, sense=-1, rhs=1))
+				else:
+					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
 
 		# capacity upper and lower bounds
 		for C in S.capacity_up() + S.capacity_low():
@@ -657,6 +659,8 @@ class DiscreteMIP(object):
 		params['kind'] = kind
 		self.mip.solve(msg=msg,**params)
 
+		#print([ self.x[scenario['T1_e'],scenario['R1'],i].value() for i in range(scenario.horizon) ])
+		#print([ self.x[scenario['T0'],scenario['R1'],i].value() for i in range(scenario.horizon) ])
 		#_solve_mip(self.mip, kind=kind, params=params, msg=msg)
 
 		if self.mip.status() == 1:
