@@ -52,7 +52,7 @@ basic test cases that are not really constraints but still represent different c
 - **LAXPLUS :** lax precedences with offset, e.g. `T1 + 3 < T2`, T1 is finished 3 time units before T2 starts. This can be also written as `T2 - T1 > 3`. Note that `T2 - T1 < 3` will ensure that the T2 start at most 3 time units after T1 ends.
 - **TIGHT :** tight precedences, e.g. `T1 <= T2`, T2 starts exactly when T1 finishes.
 - **TIGHTPLUS :** tight precedences with offset, e.g. `T1 + 3 <= T2`, T2 starts exactly 3 time units after T1 finishes. This can be also written as `T2 - T1 >= 3`. Note that `T2 - T1 <= 3` will ensure that the T2 start exactly 3 time units after T1 ends.
-- **COND :** conditional precedences, e.g. `T1 + 3 << T2`, if T1 and T2 share any resource and T1 finishes before T2, then T1 is finished even 3 time units before T2 starts.
+- **COND :** conditional precedences, e.g. `T1 + 3 << T2`, if T1 and T2, then T1 must be finished 3 time units before T2 starts.
 
 
 #### Resources

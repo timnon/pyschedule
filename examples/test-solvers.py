@@ -115,7 +115,7 @@ def COND() :
 	S['T1'] += S['R1']
 	S['T2'] += S['R1']
 	S += S['T1'] + 2 << S['T2']
-	sols = ['[(T2, R1, 0, 1), (T1, R1, 1, 2)]']
+	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
 	return S,sols
 
 def ALT() :
@@ -217,7 +217,7 @@ CAPDIFFSLICE,
 SCHEDULECOST
 ]
 
-#scenario_methods = [ZERO]
+#scenario_methods = [COND]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

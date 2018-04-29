@@ -502,16 +502,14 @@ class DiscreteMIP(object):
 				if left_size == 1:
 					for t in range(1,self.horizon):
 						affine = \
-							[(x[P.task_left, R, t_],1) for t_ in range(self.horizon)] + \
-							[(x[P.task_left, R, t_],-1) for t_ in range(t)] + \
+							[(x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length)) for t_ in range(self.horizon) ] + \
 							[(x[P.task_right, R, t_],1/right_size) for t_ in range(t)]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				elif right_size == 1:
 					for t in range(self.horizon):
 						affine = \
-							[(x[P.task_right, R, t_],1) for t_ in range(self.horizon)] + \
 							[(x[P.task_left, R, t_],1/left_size) for t_ in range(t,self.horizon)] + \
-							[(x[P.task_right, R, t_],-1) for t_ in range(t,self.horizon)]
+							[(x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length)) for t_ in range(self.horizon)]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
