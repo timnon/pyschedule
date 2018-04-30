@@ -33,7 +33,7 @@ def solve_gurobi(scenario):
 solve_methods = [
 solve_cbc,
 solve_cbc_bigm,
-solve_gurobi,
+#solve_gurobi,
 #solve_scip,
 #solve_scip_bigm,
 #solvers.ortools.solve,
