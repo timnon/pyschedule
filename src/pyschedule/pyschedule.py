@@ -1054,9 +1054,11 @@ class _Capacity(_Constraint):
 	def __getitem__(self,key):
 		if isinstance(key,str):
 			self._param = key
+			return self
 		elif isinstance(key,int):
 			self._start = key
 			self._end = key+1
+			return self
 		elif isinstance(key,slice):
 			if key.step is None:
 				self._start = key.start
