@@ -49,7 +49,7 @@ def _isiterable(var) :
 	"""
 	Test if var is iterable
 	"""
-	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple ) or ( type(var) is Tasks )
+	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple ) or ( isinstance(var,_List) )
 
 def alt(*args) :
 	"""
@@ -631,55 +631,86 @@ class Task(_SchedElement) :
 		return True
 
 
-class Tasks(list):
-	"""
-	A group of tasks
-	"""
-	def __init__(self,**kwargs):
-		group = kwargs['group']
-		for i in range(kwargs['n_tasks']):
-			name = '%s_%i'%(group,i)
-			kwargs['name'] = name
-			self.append(Task(**kwargs))
 
+class _List(list):
+	def __init__(self,l=None):
+		if l is not None:
+			self[:] = l
+		
+	def _to_list(self,l):
+		new_list = _List()
+		new_list[:] = l
+		return new_list
+		
 	def _pair_it(self,other):
 		if _isiterable(other):
 			return zip(self,other)
 		return ( (T,other) for T in self )
 
 	def __lt__(self,other) :
-		return [ T < T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T < T_ for (T,T_) in self._pair_it(other) ])
 
 	def __gt__(self,other) :
-		return [ T > T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T > T_ for (T,T_) in self._pair_it(other) ])
 
 	def __le__(self,other) :
-		return [ T <= T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T <= T_ for (T,T_) in self._pair_it(other) ])
 
 	def __ge__(self,other) :
-		return [ T >= T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T >= T_ for (T,T_) in self._pair_it(other) ])
 
 	def __ne__(self,other) :
-		return [ T != T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T != T_ for (T,T_) in self._pair_it(other) ])
 
 	def __lshift__(self,other) :
-		return [ T << T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T << T_ for (T,T_) in self._pair_it(other) ])
 
 	def __rshift__(self,other) :
-		return [ T >> T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T >> T_ for (T,T_) in self._pair_it(other) ])
 
 	def __add__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T + T_ for (T,T_) in self._pair_it(other) ])
 
 	def __sub__(self,other) :
-		return [ T - T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T - T_ for (T,T_) in self._pair_it(other) ])
 
 	def __mul__(self,other) :
-		return [ T * T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T * T_ for (T,T_) in self._pair_it(other) ])
 
 	def __radd__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair_it(other) ]
+		return self._to_list([ T + T_ for (T,T_) in self._pair_it(other) ])
+	
+	def __iadd__(self,other):
+		for el in self:
+			if _isiterable(other):
+				for x in other:
+					el += x
+			else:
+				el += other
+		return self 
+				
+	def __isub__(self,other):
+		for el in self:
+			if _isiterable(other):
+				for x in other:
+					el -= x
+			else:
+				el -= other
+		return self 
 
+
+class Tasks(_List):
+	"""
+	A group of tasks
+	"""
+	def __init__(self,**kwargs):
+		group = kwargs['group']
+		for i in range(kwargs['n_tasks']):
+			name = '%s%i'%(group,i)
+			kwargs['name'] = name
+			self.append(Task(**kwargs))
+
+	'''
 	def add_resources_req(self,RA):
 		for T in self:
 			T.add_resources_req(RA)
@@ -693,7 +724,7 @@ class Tasks(list):
 		if _isiterable(other):
 			for T in self:
 				for x in other:
-					self += x
+					T += x
 				return self
 		elif isinstance(other,Resource):
 			other = _ResourceAffine(other) #transform into _ResourceAffine
@@ -708,7 +739,7 @@ class Tasks(list):
 		if _isiterable(other):
 			for T in self:
 				for x in other:
-					self += x
+					T += x
 				return self
 		elif isinstance(other,Resource):
 			other = _ResourceAffine(other) #transform into _ResourceAffine
@@ -718,7 +749,7 @@ class Tasks(list):
 			self.remove_resources_req(other)
 			return self
 		raise Exception('ERROR: cant subtract %s from tasks %s'%(str(other),str(self)))
-
+	'''
 
 
 class _TaskAffine(_SchedElementAffine) :
@@ -1023,14 +1054,29 @@ class _Capacity(_Constraint):
 	def __getitem__(self,key):
 		if isinstance(key,str):
 			self._param = key
+			return self
 		elif isinstance(key,int):
 			self._start = key
 			self._end = key+1
+			return self
 		elif isinstance(key,slice):
-			self._start = key.start
-			self._end = key.stop
-		return self
-
+			if key.step is None:
+				self._start = key.start
+				self._end = key.stop
+				return self	
+			l = _List()
+			for _start in range(key.start,key.stop-key.step+1):
+				# create copy with adjusted start and stop
+				C_ = _Capacity(resource=self.resource)
+				C_._param = self._param
+				C_.bound = self.bound
+				C_.comp_operator = self.comp_operator
+				C_.kind = self.kind
+				C_._start = _start
+				C_._end = _start+key.step
+				l.append(C_)
+			return l
+					
 	def weight(self,T,t=None):
 		"""
 		t: start position of T. In this case we take weight proportional with overlap
@@ -1089,8 +1135,9 @@ class _Capacity(_Constraint):
 			operator = '.inc()'
 		elif self.kind == 'diff_dec':
 			operator = '.dec()'
-		s = '%s[\'%s\']%s%s %s %s' % (str(self.resource),str(param),slice,operator,
-									  str(self.comp_operator),str(self.bound))
+		s = '%s[\'%s\']%s%s' % (str(self.resource),str(param),slice,operator)
+		if self.comp_operator is not None:
+			s += ' %s %s'%(str(self.comp_operator),str(self.bound))
 		return s
 
 	def __repr__(self):

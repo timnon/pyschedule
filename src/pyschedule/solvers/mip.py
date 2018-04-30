@@ -225,9 +225,9 @@ class ContinuousMIP(object):
 
 		# conditional precedence constraints
 		for P in S.precs_cond():
-			affine = [ (x[P.task_left],1), (x[P.task_right],-1), (x[(P.task_left, P.task_right)],BIGM),
+			affine = [ (x[P.task_left],1), (x[P.task_right],-1),
 					   (x[(P.task_left, P.task_right, 'SameResource')],BIGM) ]
-			cons.append(mip.con(affine,sense=-1,rhs=-P.task_left.length-P.offset+2*BIGM))
+			cons.append(mip.con(affine,sense=-1,rhs=-P.task_left.length-P.offset+1*BIGM))
 			#mip += x[P.task_left] + P.task_left.length + P.offset <= x[P.task_right] + \
 			#                   (1 - x[(P.task_left, P.task_right)]) * BIGM + (1 - x[
 			#   (P.task_left, P.task_right, 'SameResource')]) * BIGM
@@ -501,17 +501,19 @@ class DiscreteMIP(object):
 			for R in shared_resources:
 				if left_size == 1:
 					for t in range(1,self.horizon):
+						# if the sum of x[P.task_left, R, t_] is one, then there is
+						# no slack in the next constraint (1 in coefficient), and 
+						# then the monotonicity defined by -1*(t_<t-P.offset-P.task_left.length)
+						# needs to get saisfied
 						affine = \
-							[(x[P.task_left, R, t_],1) for t_ in range(self.horizon)] + \
-							[(x[P.task_left, R, t_],-1) for t_ in range(t)] + \
+							[(x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length)) for t_ in range(self.horizon) ] + \
 							[(x[P.task_right, R, t_],1/right_size) for t_ in range(t)]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				elif right_size == 1:
 					for t in range(self.horizon):
 						affine = \
-							[(x[P.task_right, R, t_],1) for t_ in range(self.horizon)] + \
 							[(x[P.task_left, R, t_],1/left_size) for t_ in range(t,self.horizon)] + \
-							[(x[P.task_right, R, t_],-1) for t_ in range(t,self.horizon)]
+							[(x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length)) for t_ in range(self.horizon)]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
