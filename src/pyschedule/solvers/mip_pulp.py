@@ -92,6 +92,20 @@ class MIP(object):
 				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
 			elif kind == 'COIN':
 				self.mip.solve(pl.COIN(msg=msg, options=options))
+		elif kind == 'GUROBI':
+			# GUROBI_CMD does not support a timelimit or epgap
+			# GUROBI cannot dispatch parameters from options correctly
+			options=[]
+			if time_limit is not None:
+				if ratio_gap is not None:
+					self.mip.solve(pl.GUROBI(msg=msg,timeLimit=time_limit,epgap=ratio_gap))
+			elif time_limit is not None:
+				self.mip.solve(pl.GUROBI(msg=msg, timeLimit=time_limit))
+			elif ratio_gap is not None:
+				self.mip.solve(pl.GUROBI(msg=msg, epgap=ratio_gap))
+			else:
+				self.mip.solve(pl.GUROBI_CMD(msg=msg))
+
 		else:
 			raise Exception('ERROR: solver ' + kind + ' not known')
 
