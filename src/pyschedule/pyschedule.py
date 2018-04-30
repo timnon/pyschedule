@@ -1058,10 +1058,23 @@ class _Capacity(_Constraint):
 			self._start = key
 			self._end = key+1
 		elif isinstance(key,slice):
-			self._start = key.start
-			self._end = key.stop
-		return self
-
+			if key.step is None:
+				self._start = key.start
+				self._end = key.stop
+				return self	
+			l = _List()
+			for _start in range(key.start,key.stop-key.step+1):
+				# create copy with adjusted start and stop
+				C_ = _Capacity(resource=self.resource)
+				C_._param = self._param
+				C_.bound = self.bound
+				C_.comp_operator = self.comp_operator
+				C_.kind = self.kind
+				C_._start = _start
+				C_._end = _start+key.step
+				l.append(C_)
+			return l
+					
 	def weight(self,T,t=None):
 		"""
 		t: start position of T. In this case we take weight proportional with overlap
@@ -1120,8 +1133,9 @@ class _Capacity(_Constraint):
 			operator = '.inc()'
 		elif self.kind == 'diff_dec':
 			operator = '.dec()'
-		s = '%s[\'%s\']%s%s %s %s' % (str(self.resource),str(param),slice,operator,
-									  str(self.comp_operator),str(self.bound))
+		s = '%s[\'%s\']%s%s' % (str(self.resource),str(param),slice,operator)
+		if self.comp_operator is not None:
+			s += ' %s %s'%(str(self.comp_operator),str(self.bound))
 		return s
 
 	def __repr__(self):

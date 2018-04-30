@@ -1,4 +1,3 @@
-
 # test artefact for the case that pyschedule is
 # read from folder
 import sys
