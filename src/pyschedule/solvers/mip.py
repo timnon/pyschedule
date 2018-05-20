@@ -139,6 +139,7 @@ class DiscreteMIP(object):
 		affine = [ (x[T, t],1) for T in S.tasks() for t in range(self.horizon-T.length+1,self.horizon) if (T,t) in x ]
 		cons.append(mip.con(affine, sense=-1, rhs=0))
 
+		# tasks are not allowed to be scheduled in the same resource at the same time
 		coeffs = { (T,R) : RA[R] for T in S.tasks() for RA in T.resources_req for R in RA }
 		for R in S.resources():
 			if R.size is not None:
@@ -150,6 +151,17 @@ class DiscreteMIP(object):
 						  for T in set(S.tasks(resource=R)) & set(self.task_groups)
 						  for t_ in range(t+1-T.length,t+1)
 						  if (T,R,t_) in x ]
+				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
+
+			# case for tasks of length zero, they can block longer tasks
+			for t in range(1,self.horizon):
+				affine =  [(x[T, R, t_], coeffs[T,R])
+						   for T in set(S.tasks(resource=R)) & set(self.task_groups)
+						   for t_ in range(t+1-T.length,t+1)
+						   if T.length > 1 and (T,R,t_) in x ]
+				affine += [(x[T, R, t], coeffs[T,R])
+						   for T in set(S.tasks(resource=R)) & set(self.task_groups)
+						   if T.length == 0 and (T,R,t) in x ]
 				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
 
 		# lax precedence constraints
