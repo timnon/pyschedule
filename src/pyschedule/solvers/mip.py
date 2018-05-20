@@ -219,15 +219,17 @@ class DiscreteMIP(object):
 		for P in S.bounds_low_tight():
 			if P.task not in self.task_groups:
 				continue
-			task_group_size = len(self.task_groups[P.task])
-			cons.append(mip.con([(x[P.task, P.bound],1)], sense=0, rhs=task_group_size))
+			affine =  [(x[P.task, t],1) for t in range(P.bound)]
+			affine += [(x[P.task, t],1) for t in range(P.bound+1,self.horizon)]
+			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# tight up bounds
 		for P in S.bounds_up_tight():
 			if P.task not in self.task_groups:
 				continue
-			task_group_size = len(self.task_groups[P.task])
-			cons.append(mip.con([(x[P.task, max(P.bound-P.task.length,0)],1)], sense=0, rhs=task_group_size))
+			affine =  [(x[P.task, t],1) for t in range(P.bound-P.task.length)]
+			affine += [(x[P.task, t],1) for t in range(P.bound-P.task.length+1,self.horizon)]
+			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# conditional precedence constraints
 		for P in S.precs_cond():

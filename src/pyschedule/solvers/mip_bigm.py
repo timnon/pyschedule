@@ -46,8 +46,6 @@ def solve(scenario, bigm=10000, kind='CBC', time_limit=None, random_seed=None, r
 		None if solving was not successful
 	"""
 
-	import pdb;pdb.set_trace()
-
 	scenario.check()
 	mip = MIP(str(scenario))
 	return ContinuousMIP(mip).solve(scenario, bigm=bigm, kind=kind, time_limit=time_limit, random_seed=random_seed,
