@@ -18,13 +18,13 @@ def solve_cbc(scenario):
 	return solvers.mip.solve(scenario,kind='CBC',msg=msg)
 
 def solve_cbc_bigm(scenario):
-	return solvers.mip.solve_bigm(scenario,kind='CBC',msg=msg)
+	return solvers.mip_bigm.solve(scenario,kind='CBC',msg=msg)
 
 def solve_scip(scenario):
 	return solvers.mip.solve(scenario,kind='SCIP',msg=msg)
 
 def solve_scip_bigm(scenario):
-	return solvers.mip.solve_bigm(scenario,kind='SCIP',msg=msg)
+	return solvers.mip_bigm.solve(scenario,kind='SCIP',msg=msg)
 
 def solve_gurobi(scenario):
 	return solvers.mip.solve(scenario,kind='GUROBI',msg=msg)
@@ -199,6 +199,17 @@ def SCHEDULECOST():
 	sols = ['[(T1, R1, 0, 1)]']
 	return S,sols
 
+def PERIODS():
+	S = two_task_scenario()
+	S['T1'] += S['R1']
+	S['T2'] += S['R1']
+	S['T1'].completion_time_cost = 1
+	S['T2'].completion_time_cost = 2
+	S['R1'].periods = [1,3,4]
+	S['T2'].periods = [3]
+	sols = ['[(T1, R1, 1, 2), (T2, R1, 3, 4)]']
+	return S,sols
+
 
 scenario_methods = [
 ZERO,
@@ -218,10 +229,11 @@ CAP,
 CAPSLICE,
 CAPDIFF,
 CAPDIFFSLICE,
-SCHEDULECOST
+SCHEDULECOST,
+PERIODS
 ]
 
-#scenario_methods = [COND]
+#scenario_methods = [PERIODS]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

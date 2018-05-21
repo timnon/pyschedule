@@ -29,6 +29,7 @@ should be directly written to the passed scenario
 """
 
 from . import mip
+from . import mip_bigm
 from . import cpoptimizer
 from . import ortools
 from . import listsched

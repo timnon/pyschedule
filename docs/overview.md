@@ -46,8 +46,8 @@ basic test cases that are not really constraints but still represent different c
 - **NONUNIT :** tasks of lenght > 1 are allowed, e.g. `T1 = S.Task(length=3)`.
 
 #### Precedences
-- **BOUND :** normal bounds, e.g. `T1 > 3` or `T1 < 5`, T1 starts after time step 3 or ends before time step 5, respectively.
-- **BOUNDTIGHT :** tight bounds, e.g. `T1 >= 3` or `T1 <= 5`, T1 starts at time step 3 or ends at time step 5, respectively.
+- **BOUND :** normal bounds, e.g. `T1 > 3` or `T1 < 5`, T1 starts after period 3 or ends before period 5, respectively.
+- **BOUNDTIGHT :** tight bounds, e.g. `T1 >= 3` or `T1 <= 5`, T1 starts at period 3 or ends at period 5, respectively.
 - **LAX :** lax precedences, e.g. `T1 < T2`, T1 is finished before T2 starts.
 - **LAXPLUS :** lax precedences with offset, e.g. `T1 + 3 < T2`, T1 is finished 3 time units before T2 starts. This can be also written as `T2 - T1 > 3`. Note that `T2 - T1 < 3` will ensure that the T2 start at most 3 time units after T1 ends.
 - **TIGHT :** tight precedences, e.g. `T1 <= T2`, T2 starts exactly when T1 finishes.
@@ -66,6 +66,7 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
 - **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4.
 - **SCHEDULECOST :** if schedule_cost is set, e.g. `T1.schedule_cost = 1`, then this task is optional, but the schedule_cost will be added from the objective. This is for situations where not all tasks can be scheduled, and hence the most valuable ones with the lowest schedule_cost should be selected. Note that the schedule_cost can also be negative.
+- **PERIODS :** restrict the periods of a resource or a task by setting the periods parameter, e.g. `R.periods = [1,2,3]` or `T.periods = [2,5,6]`. This can also be combined
 
 
 ### Solvers vs Constraints
@@ -195,15 +196,13 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td></td>
       <td></td>
     </tr>
+	<tr>
+      <th>PERIODS</th>
+      <td>X</td>
+      <td></td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
 X means that the constraint is working and Error means that it produces an error when using it (to be fixed).
-
-### Outlook
-
-Constraints that are only partially implemented or on the TODO list:
-
-- **FIRST :** first/last tasks on resources, the envisioned syntax is `S += R1[3:7] < T1` to ensure that T1 is the last task on R1 in between 3 and 7
-- soft constraints with cost for not satisfying, the envisoned syntax is `S += soft( T < 5, cost=3 )`
-- turn solvers.pulp into solvers.mip which is agnostic of the python mip package

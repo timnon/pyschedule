@@ -93,9 +93,15 @@ class DiscreteMIP(object):
 			cat = 'Binary'
 			if task_group_size > 1:
 				cat = 'Integer'
-			x.update({ (T,t) : mip.var(str((T, t)), 0, task_group_size, cat) for t in range(self.horizon) })
-			affine = [(x[T, t], 1) for t in range(self.horizon) ]
-
+			# single resource assignments restrict the periods directly
+			task_periods = set(T.periods)
+			task_resources_periods = [ set(R.periods)
+				for RA in T.resources_req if len(RA) == 1
+				for R in RA ]
+			if task_resources_periods:
+				task_periods &= set.intersection(*task_resources_periods)
+			x.update({ (T,t) : mip.var(str((T, t)), 0, task_group_size, cat) for t in task_periods })
+			affine = [(x[T, t], 1) for t in task_periods ]
 			# check if task is required
 			if T.schedule_cost is None:
 				cons.append(mip.con(affine, sense=0, rhs=task_group_size))
@@ -108,19 +114,17 @@ class DiscreteMIP(object):
 					continue
 				# create variables if necessary except the first one
 				x.update({ (T,R,t) : mip.var(str((T, R, t)), 0, task_group_size, cat)
-						   for R in RA for t in range(self.horizon) if (T,R,t) not in x})
+						   for R in RA for t in R.periods if (T,R,t) not in x})
 				# enough position needs to get selected
-				affine = [(x[T, R, t], 1) for R in RA for t in range(self.horizon) ]
-				# TODO: can the next line be removed?
-				# cons.append(mip.con(affine, sense=0, rhs=task_group_size))
 				# synchronize with base variables
-				for t in range(self.horizon):
-					affine = [(x[T, R, t], 1) for R in RA] + [(x[T,t],-1)]
+				for t in task_periods:
+					affine = [(x[T, R, t], 1) for R in RA if (T,R,t) in x ] + [(x[T,t],-1)]
 					cons.append(mip.con(affine, sense=0, rhs=0))
 
 			# generate shortcuts for single resources
-			x.update({ (T,R,t) : x[T,t] for RA in T.resources_req if len(RA) == 1
-					   for R in RA for t in range(self.horizon) })
+			x.update({ (T,R,t) : x[T,t]
+				for RA in T.resources_req if len(RA) == 1
+				for R in RA for t in task_periods })
 
 		# synchronize in RA with multiple tasks
 		ra_to_tasks = S.resources_req_tasks()
@@ -131,12 +135,14 @@ class DiscreteMIP(object):
 			for R in RA:
 				T_ = tasks[0]
 				for T in tasks[1:]:
-					affine = [(x[T,R,t],1) for t in range(self.horizon) ]+\
-							 [(x[T_,R,t],-1) for t in range(self.horizon) ]
+					affine = [(x[T,R,t],1) for t in R.periods ]+\
+							 [(x[T_,R,t],-1) for t in R.periods ]
 					cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# everybody is finished before the horizon TODO: why is this check necessary
-		affine = [ (x[T, t],1) for T in S.tasks() for t in range(self.horizon-T.length+1,self.horizon) if (T,t) in x ]
+		affine = [ (x[T, t],1) for T in S.tasks()
+		           for t in range(self.horizon-T.length+1,self.horizon)
+				   if (T,t) in x ]
 		cons.append(mip.con(affine, sense=-1, rhs=0))
 
 		# tasks are not allowed to be scheduled in the same resource at the same time
@@ -258,14 +264,14 @@ class DiscreteMIP(object):
 						# then the monotonicity defined by -1*(t_<t-P.offset-P.task_left.length)
 						# needs to get saisfied
 						affine = \
-							[(x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length)) for t_ in range(self.horizon) ] + \
-							[(x[P.task_right, R, t_],1/right_size) for t_ in range(t)]
+							[(x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length)) for t_ in R.periods ] + \
+							[(x[P.task_right, R, t_],1/right_size) for t_ in R.periods if t_ < t ]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				elif right_size == 1:
 					for t in range(self.horizon):
 						affine = \
-							[(x[P.task_left, R, t_],1/left_size) for t_ in range(t,self.horizon)] + \
-							[(x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length)) for t_ in range(self.horizon)]
+							[(x[P.task_left, R, t_],1/left_size) for t_ in R.periods if t_ >= t ] + \
+							[(x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length)) for t_ in R.periods ]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
@@ -348,7 +354,7 @@ class DiscreteMIP(object):
 			(x[T, t], task2cost(T,t))
 			for T in S.tasks()
 			if T in self.task_groups
-			for t in range(self.horizon) ]
+			for t in T.periods if (T,t) in x ]
 
 		mip.obj(objective)
 		'''

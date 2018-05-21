@@ -56,7 +56,7 @@ for i in range(n) :
 		T[i,j] += R[mach_table[i][j] % n]
 
 S.use_makespan_objective()
-if pyschedule.solvers.mip.solve_bigm(S,kind='CBC',msg=1):
+if pyschedule.solvers.mip_bigm.solve(S,kind='CBC',msg=1):
 	pyschedule.plotters.matplotlib.plot(S,resource_height=100.0,hide_tasks=[S._tasks['MakeSpan']])
 else:
 	print('no solution found')
