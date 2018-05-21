@@ -174,16 +174,23 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
+	def Task(self,name,length=1,periods=None,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		"""
 		Adds a new task to the scenario
 		name : unique task name, must not contain special characters
 		length : length of task, default is 1
+		periods : fixed set of periods when the task can be scheduled
+		group : task group. Tasks in same task group must be completely interchangeable
+		schedule_cost : additional cost if job is scheduled. If cost is negative, then this can be used as a reward
+		completion_time_cost : cost for each period a job is delayed after period 0
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
+		if periods is None and self.horizon is not None:
+			periods = list(range(self.horizon))
 		task = Task(name=name,
 			length=length,
+			periods=periods,
 			group=group,
 			completion_time_cost=completion_time_cost,
 			schedule_cost=schedule_cost,
@@ -194,6 +201,8 @@ class Scenario(_SchedElement):
 	def Tasks(self,**kwargs) :
 		tasks = Tasks(**kwargs)
 		for T in tasks:
+			if T.periods is None:
+				T.periods = list(range(self.horizon))
 			self.add_task(T)
 		return tasks
 
@@ -206,7 +215,7 @@ class Scenario(_SchedElement):
 		else :
 			return list({ T for T in self.tasks() for RA in T.resources_req if resource in RA })
 
-	def Resource(self,name,size=1,**kwargs) :
+	def Resource(self,name,size=1,periods=None,**kwargs) :
 		"""
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
@@ -215,7 +224,9 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		resource = Resource(name,size=size,**kwargs)
+		if periods is None and self.horizon is not None:
+			periods = list(range(self.horizon))
+		resource = Resource(name,size=size,periods=periods,**kwargs)
 		self.add_resource(resource)
 		return resource
 
@@ -525,13 +536,14 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
+	def __init__(self,name,length=1,group=None,periods=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
 		# base parameters
 		self.length = length # length of task
 		self.group = group # group exchangeable tasks
+		self.periods = periods # periods when task can be scheduled
 
 		# additional parameters
 		self.start_value = None # should be filled by solver
@@ -636,12 +648,12 @@ class _List(list):
 	def __init__(self,l=None):
 		if l is not None:
 			self[:] = l
-		
+
 	def _to_list(self,l):
 		new_list = _List()
 		new_list[:] = l
 		return new_list
-		
+
 	def _pair_it(self,other):
 		if _isiterable(other):
 			return zip(self,other)
@@ -679,7 +691,7 @@ class _List(list):
 
 	def __radd__(self,other) :
 		return self._to_list([ T + T_ for (T,T_) in self._pair_it(other) ])
-	
+
 	def __iadd__(self,other):
 		for el in self:
 			if _isiterable(other):
@@ -687,8 +699,8 @@ class _List(list):
 					el += x
 			else:
 				el += other
-		return self 
-				
+		return self
+
 	def __isub__(self,other):
 		for el in self:
 			if _isiterable(other):
@@ -696,7 +708,7 @@ class _List(list):
 					el -= x
 			else:
 				el -= other
-		return self 
+		return self
 
 
 class Tasks(_List):
@@ -985,9 +997,10 @@ class Resource(_SchedElement) :
 	"""
 	A resource which can processes tasks
 	"""
-	def __init__(self,name=None,size=1,**kwargs) :
+	def __init__(self,name=None,size=1,periods=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		self.size = size
+		self.periods = periods
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
 
@@ -1063,7 +1076,7 @@ class _Capacity(_Constraint):
 			if key.step is None:
 				self._start = key.start
 				self._end = key.stop
-				return self	
+				return self
 			l = _List()
 			for _start in range(key.start,key.stop-key.step+1):
 				# create copy with adjusted start and stop
@@ -1076,7 +1089,7 @@ class _Capacity(_Constraint):
 				C_._end = _start+key.step
 				l.append(C_)
 			return l
-					
+
 	def weight(self,T,t=None):
 		"""
 		t: start position of T. In this case we take weight proportional with overlap
