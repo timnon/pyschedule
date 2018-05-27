@@ -151,12 +151,12 @@ class _SchedElementAffine(_DICT_TYPE) :
 	def __str__(self) :
 		def format_coeff(val) :
 			if val != 1 :
-				return str(val)+'x'
+				return str(val)+'*'
 			return ''
 		return self.affine_operator.join([ format_coeff(self[key])+str(key) for key in self ])
 
 	def __repr__(self):
-		return self.__str__() + '_' + str(id(self)) #add id because representation is otherwise not unique
+		return self.__str__()# + '_' + str(id(self)) #add id because representation is otherwise not unique
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
@@ -186,8 +186,8 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		if periods is None and self.horizon is not None:
-			periods = list(range(self.horizon))
+		#if periods is None and self.horizon is not None:
+		#	periods = list(range(self.horizon))
 		task = Task(name=name,
 			length=length,
 			periods=periods,
@@ -198,11 +198,11 @@ class Scenario(_SchedElement):
 		self.add_task(task)
 		return task
 
-	def Tasks(self,**kwargs) :
-		tasks = Tasks(**kwargs)
+	def Tasks(self,name,n_tasks=1,is_group=False,**kwargs) :
+		tasks = Tasks(name=name,n_tasks=n_tasks,is_group=is_group,**kwargs)
 		for T in tasks:
-			if T.periods is None:
-				T.periods = list(range(self.horizon))
+			#if T.periods is None:
+			#	T.periods = list(range(self.horizon))
 			self.add_task(T)
 		return tasks
 
@@ -224,11 +224,19 @@ class Scenario(_SchedElement):
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
-		if periods is None and self.horizon is not None:
-			periods = list(range(self.horizon))
+		#if periods is None and self.horizon is not None:
+		#	periods = list(range(self.horizon))
 		resource = Resource(name,size=size,periods=periods,**kwargs)
 		self.add_resource(resource)
 		return resource
+
+	def Resources(self,name,n_resources=1,is_group=False,**kwargs) :
+		resources = Resources(name=name,n_resources=n_resources,is_group=is_group,**kwargs)
+		for R in resources:
+			#if R.periods is None:
+			#	R.periods = list(range(self.horizon))
+			self.add_resource(R)
+		return resources
 
 	def resources(self,task=None) :
 		"""
@@ -418,6 +426,11 @@ class Scenario(_SchedElement):
 						(str(resource.name),str(self.name)))
 		self._constraints = [ C for C in self._constraints if resource not in C.resources() ]
 
+	def get_periods(self,el):
+		if el.periods is None:
+			return list(range(self.horizon))
+		return el.periods
+
 	def __iadd__(self,other) :
 		if _isiterable(other) :
 			for x in other :
@@ -549,6 +562,7 @@ class Task(_SchedElement) :
 		self.start_value = None # should be filled by solver
 		self.resources = None # should be filled by solver
 		self.resources_req = list() # required resources
+		self.tasks_req = list() # resource usage is inherited from these tasks
 		self.schedule_cost = schedule_cost # in case not None, then the task is optional adds the schedule_cost to the objective if the task is scheduled
 		self.completion_time_cost = completion_time_cost # cost on the final completion time
 
@@ -592,7 +606,10 @@ class Task(_SchedElement) :
 		return _TaskAffine(self) + other
 
 	def add_resources_req(self,RA):
+		if RA in self.resources_req:
+			return self
 		self.resources_req.append(RA)
+		return self
 
 	def remove_resources_req(self,RA):
 		self.resources_req = [ RA_ for RA_ in self.resources_req if str(RA_) != str(RA) ]
@@ -600,6 +617,16 @@ class Task(_SchedElement) :
 
 	def get_resources_in_req(self):
 		return { R for RA in self.resources_req for R in RA }
+
+	def add_tasks_req(self,T):
+		if T in self.tasks_req:
+			return self
+		self.tasks_req.append(T)
+		return self
+
+	def remove_tasks_req(self,T):
+		self.tasks_req = [ T_ for T_ in self.tasks_req if str(T_) != str(T) ]
+		return self
 
 	def __iadd__(self,other):
 		if _isiterable(other):
@@ -612,6 +639,9 @@ class Task(_SchedElement) :
 			return self
 		elif isinstance(other,_ResourceAffine):
 			self.add_resources_req(other)
+			return self
+		elif isinstance(other,Task):
+			self.add_tasks_req(other)
 			return self
 		raise Exception('ERROR: cant add %s to task %s'%(str(other),str(self)))
 
@@ -654,45 +684,67 @@ class _List(list):
 		new_list[:] = l
 		return new_list
 
-	def _pair_it(self,other):
+	def _pair(self,other):
 		if _isiterable(other):
 			return zip(self,other)
 		return ( (T,other) for T in self )
 
 	def __lt__(self,other) :
-		return self._to_list([ T < T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T < T_ for (T,T_) in self._pair(other) ])
 
 	def __gt__(self,other) :
-		return self._to_list([ T > T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T > T_ for (T,T_) in self._pair(other) ])
 
 	def __le__(self,other) :
-		return self._to_list([ T <= T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T <= T_ for (T,T_) in self._pair(other) ])
 
 	def __ge__(self,other) :
-		return self._to_list([ T >= T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T >= T_ for (T,T_) in self._pair(other) ])
 
 	def __ne__(self,other) :
-		return self._to_list([ T != T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T != T_ for (T,T_) in self._pair(other) ])
 
 	def __lshift__(self,other) :
-		return self._to_list([ T << T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T << T_ for (T,T_) in self._pair(other) ])
 
 	def __rshift__(self,other) :
-		return self._to_list([ T >> T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T >> T_ for (T,T_) in self._pair(other) ])
 
 	def __add__(self,other) :
-		return self._to_list([ T + T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __sub__(self,other) :
-		return self._to_list([ T - T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __mul__(self,other) :
-		return self._to_list([ T * T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T * T_ for (T,T_) in self._pair(other) ])
 
 	def __radd__(self,other) :
-		return self._to_list([ T + T_ for (T,T_) in self._pair_it(other) ])
+		return self._to_list([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __iadd__(self,other):
+		if not _isiterable(other):
+			raise Exception('ERROR: %s has to be an iterable object'%(str(other)))
+			return self
+		if len(other) != len(self):
+			raise Exception('ERROR: length of %s is different from %s'%(str(other),str(self)))
+			return self
+		for (el,x) in self._pair(other):
+			el += x
+		return self
+
+	def __isub__(self,other):
+		if not _isiterable(other):
+			raise Exception('ERROR: %s has to be an iterable object'%(str(other)))
+			return self
+		if len(other) != len(self):
+			raise Exception('ERROR: length of %s is different from %s'%(str(other),str(self)))
+			return self
+		for (el,x) in self._pair(other):
+			el -= x
+		return self
+
+	def __imul__(self,other):
 		for el in self:
 			if _isiterable(other):
 				for x in other:
@@ -701,7 +753,7 @@ class _List(list):
 				el += other
 		return self
 
-	def __isub__(self,other):
+	def __idiv__(self,other):
 		for el in self:
 			if _isiterable(other):
 				for x in other:
@@ -711,16 +763,19 @@ class _List(list):
 		return self
 
 
+
 class Tasks(_List):
 	"""
 	A group of tasks
 	"""
-	def __init__(self,**kwargs):
-		group = kwargs['group']
-		for i in range(kwargs['n_tasks']):
-			name = '%s%i'%(group,i)
-			kwargs['name'] = name
-			self.append(Task(**kwargs))
+	def __init__(self,name,n_tasks=1,is_group=False,**kwargs):
+		if is_group:
+			group = name
+		else:
+			group = None
+		for i in range(n_tasks):
+			name_ = '%s%i'%(name,i)
+			self.append(Task(name=name_,group=group,**kwargs))
 
 	'''
 	def add_resources_req(self,RA):
@@ -762,6 +817,20 @@ class Tasks(_List):
 			return self
 		raise Exception('ERROR: cant subtract %s from tasks %s'%(str(other),str(self)))
 	'''
+
+
+class Resources(_List):
+	"""
+	A group of tasks
+	"""
+	def __init__(self,name,n_resources=1,is_group=False,**kwargs):
+		if is_group:
+			group = name
+		else:
+			group = None
+		for i in range(n_resources):
+			name_ = '%s%i'%(name,i)
+			self.append(Resource(name=name_,group=group,**kwargs))
 
 
 class _TaskAffine(_SchedElementAffine) :
@@ -997,9 +1066,10 @@ class Resource(_SchedElement) :
 	"""
 	A resource which can processes tasks
 	"""
-	def __init__(self,name=None,size=1,periods=None,**kwargs) :
+	def __init__(self,name=None,size=1,group=None,periods=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		self.size = size
+		self.group = group
 		self.periods = periods
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
@@ -1030,6 +1100,14 @@ class _ResourceAffine(_SchedElementAffine) :
 	def __or__(self,other) :
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
+	def __str__(self):
+		return '|'.join( str(R) if self[R] == 1 else '%s*%s'%(str(self[R]),str(R)) for R in self )
+
+	def __repr__(self):
+		return self.__str__()
+
+	def __hash__(self):
+		return self.__repr__().__hash__()
 
 
 class _Capacity(_Constraint):

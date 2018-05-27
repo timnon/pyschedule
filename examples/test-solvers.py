@@ -136,11 +136,12 @@ def MULT() :
 	sols = ['[(T1, R1, 0, 1), (T1, R2, 0, 1), (T2, R1, 1, 2), (T2, R2, 1, 2)]']
 	return S,sols
 
-def ALTMULT() :
+def TASKSREQ() :
 	S = two_task_scenario()
 	RA = S['R1']|S['R2']
 	S['T1'] += RA
 	S['T2'] += RA
+	S['T2'] += S['T1']
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]','[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
 
@@ -223,7 +224,7 @@ TIGHTPLUS,
 COND,
 ALT,
 MULT,
-ALTMULT,
+TASKSREQ,
 CUMUL,
 CAP,
 CAPSLICE,
@@ -233,7 +234,7 @@ SCHEDULECOST,
 PERIODS
 ]
 
-#scenario_methods = [PERIODS]
+#scenario_methods = [TASKSREQ]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
