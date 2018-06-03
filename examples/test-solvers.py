@@ -141,7 +141,7 @@ def TASKSREQ() :
 	RA = S['R1']|S['R2']
 	S['T1'] += RA
 	S['T2'] += RA
-	S['T2'] += S['T1']
+	S['T2'] += S['T1']*[S['R1'],S['R2']]
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 1, 2)]','[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
 
@@ -234,7 +234,7 @@ SCHEDULECOST,
 PERIODS
 ]
 
-#scenario_methods = [TASKSREQ]
+#scenario_methods = [BOUND]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

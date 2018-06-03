@@ -126,15 +126,33 @@ class DiscreteMIP(object):
 				for RA in T.resources_req if len(RA) == 1
 				for R in RA for t in task_periods })
 
+
 		for T in self.task_groups:
-			resources_in_req = set(T.get_resources_in_req())
-			for T_ in T.tasks_req:
-				T_ = self.task_groups[T_][0]
+			#import pdb;pdb.set_trace()
+			#resources_in_req = set(T.get_resources_in_req())
+			for TR in T.tasks_req:
+				if TR in S.tasks():
+					T_ = TR
+					affine  = [(x[T , t],  1) for t in S.get_periods(T) if (T,t) in x ]
+					affine += [(x[T_, t], -1) for t in S.get_periods(T) if (T_,t) in x ]
+					cons.append(mip.con(affine, sense=1, rhs=0))
+					continue
+				for T_ in TR:
+					R = TR[T_]
+					T_ = self.task_groups[T_][0]
+					if R not in S.resources():
+						continue
+					affine  = [(x[T , R, t],  1) for t in S.get_periods(R) if (T,R,t) in x ]
+					affine += [(x[T_, R, t], -1) for t in S.get_periods(R) if (T_,R,t) in x ]
+					cons.append(mip.con(affine, sense=1, rhs=0))
+
+				'''
 				Rs = set(T_.get_resources_in_req()) & set(resources_in_req)
 				for R in Rs:
 					affine  = [(x[T , R, t],  1) for t in S.get_periods(R) if (T,R,t) in x ]
 					affine += [(x[T_, R, t], -1) for t in S.get_periods(R) if (T,R,t) in x ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
+				'''
 
 		'''
 		# synchronize in RA with multiple tasks

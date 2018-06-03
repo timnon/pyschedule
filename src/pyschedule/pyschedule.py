@@ -49,12 +49,13 @@ def _isiterable(var) :
 	"""
 	Test if var is iterable
 	"""
-	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple ) or ( isinstance(var,_List) )
+	return ( type(var) is list ) or ( type(var) is set ) or ( type(var) is tuple ) \
+	or ( isinstance(var,_List) )
 
 def alt(*args) :
 	"""
 	Method to reduce the given elements with the or-operator
-	e.g. alt(R1,R2,R3) = alt( R for R in [R1,R2,R3] ) = alt([R1,R2,R3]) = R1|R2|R3
+	e.g. alt([R1,R2,R3]) = R1|R2|R3
 	"""
 	l = [ functools.reduce(lambda x,y: x|y, a) for a in args if _isiterable(a) or isinstance(a, types.GeneratorType)]
 	l += [ a for a in args if not _isiterable(a) and not isinstance(a, types.GeneratorType)  ]
@@ -85,81 +86,142 @@ class _SchedElement(object):
 
 
 
-class _SchedElementAffine(_DICT_TYPE) :
-
-	def __init__(self,unknown=None,element_class=_SchedElement,affine_operator='+') :
-		_DICT_TYPE.__init__(self)
-		self.element_class = element_class
+class _SchedElementAffine(object) :
+	def __init__(self,unknown=None,affine_operator='+') :
+		self.map = _DICT_TYPE()
 		self.affine_operator = affine_operator
-		if unknown == None :
-			pass
-		elif isinstance(unknown,self.element_class) :
-			self[unknown] = 1
-		elif _isnumeric(unknown) :
-			self[1] = unknown
-		elif isinstance(unknown,type(self)) :
-			self.update(unknown)
+		if isinstance(unknown,type(self)) :
+			self.map.update(unknown.map)
+		else:
+			self.map[unknown] = 1
+		'''
 		elif isinstance(unknown,list) :
-			self.update(_DICT_TYPE(unknown))
-		else :
-			raise Exception('ERROR: cant init %s from %s'%(str(self),str(unknown)))
+			self.map.update(_DICT_TYPE(unknown))
+		else:
+			self.map[1] = unknown
+		'''
 
-	def __add__(self,other) :
-		if _isiterable(other) :
-			return [ self + x for x in other ]
+	def __getitem__(self,key):
+		return self.map[key]
+
+	def __setitem__(self,key,value):
+		self.map[key] = value
+
+	def __iter__(self):
+		return self.map.__iter__()
+
+	def __len__(self):
+		return self.map.__len__()
+
+	def __add__(self,other):
 		if isinstance(other,type(self)) :
 			new = type(self)(self)
 			for key in other :
-				if key in new :
-					new[key] += other[key]
-				else :
-					new[key] = other[key]
+				new[key] = other[key]
 			return new
-		elif isinstance(other,self.element_class) or _isnumeric(other):
-			return self + type(self)(other)
-		raise Exception('ERROR: you cannot add %s to %s'%(str(other),str(self)))
+		return self + type(self)(other)
 
 	def __sub__(self,other) :
-		if _isiterable(other) :
-			return [ self - x for x in other ]
 		if isinstance(other,type(self)) :
 			new = type(self)(self)
 			for key in other :
-				if key in new :
-					new[key] -= other[key]
-				else :
-					new[key] = -other[key]
+				new[key] = -other[key]
 			return new
-		else :
-			return self - type(self)(other)
-
-	def __mul__(self,other) :
-		if isinstance(other,type(self)) :
-			new = type(self)(self)
-			if 1 in other :
-				for key in self :
-					new[key] *= other[1]
-			else :
-				raise Exception('ERROR: can multipy %s only with integer but not with %s'%(str(self),str(other)))
-			return new
-		else :
-			return self * type(self)(other)
+		return self - type(self)(other)
 
 	def __radd__(self,other) :
 		return self + other
 
+	def __iadd__(self,other):
+		self = self + other
+		return self
+
+	def __isub__(self,other):
+		self = self - other
+		return self
+
+	def __mul__(self,other):
+		new = type(self)(self)
+		for key in self.map:
+			new.map[key] = other
+		return new
+
 	def __str__(self) :
 		def format_coeff(val) :
 			if val != 1 :
-				return str(val)+'*'
+				return '*'+str(val)
 			return ''
-		return self.affine_operator.join([ format_coeff(self[key])+str(key) for key in self ])
+		return self.affine_operator.join([ str(key)+format_coeff(self[key]) for key in self ])
 
 	def __repr__(self):
-		return self.__str__()# + '_' + str(id(self)) #add id because representation is otherwise not unique
+		return self.__str__()
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
+
+
+
+class _List(list):
+	def __init__(self,l=None):
+		if l is not None:
+			self[:] = l
+
+	def _to_list(self,l):
+		new_list = _List()
+		new_list[:] = l
+		return new_list
+
+	def _pair(self,other):
+		if _isiterable(other):
+			return zip(self,other)
+		return ( (T,other) for T in self )
+
+	def __lt__(self,other) :
+		return [ T < T_ for (T,T_) in self._pair(other) ]
+
+	def __gt__(self,other) :
+		return [ T > T_ for (T,T_) in self._pair(other) ]
+
+	def __le__(self,other) :
+		return [ T <= T_ for (T,T_) in self._pair(other) ]
+
+	def __ge__(self,other) :
+		return [ T >= T_ for (T,T_) in self._pair(other) ]
+
+	def __ne__(self,other) :
+		return [ T != T_ for (T,T_) in self._pair(other) ]
+
+	def __lshift__(self,other) :
+		return [ T << T_ for (T,T_) in self._pair(other) ]
+
+	def __rshift__(self,other) :
+		return [ T >> T_ for (T,T_) in self._pair(other) ]
+
+	def __add__(self,other) :
+		return [ T + T_ for (T,T_) in self._pair(other) ]
+
+	def __sub__(self,other) :
+		return [ T - T_ for (T,T_) in self._pair(other) ]
+
+	def __radd__(self,other) :
+		return [ T + T_ for (T,T_) in self._pair(other) ]
+
+	def __rsub__(self,other) :
+		return [ T - T_ for (T,T_) in self._pair(other) ]
+
+	def __iadd__(self,other):
+		return _List([ T.__iadd__(T_) for (T,T_) in self._pair(other) ])
+
+	def __isub__(self,other):
+		return _List([ T.__isub__(T_) for (T,T_) in self._pair(other) ])
+
+	def __mul__(self,other) :
+		if not _isiterable(other) and not isinstance(other,_ResourceAffine):
+			return [ T*T_ for (T,T_) in self._pair(other) ]
+		return [ [ T*T_ for T_ in other ] for T in self ]
+
+	def __imul__(self,other):
+		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
 
 
 
@@ -198,8 +260,8 @@ class Scenario(_SchedElement):
 		self.add_task(task)
 		return task
 
-	def Tasks(self,name,n_tasks=1,is_group=False,**kwargs) :
-		tasks = Tasks(name=name,n_tasks=n_tasks,is_group=is_group,**kwargs)
+	def Tasks(self,name,num=1,is_group=False,**kwargs) :
+		tasks = Tasks(name=name,num=num,is_group=is_group,**kwargs)
 		for T in tasks:
 			#if T.periods is None:
 			#	T.periods = list(range(self.horizon))
@@ -230,8 +292,8 @@ class Scenario(_SchedElement):
 		self.add_resource(resource)
 		return resource
 
-	def Resources(self,name,n_resources=1,is_group=False,**kwargs) :
-		resources = Resources(name=name,n_resources=n_resources,is_group=is_group,**kwargs)
+	def Resources(self,name,num=1,is_group=False,**kwargs) :
+		resources = Resources(name=name,num=num,is_group=is_group,**kwargs)
 		for R in resources:
 			#if R.periods is None:
 			#	R.periods = list(range(self.horizon))
@@ -315,12 +377,8 @@ class Scenario(_SchedElement):
 		"""
 		Sets the objective to a uniform flow-time objective
 		"""
-		self.clear_objective()
-		if not self.tasks():
-			return
-		A = sum([ T*1 for T in self.tasks() ])
-		del A[1] #remove 1 due to sum
-		self += A
+		for T in self.tasks():
+			T.completion_time_cost = 1
 
 	def clear_solution(self):
 		"""
@@ -600,6 +658,8 @@ class Task(_SchedElement) :
 		return _TaskAffine(self) - other
 
 	def __mul__(self,other) :
+		if _isiterable(other):
+			return [ self*el for el in other ]
 		return _TaskAffine(self) * other
 
 	def __radd__(self,other) :
@@ -640,7 +700,12 @@ class Task(_SchedElement) :
 		elif isinstance(other,_ResourceAffine):
 			self.add_resources_req(other)
 			return self
-		elif isinstance(other,Task):
+		elif isinstance(other,Task) or isinstance(other,_TaskAffine):
+			self.add_tasks_req(other)
+			return self
+		elif isinstance(other,_TaskAffine):
+			if len(other) != 1:
+				raise Exception('ERROR: task-affine %s contains more than one task'%(str(other)))
 			self.add_tasks_req(other)
 			return self
 		raise Exception('ERROR: cant add %s to task %s'%(str(other),str(self)))
@@ -674,180 +739,50 @@ class Task(_SchedElement) :
 
 
 
-class _List(list):
-	def __init__(self,l=None):
-		if l is not None:
-			self[:] = l
-
-	def _to_list(self,l):
-		new_list = _List()
-		new_list[:] = l
-		return new_list
-
-	def _pair(self,other):
-		if _isiterable(other):
-			return zip(self,other)
-		return ( (T,other) for T in self )
-
-	def __lt__(self,other) :
-		return self._to_list([ T < T_ for (T,T_) in self._pair(other) ])
-
-	def __gt__(self,other) :
-		return self._to_list([ T > T_ for (T,T_) in self._pair(other) ])
-
-	def __le__(self,other) :
-		return self._to_list([ T <= T_ for (T,T_) in self._pair(other) ])
-
-	def __ge__(self,other) :
-		return self._to_list([ T >= T_ for (T,T_) in self._pair(other) ])
-
-	def __ne__(self,other) :
-		return self._to_list([ T != T_ for (T,T_) in self._pair(other) ])
-
-	def __lshift__(self,other) :
-		return self._to_list([ T << T_ for (T,T_) in self._pair(other) ])
-
-	def __rshift__(self,other) :
-		return self._to_list([ T >> T_ for (T,T_) in self._pair(other) ])
-
-	def __add__(self,other) :
-		return self._to_list([ T + T_ for (T,T_) in self._pair(other) ])
-
-	def __sub__(self,other) :
-		return self._to_list([ T - T_ for (T,T_) in self._pair(other) ])
-
-	def __mul__(self,other) :
-		return self._to_list([ T * T_ for (T,T_) in self._pair(other) ])
-
-	def __radd__(self,other) :
-		return self._to_list([ T + T_ for (T,T_) in self._pair(other) ])
-
-	def __iadd__(self,other):
-		if not _isiterable(other):
-			raise Exception('ERROR: %s has to be an iterable object'%(str(other)))
-			return self
-		if len(other) != len(self):
-			raise Exception('ERROR: length of %s is different from %s'%(str(other),str(self)))
-			return self
-		for (el,x) in self._pair(other):
-			el += x
-		return self
-
-	def __isub__(self,other):
-		if not _isiterable(other):
-			raise Exception('ERROR: %s has to be an iterable object'%(str(other)))
-			return self
-		if len(other) != len(self):
-			raise Exception('ERROR: length of %s is different from %s'%(str(other),str(self)))
-			return self
-		for (el,x) in self._pair(other):
-			el -= x
-		return self
-
-	def __imul__(self,other):
-		for el in self:
-			if _isiterable(other):
-				for x in other:
-					el += x
-			else:
-				el += other
-		return self
-
-	def __idiv__(self,other):
-		for el in self:
-			if _isiterable(other):
-				for x in other:
-					el -= x
-			else:
-				el -= other
-		return self
-
-
-
 class Tasks(_List):
 	"""
 	A group of tasks
 	"""
-	def __init__(self,name,n_tasks=1,is_group=False,**kwargs):
+	def __init__(self,name,num=1,is_group=False,**kwargs):
 		if is_group:
 			group = name
 		else:
 			group = None
-		for i in range(n_tasks):
+		for i in range(num):
 			name_ = '%s%i'%(name,i)
 			self.append(Task(name=name_,group=group,**kwargs))
 
-	'''
-	def add_resources_req(self,RA):
-		for T in self:
-			T.add_resources_req(RA)
-
-	def remove_resources_req(self,RA):
-		for T in self:
-			T.remove_resources_req(RA)
-		return self
-
-	def __iadd__(self,other):
-		if _isiterable(other):
-			for T in self:
-				for x in other:
-					T += x
-				return self
-		elif isinstance(other,Resource):
-			other = _ResourceAffine(other) #transform into _ResourceAffine
-			self.add_resources_req(other)
-			return self
-		elif isinstance(other,_ResourceAffine):
-			self.add_resources_req(other)
-			return self
-		raise Exception('ERROR: cant add %s to tasks %s'%(str(other),str(self)))
-
-	def __isub__(self,other):
-		if _isiterable(other):
-			for T in self:
-				for x in other:
-					T += x
-				return self
-		elif isinstance(other,Resource):
-			other = _ResourceAffine(other) #transform into _ResourceAffine
-			self.remove_resources_req(other)
-			return self
-		elif isinstance(other,_ResourceAffine):
-			self.remove_resources_req(other)
-			return self
-		raise Exception('ERROR: cant subtract %s from tasks %s'%(str(other),str(self)))
-	'''
 
 
 class Resources(_List):
 	"""
 	A group of tasks
 	"""
-	def __init__(self,name,n_resources=1,is_group=False,**kwargs):
+	def __init__(self,name,num=1,is_group=False,**kwargs):
 		if is_group:
 			group = name
 		else:
 			group = None
-		for i in range(n_resources):
+		for i in range(num):
 			name_ = '%s%i'%(name,i)
 			self.append(Resource(name=name_,group=group,**kwargs))
 
 
 class _TaskAffine(_SchedElementAffine) :
-
 	def __init__(self,unknown=None) :
-		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Task)
+		_SchedElementAffine.__init__(self,unknown=unknown)
 
 	def _get_prec(self,TA,comp_operator) :
 		pos_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] >= 0 ]
 		neg_tasks = [ T for T in TA if isinstance(T,Task) and TA[T] < 0 ]
-		if len(neg_tasks) > 1 or len(pos_tasks) > 1 :
+		offsets = [ T*TA[T] for T in TA if _isnumeric(T) ]
+		if len(neg_tasks) > 1 or len(pos_tasks) > 1 or len(offsets) > 1 :
 			raise Exception('ERROR: can only deal with simple precedences of \
 									the form T1 + 3 < T2 or T1 < 3 and not %s'%str(TA) )
 		# get offset
 		offset = 0
-		if 1 in TA :
-			offset = TA[1]
+		if offsets:
+			offset = offsets[0]
 		if pos_tasks and neg_tasks :
 			left = pos_tasks[0]
 			right = neg_tasks[0]
@@ -1061,7 +996,6 @@ class PrecedenceCond(_Precedence) :
 
 
 
-
 class Resource(_SchedElement) :
 	"""
 	A resource which can processes tasks
@@ -1092,12 +1026,11 @@ class Resource(_SchedElement) :
 
 
 
-class _ResourceAffine(_SchedElementAffine) :
+class _ResourceAffine(_SchedElementAffine):
+	def __init__(self,unknown=None):
+		_SchedElementAffine.__init__(self,unknown=unknown,affine_operator='|')
 
-	def __init__(self,unknown=None) :
-		_SchedElementAffine.__init__(self,unknown=unknown,element_class=Resource,affine_operator='|')
-
-	def __or__(self,other) :
+	def __or__(self,other):
 		return super(_ResourceAffine,self).__add__(_ResourceAffine(other)) #add of superclass
 
 	def __str__(self):
@@ -1111,7 +1044,6 @@ class _ResourceAffine(_SchedElementAffine) :
 
 
 class _Capacity(_Constraint):
-
 	def __init__(self,resource):
 		_Constraint.__init__(self)
 		self.resource = resource
