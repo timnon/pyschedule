@@ -59,7 +59,7 @@ basic test cases that are not really constraints but still represent different c
 each task needs at least one resource. To keep the syntax concise, pyschedule used % as an operator to connect tasks and resources
 - **MULT :** multiple resources, e.g. `T1 += [R1,R2]`, T1 uses R1 and R2.
 - **ALT :** alternative resources, e.g. `T1 += R1|R2`, T1 uses either R1 or R2. For a list of resources L it is also possible to write `T1 += pyschedule.alt(L)` or `T1 += pyschedule.alt( R for R in L )`.
-- **ALTMULT :** alternative resources which are similar for different tasks, e.g. `A = R1|R2; T1 += A; T2 += A`, T1 and T2 either use R1 or R2, but they both use the same one.
+- **TASKSREQ :** synchronize resources between tasks, e.g. `T1 += T2`, if T2 uses some resource and T1 could use the same resource, then T1 will use this resource. This is useful if tasks T1 and T2 are related, and hence they should use the same resources to avoid switching
 - **CUMUL :** cumulative resources, e.g. `R1 = S.Resource('R1',size=3); T1 += R1*2`, R1 has size 3 and T1 uses 2 units of that size whenever run. This can be used to model worker pools or any other resource with a high multiplicity. Using a resource of size n instead n resources of size 1 often helps the solver.
 - **CAP :** capacities, e.g. `R1['length'] <= 4`, the sum of the lengths of the tasks assigned to R1 must be at most 4. We can also generate other parameters, e.g. first set `T1.work = 3` and then `R1['work'] <= 4`.
 - **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
@@ -155,7 +155,7 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <td>X</td>
     </tr>
     <tr>
-      <th>ALTMULT</th>
+      <th>TASKSREQ</th>
       <td>X</td>
       <td>X</td>
       <td>X</td>
