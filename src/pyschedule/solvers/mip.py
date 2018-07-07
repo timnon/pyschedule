@@ -395,11 +395,22 @@ class DiscreteMIP(object):
 				cost += T.schedule_cost
 			return cost
 
+		# completion and schedule costs of tasks
 		objective = [
 			(x[T, t], task2cost(T,t))
 			for T in S.tasks()
 			if T in self.task_groups
-			for t in S.get_periods(T) if (T,t) in x ]
+			for t in S.get_periods(T) if (T,t) in x
+			]
+
+		# add costs per periods of resources to objective
+		objective += [
+			(x[T,R,t],R.cost_per_period)
+			for R in S.resources() if R.cost_per_period is not None
+			for T in S.tasks(resource=R)
+			for t in S.get_periods(R)
+			if (T,R,t) in x
+			]
 
 		mip.obj(objective)
 		'''

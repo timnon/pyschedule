@@ -277,18 +277,20 @@ class Scenario(_SchedElement):
 		else :
 			return list({ T for T in self.tasks() for RA in T.resources_req if resource in RA })
 
-	def Resource(self,name,size=1,periods=None,**kwargs) :
+	def Resource(self,name,size=1,periods=None,cost_per_period=None,**kwargs) :
 		"""
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
 		size   : the size of the resource, if size > 1, then we get a cumulative resource that can process
 		 		different tasks in parallel
+		periods : the periods which are available for scheduling
+		cost_per_period : the cost for one period
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
 		#if periods is None and self.horizon is not None:
 		#	periods = list(range(self.horizon))
-		resource = Resource(name,size=size,periods=periods,**kwargs)
+		resource = Resource(name,size=size,periods=periods,cost_per_period=cost_per_period,**kwargs)
 		self.add_resource(resource)
 		return resource
 
@@ -485,6 +487,10 @@ class Scenario(_SchedElement):
 		self._constraints = [ C for C in self._constraints if resource not in C.resources() ]
 
 	def get_periods(self,el):
+		"""
+		return the valid periods of this task or resource. If no specific periods
+		are defined, take all periods of the scenario
+		"""
 		if el.periods is None:
 			return list(range(self.horizon))
 		return el.periods
@@ -756,7 +762,7 @@ class Tasks(_List):
 
 class Resources(_List):
 	"""
-	A group of tasks
+	A group of resources
 	"""
 	def __init__(self,name,num=1,is_group=False,**kwargs):
 		if is_group:
@@ -1000,11 +1006,12 @@ class Resource(_SchedElement) :
 	"""
 	A resource which can processes tasks
 	"""
-	def __init__(self,name=None,size=1,group=None,periods=None,**kwargs) :
+	def __init__(self,name=None,size=1,group=None,periods=None,cost_per_period=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		self.size = size
 		self.group = group
 		self.periods = periods
+		self.cost_per_period = cost_per_period
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
 

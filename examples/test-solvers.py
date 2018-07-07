@@ -211,6 +211,16 @@ def PERIODS():
 	sols = ['[(T1, R1, 1, 2), (T2, R1, 3, 4)]']
 	return S,sols
 
+def COSTPERPERIOD():
+	S = two_task_scenario()
+	S['T1'] += S['R1']|S['R2']
+	S['T2'] += S['R1']|S['R2']
+	S['T1'].completion_time_cost = 2
+	S['T2'].completion_time_cost = 1
+	S['R1'].cost_per_period = 10
+	sols = ['[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
+	return S,sols
+
 
 scenario_methods = [
 ZERO,
@@ -234,7 +244,7 @@ SCHEDULECOST,
 PERIODS
 ]
 
-#scenario_methods = [BOUND]
+#scenario_methods = [COSTPERPERIOD]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])
