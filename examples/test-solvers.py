@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import sys
-sys.path.append('../src')
+sys.path += ['../src','src']
 from pyschedule import Scenario, Task, Resource, solvers, plotters
 import copy, collections, traceback
 

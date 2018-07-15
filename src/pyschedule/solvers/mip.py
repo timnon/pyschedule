@@ -95,7 +95,8 @@ class DiscreteMIP(object):
 				cat = 'Integer'
 			# single resource assignments restrict the periods directly
 			task_periods = set(S.get_periods(T))
-			task_resources_periods = [ set(S.get_periods(R))
+			task_resources_periods = \
+				[ set(S.get_periods(R))
 				for RA in T.resources_req if len(RA) == 1
 				for R in RA ]
 			if task_resources_periods:
@@ -126,15 +127,19 @@ class DiscreteMIP(object):
 				for RA in T.resources_req if len(RA) == 1
 				for R in RA for t in task_periods })
 
-
+		# task requirements
 		for T in self.task_groups:
-			#import pdb;pdb.set_trace()
-			#resources_in_req = set(T.get_resources_in_req())
 			for TR in T.tasks_req:
 				if TR in S.tasks():
 					T_ = TR
-					affine  = [(x[T , t],  1) for t in S.get_periods(T) if (T,t) in x ]
-					affine += [(x[T_, t], -1) for t in S.get_periods(T) if (T_,t) in x ]
+					affine = \
+						[ (x[T,t],  1)
+						for t in range(self.horizon)
+						if (T,t) in x ]
+					affine += \
+						[ (x[T_,t], -1)
+						for t in range(self.horizon)
+						if (T_,t) in x ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
 					continue
 				for T_ in TR:
@@ -142,17 +147,15 @@ class DiscreteMIP(object):
 					T_ = self.task_groups[T_][0]
 					if R not in S.resources():
 						continue
-					affine  = [(x[T , R, t],  1) for t in S.get_periods(R) if (T,R,t) in x ]
-					affine += [(x[T_, R, t], -1) for t in S.get_periods(R) if (T_,R,t) in x ]
+					affine = \
+						[ (x[T,R,t],  1)
+						for t in range(self.horizon)
+						if (T,R,t) in x ]
+					affine += \
+						[(x[T_,R,t], -1)
+						for t in range(self.horizon)
+						if (T_,R,t) in x ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
-
-				'''
-				Rs = set(T_.get_resources_in_req()) & set(resources_in_req)
-				for R in Rs:
-					affine  = [(x[T , R, t],  1) for t in S.get_periods(R) if (T,R,t) in x ]
-					affine += [(x[T_, R, t], -1) for t in S.get_periods(R) if (T,R,t) in x ]
-					cons.append(mip.con(affine, sense=1, rhs=0))
-				'''
 
 		'''
 		# synchronize in RA with multiple tasks
@@ -212,8 +215,12 @@ class DiscreteMIP(object):
 			if left_size == right_size:
 				for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
 					affine = \
-						[(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
-						[(x[P.task_right, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
+						[ (x[P.task_left, t_],1)
+						for t_ in range(t,self.horizon)
+						if (P.task_left,t_) in x ] + \
+						[ (x[P.task_right, t_],-1)
+						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
+						if (P.task_right,t_) in x ]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
 				if left_size == 1:
 					continue
@@ -236,8 +243,12 @@ class DiscreteMIP(object):
 			elif left_size == 1 or right_size == 1:
 				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
 					affine = \
-						[(x[P.task_left, t_],1/left_size) for t_ in range(t,self.horizon)] + \
-						[(x[P.task_right, t_],-1/right_size) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
+						[ (x[P.task_left,t_],1/left_size)
+						for t_ in range(t,self.horizon)
+						if (P.task_left,t_) in x ] + \
+						[ (x[P.task_right,t_],-1/right_size)
+						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
+						if (P.task_right,t_) in x ]
 					cons.append(mip.con(affine, sense=-1, rhs=0))
 			#covers the cases that the task groups have different sizes != 1
 			#if the right task group is larger, then the  additonal tasks
@@ -245,8 +256,12 @@ class DiscreteMIP(object):
 			else:
 				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
 					affine = \
-						[(x[P.task_left, t_],1) for t_ in range(t-P.task_left.length-P.offset)] + \
-						[(x[P.task_right, t_],-1) for t_ in range(t)]
+						[ (x[P.task_left,t_],1)
+						for t_ in range(t-P.task_left.length-P.offset)
+						if (P.task_left,t_) in x ] + \
+						[ (x[P.task_right,t_],-1)
+						for t_ in range(t)
+						if (P.task_right,t_) in x ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
 
 		# tight precedence constraints
@@ -255,43 +270,71 @@ class DiscreteMIP(object):
 				continue
 			if P.offset >= 0:
 				for t in range(self.horizon):
-					affine = [(x[P.task_left, t_],1) for t_ in range(t,self.horizon)] + \
-						 [(x[P.task_right, t_],-1) for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)]
+					affine = \
+						[ (x[P.task_left,t_],1)
+						for t_ in range(t,self.horizon)
+						if (P.task_left,t_) in x ] + \
+						[ (x[P.task_right,t_],-1)
+						for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)
+						if (P.task_right,t_) in x]
 					cons.append(mip.con(affine, sense=0, rhs=0))
 			elif P.offset < 0:
 				for t in range(self.horizon):
-					affine = [(x[P.task_right, t_],1) for t_ in range(t)] + \
-						 [(x[P.task_left, t_],-1) for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))]
+					affine = \
+						[ (x[P.task_right,t_],1)
+						for t_ in range(t)
+						if (P.task_right,t_) in x ] + \
+						[ (x[P.task_left, t_],-1)
+						for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))
+						if (P.task_left,t_) in x ]
 					cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# low bounds
 		for P in S.bounds_low():
 			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.task, t],1) for t in range(P.bound)]
+			affine = \
+				[ (x[P.task,t],1)
+				for t in range(P.bound)
+				if (P.task,t) in x ]
 			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# up bounds
 		for P in S.bounds_up():
 			if P.task not in self.task_groups:
 				continue
-			affine = [(x[P.task, t],1) for t in range(max(P.bound-P.task.length+1,0),self.horizon)]
+			affine = \
+				[ (x[P.task,t],1)
+				for t in range(max(P.bound-P.task.length+1,0),self.horizon)
+				if (P.task,t) in x ]
 			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# tight low bounds
 		for P in S.bounds_low_tight():
 			if P.task not in self.task_groups:
 				continue
-			affine =  [(x[P.task, t],1) for t in range(P.bound)]
-			affine += [(x[P.task, t],1) for t in range(P.bound+1,self.horizon)]
+			affine = \
+				[ (x[P.task,t],1)
+				for t in range(P.bound)
+				if (P.task,t) in x ]
+			affine += \
+				[ (x[P.task,t],1)
+				for t in range(P.bound+1,self.horizon)
+				if (P.task,t) in x ]
 			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# tight up bounds
 		for P in S.bounds_up_tight():
 			if P.task not in self.task_groups:
 				continue
-			affine =  [(x[P.task, t],1) for t in range(P.bound-P.task.length)]
-			affine += [(x[P.task, t],1) for t in range(P.bound-P.task.length+1,self.horizon)]
+			affine = \
+				[ (x[P.task,t],1)
+				for t in range(P.bound-P.task.length)
+				if (P.task,t) in x ]
+			affine += \
+				[ (x[P.task,t],1)
+				for t in range(P.bound-P.task.length+1,self.horizon)
+				if (P.task,t) in x ]
 			cons.append(mip.con(affine, sense=0, rhs=0))
 
 		# conditional precedence constraints
@@ -309,14 +352,26 @@ class DiscreteMIP(object):
 						# then the monotonicity defined by -1*(t_<t-P.offset-P.task_left.length)
 						# needs to get saisfied
 						affine = \
-							[(x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length)) for t_ in S.get_periods(R) ] + \
-							[(x[P.task_right, R, t_],1/right_size) for t_ in S.get_periods(R) if t_ < t ]
+							[ (x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length))
+							for t_ in range(self.horizon)
+							if (P.task_left, R, t_) in x ]
+						affine += \
+							[ (x[P.task_right, R, t_],1/right_size)
+							for t_ in range(self.horizon)
+							if (P.task_right, R, t_) in x
+							and t_ < t ]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				elif right_size == 1:
 					for t in range(self.horizon):
 						affine = \
-							[(x[P.task_left, R, t_],1/left_size) for t_ in S.get_periods(R) if t_ >= t ] + \
-							[(x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length)) for t_ in S.get_periods(R) ]
+							[ (x[P.task_left, R, t_],1/left_size)
+							for t_ in range(self.horizon)
+							if (P.task_left, R, t_) in x
+							and t_ >= t ]
+						affine += \
+							[ (x[P.task_right, R, t_],1-1*(t_>=t+P.offset+P.task_left.length))
+							for t_ in range(self.horizon)
+							if (P.task_right, R, t_) in x ]
 						cons.append(mip.con(affine, sense=-1, rhs=1))
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
@@ -335,7 +390,8 @@ class DiscreteMIP(object):
 			affine = [ (x[T,R,t-T.length+1], C.weight(T,t-T.length+1))
 					  for t in range(start,end)
 					  for T in self.task_groups
-					  if (T,R,t-T.length+1) in x and C.weight(T,t-T.length+1) ]
+					  if (T,R,t-T.length+1) in x
+					  and C.weight(T,t-T.length+1) ]
 			if not affine:
 				continue
 			# sum up (pulp doesnt do this)
@@ -354,10 +410,14 @@ class DiscreteMIP(object):
 			R = C.resource
 
 			def get_diff_con(count,C,t,flip):
-				affine_1 =  [ (x[T,R,t-T.length+1],flip*C.weight(T)) for T in self.task_groups
-						   if (T,R,t-T.length+1) in x and C.weight(T) ]
-				affine_2 = [ (x[T,R,t+1],-flip*C.weight(T)) for T in self.task_groups
-						   if (T,R,t+1) in x and C.weight(T) ]
+				affine_1 = \
+					[ (x[T,R,t-T.length+1],flip*C.weight(T))
+					for T in self.task_groups
+					if (T,R,t-T.length+1) in x and C.weight(T) ]
+				affine_2 = \
+					[ (x[T,R,t+1],-flip*C.weight(T))
+					for T in self.task_groups
+					if (T,R,t+1) in x and C.weight(T) ]
 				if affine_1 and affine_2:
 					if ('switch_%i'%count,R,t) not in x:
 						x['switch_%i'%count,R,t] = mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
