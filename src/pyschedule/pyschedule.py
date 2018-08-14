@@ -107,6 +107,9 @@ class _SchedElementAffine(object) :
 	def __setitem__(self,key,value):
 		self.map[key] = value
 
+	def __delitem__(self,key):
+		self.map.__delitem__(key)
+
 	def __iter__(self):
 		return self.map.__iter__()
 
@@ -423,17 +426,8 @@ class Scenario(_SchedElement):
 	def bounds_up_tight(self) :
 		return self.constraints(BoundUpTight)
 
-	def capacity_low(self):
-		return self.constraints(CapacityLow)
-
-	def capacity_up(self):
-		return self.constraints(CapacityUp)
-
-	def capacity_diff_up(self):
-		return self.constraints(CapacityDiffUp)
-
-	def capacity_diff_low(self):
-		return self.constraints(CapacityDiffLow)
+	def capacity(self):
+		return self.constraints(Capacity)
 
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
@@ -600,10 +594,7 @@ class Scenario(_SchedElement):
 		s += print_constraint('UPPER BOUNDS',self.bounds_up())
 		s += print_constraint('TIGHT LOWER BOUNDS',self.bounds_low_tight())
 		s += print_constraint('TIGHT UPPER BOUNDS',self.bounds_up_tight())
-		s += print_constraint('CAPACITY LOWER BOUNDS',self.capacity_low())
-		s += print_constraint('CAPACITY UPPER BOUNDS',self.capacity_up())
-		s += print_constraint('CAPACITY DIFF LOWER BOUNDS',self.capacity_diff_low())
-		s += print_constraint('CAPACITY DIFF UPPER BOUNDS',self.capacity_diff_up())
+		s += print_constraint('CAPACITY BOUNDS',self.capacity())
 		s += '###############################################'
 		return s
 
@@ -1022,14 +1013,14 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self) | other
 
 	def __getitem__(self, key):
-		C = _Capacity(resource=self)
-		return C[key]
+		SL = _Slice(resource=self)
+		return SL[key]
 
 	def __le__(self,other):
-		return _Capacity(resource=self) <= other
+		return _Slice(resource=self) <= other
 
 	def __ge__(self,other):
-		return _Capacity(resource=self) >= other
+		return _Slice(resource=self) >= other
 
 
 
@@ -1050,36 +1041,14 @@ class _ResourceAffine(_SchedElementAffine):
 		return self.__repr__().__hash__()
 
 
-class _Capacity(_Constraint):
+class _Slice(_SchedElement):
 	def __init__(self,resource):
-		_Constraint.__init__(self)
+		_SchedElement.__init__(self)
 		self.resource = resource
 		self._param = 'length'
 		self._start = None
 		self._end = None
-		self.bound = None
-		self.comp_operator = None
 		self.kind = 'sum'
-
-	def __ge__(self, other):
-		if not _isnumeric(other):
-			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
-		self.__class__ = CapacityLow
-		if 'diff' in self.kind:
-			self.__class__ = CapacityDiffLow
-		self.comp_operator = '>='
-		self.bound = other
-		return self
-
-	def __le__(self, other):
-		if not _isnumeric(other):
-			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
-		self.__class__ = CapacityUp
-		if 'diff' in self.kind:
-			self.__class__ = CapacityDiffUp
-		self.comp_operator = '<='
-		self.bound = other
-		return self
 
 	def __getitem__(self,key):
 		if isinstance(key,str):
@@ -1145,6 +1114,21 @@ class _Capacity(_Constraint):
 		self.kind = 'diff_inc'
 		return self
 
+	def __mul__(self,other) :
+		return _SliceAffine(self).__mul__(other)
+
+	def __add__(self,other) :
+		return _SliceAffine(self) + other
+
+	def __sub__(self,other) :
+		return _SliceAffine(self) - other
+
+	def __le__(self,other) :
+		return _SliceAffine(self) <= other
+
+	def __ge__(self,other) :
+		return _SliceAffine(self) >= other
+
 	def __str__(self):
 		param = self._param
 		if self.name is not None and self.name is not '':
@@ -1160,14 +1144,12 @@ class _Capacity(_Constraint):
 			slice += ']'
 		operator = ''
 		if self.kind == 'diff':
-			operator = '.diff()'
+			operator = '.diff'
 		elif self.kind == 'diff_inc':
-			operator = '.inc()'
+			operator = '.inc'
 		elif self.kind == 'diff_dec':
-			operator = '.dec()'
+			operator = '.dec'
 		s = '%s[\'%s\']%s%s' % (str(self.resource),str(param),slice,operator)
-		if self.comp_operator is not None:
-			s += ' %s %s'%(str(self.comp_operator),str(self.bound))
 		return s
 
 	def __repr__(self):
@@ -1175,36 +1157,62 @@ class _Capacity(_Constraint):
 
 
 
-class CapacityLow(_Capacity):
+class _SliceAffine(_SchedElementAffine):
 	"""
-	A lower capacity bound on one resource in an interval
+	linear combination of resource slices to be turned into a capacity contraint
 	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __init__(self,unknown=None):
+		_SchedElementAffine.__init__(self,unknown=unknown,affine_operator='+')
+
+	def _get_cap(self,SLA):
+		SLA_ = copy.copy(SLA)
+		offset = 0
+		for SL in SLA:
+			if _isnumeric(SL):
+				offset -= SL*SLA[SL]
+				del SLA_[SL]
+		return Capacity(SLA=SLA_,bound=offset)
+
+	def __le__(self,other):
+		if _isiterable(other):
+			return [ self <= x for x in other ]
+		if not isinstance(other,type(self)):
+			return self <= _SliceAffine(other)
+		return self._get_cap(self-other)
+
+	def __ge__(self,other) :
+		if _isiterable(other) :
+			return [ self >= x for x in other ]
+		if not isinstance(other,type(self)) :
+			return self >= _SliceAffine(other)
+		return self._get_cap(other-self)
+
+	def __add__(self,other):
+		return super(_SliceAffine,self).__add__(_SliceAffine(other)) #add of superclass
+
+	def __str__(self):
+		return ' + '.join( str(SL) if self[SL] == 1 else '%s*%s'%(str(self[SL]),str(SL)) for SL in self )
+
+	def __repr__(self):
+		return self.__str__()
+
+	def __hash__(self):
+		return self.__repr__().__hash__()
 
 
-
-class CapacityDiffLow(_Capacity):
+class Capacity(_Constraint):
 	"""
-	A lower bound on the number of on/off-switches for the capacity
+	A capacity constraint
 	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __init__(self,SLA,bound):
+		self.SLA = SLA
+		self.bound = bound
 
+	def __str__(self):
+		return str(self.SLA) + ' <= ' + str(self.bound)
 
+	def __repr__(self):
+		return self.__str__()
 
-class CapacityUp(_Capacity):
-	"""
-	An upper capacity bound on one resource in an interval
-	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
-
-
-
-class CapacityDiffUp(_Capacity):
-	"""
-	An upper bound on the number of on/off-switches for the capacity
-	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __hash__(self):
+		return self.__repr__().__hash__()
