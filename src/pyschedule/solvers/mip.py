@@ -376,76 +376,102 @@ class DiscreteMIP(object):
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
 
-		# capacity upper and lower bounds
-		for C in S.capacity_up() + S.capacity_low():
-			R = C.resource
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end
-			else:
-				end = S.horizon
-			affine = [ (x[T,R,t-T.length+1], C.weight(T,t-T.length+1))
-					  for t in range(start,end)
-					  for T in self.task_groups
-					  if (T,R,t-T.length+1) in x
-					  and C.weight(T,t-T.length+1) ]
-			if not affine:
-				continue
-			# sum up (pulp doesnt do this)
-			affine_ = { a:0 for a,b in affine }
-			for a,b in affine:
-				affine_[a] += b
-			affine = [ (a,affine_[a]) for a in affine_ ]
-			if C in S.capacity_up():
-				sense = -1
-			else:
-				sense = 1
-			cons.append(mip.con(affine, sense=sense, rhs=C.bound))
+		#capacities
+		count = 0 #to distinguish variables
+		for C in S.capacity():
+			affines = list()
+			for SL in C.slices_sum():
+				R = SL.resource
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				affine = [ (x[T,R,t-T.length+1], SL.weight(T,t-T.length+1))
+						  for t in range(start,end)
+						  for T in self.task_groups
+						  if (T,R,t-T.length+1) in x
+						  and SL.weight(T,t-T.length+1) ]
+				if not affine:
+					continue
+				# sum up (pulp doesnt do this)
+				affine_ = { a:0 for a,b in affine }
+				for a,b in affine:
+					affine_[a] += b
+				affine = [ (a,affine_[a]) for a in affine_ ]
+				affines += affine
 
-		# capacity switch bounds
-		for count, C in enumerate(S.capacity_diff_up()):
-			R = C.resource
-
-			def get_diff_con(count,C,t,flip):
-				affine_1 = \
-					[ (x[T,R,t-T.length+1],flip*C.weight(T))
-					for T in self.task_groups
-					if (T,R,t-T.length+1) in x and C.weight(T) ]
-				affine_2 = \
-					[ (x[T,R,t+1],-flip*C.weight(T))
-					for T in self.task_groups
-					if (T,R,t+1) in x and C.weight(T) ]
-				if affine_1 and affine_2:
-					if ('switch_%i'%count,R,t) not in x:
-						x['switch_%i'%count,R,t] = mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
-					affine = affine_1 + affine_2 + [ (x['switch_%i'%count,R,t],1) ]
-					con = mip.con(affine, sense=1, rhs=0)
-					return con
-				return None
-
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end
-			else:
-				end = S.horizon
-			for t in range(start,end-1):
-				if C.kind == 'diff' or C.kind == 'diff_dec':
-					con = get_diff_con(count,C,t,-1)
-					if con is not None:
+			# max slices
+			for SL in C.slices_max():
+				R = SL.resource
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				affines_ = list()
+				for t in range(start,end):
+					for T in self.task_groups:
+						if (T,R,t-T.length+1) in x and SL.weight(T,t-T.length+1):
+							affine_ = [ (x[T,R,t-T.length+1], SL.weight(T,t-T.length+1)) ]
+							affines_.append(affine_)
+				if affines_:
+					x['cap_%i'%count,R] = mip.var(str(('cap_%i'%count,R)), 0, C.bound)
+					x_ = x['cap_%i'%count,R]
+					count += 1
+					affines += [ (x_,1) ]
+					for affine_ in affines_:
+						affine_ += [ (x_,-1) ]
+						con = mip.con(affine_, sense=-1, rhs=0)
 						cons.append(con)
-				if C.kind == 'diff' or C.kind == 'diff_inc':
-					con = get_diff_con(count,C,t,1)
-					if con is not None:
+
+			# diff slices
+			for SL in C.slices_diff():
+				R = SL.resource
+
+				def add_diff_con(count,SL,t,flip):
+					affine_1 = \
+						[ (x[T,R,t-T.length+1],flip*SL.weight(T))
+						for T in self.task_groups
+						if (T,R,t-T.length+1) in x and SL.weight(T) ]
+					affine_2 = \
+						[ (x[T,R,t+1],-flip*SL.weight(T))
+						for T in self.task_groups
+						if (T,R,t+1) in x and SL.weight(T) ]
+					if affine_1 and affine_2:
+						if ('cap_%i'%count,R,t) not in x:
+							x['cap_%i'%count,R,t] = mip.var(str(('cap_%i'%count,R, t)), 0, C.bound)
+						affine = affine_1 + affine_2 + [ (x['cap_%i'%count,R,t],1) ]
+						con = mip.con(affine, sense=1, rhs=0)
 						cons.append(con)
-			affine = [ (x['switch_%i'%count,R,t],1) for t in range(S.horizon) if ('switch_%i'%count,R,t) in x ]
-			if affine:
-				cons.append(mip.con(affine, sense=-1, rhs=C.bound))
+					return None
+
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				for t in range(start,end-1):
+					if SL.kind == 'diff' or SL.kind == 'diff_dec':
+						add_diff_con(count,SL,t,-1)
+					if SL.kind == 'diff' or SL.kind == 'diff_inc':
+						add_diff_con(count,SL,t,1)
+				affine = [ (x['cap_%i'%count,R,t],1) for t in range(S.horizon) if ('cap_%i'%count,R,t) in x ]
+				affines += affine
+				count += 1
+
+			if affines:
+				cons.append(mip.con(affines, sense=-1, rhs=C.bound))
+				#import pdb;pdb.set_trace()
 
 		def task2cost(T,t):
 			cost = 0

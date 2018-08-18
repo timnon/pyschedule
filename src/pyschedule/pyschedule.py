@@ -180,37 +180,37 @@ class _List(list):
 		return ( (T,other) for T in self )
 
 	def __lt__(self,other) :
-		return [ T < T_ for (T,T_) in self._pair(other) ]
+		return _List([ T < T_ for (T,T_) in self._pair(other) ])
 
 	def __gt__(self,other) :
-		return [ T > T_ for (T,T_) in self._pair(other) ]
+		return _List([ T > T_ for (T,T_) in self._pair(other) ])
 
 	def __le__(self,other) :
-		return [ T <= T_ for (T,T_) in self._pair(other) ]
+		return _List([ T <= T_ for (T,T_) in self._pair(other) ])
 
 	def __ge__(self,other) :
-		return [ T >= T_ for (T,T_) in self._pair(other) ]
+		return _List([ T >= T_ for (T,T_) in self._pair(other) ])
 
 	def __ne__(self,other) :
-		return [ T != T_ for (T,T_) in self._pair(other) ]
+		return _List([ T != T_ for (T,T_) in self._pair(other) ])
 
 	def __lshift__(self,other) :
-		return [ T << T_ for (T,T_) in self._pair(other) ]
+		return _List([ T << T_ for (T,T_) in self._pair(other) ])
 
 	def __rshift__(self,other) :
-		return [ T >> T_ for (T,T_) in self._pair(other) ]
+		return _List([ T >> T_ for (T,T_) in self._pair(other) ])
 
 	def __add__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair(other) ]
+		return _List([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __sub__(self,other) :
-		return [ T - T_ for (T,T_) in self._pair(other) ]
+		return _List([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __radd__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair(other) ]
+		return _List([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __rsub__(self,other) :
-		return [ T - T_ for (T,T_) in self._pair(other) ]
+		return _List([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __iadd__(self,other):
 		return _List([ T.__iadd__(T_) for (T,T_) in self._pair(other) ])
@@ -220,8 +220,8 @@ class _List(list):
 
 	def __mul__(self,other) :
 		if not _isiterable(other) and not isinstance(other,_ResourceAffine):
-			return [ T*T_ for (T,T_) in self._pair(other) ]
-		return [ [ T*T_ for T_ in other ] for T in self ]
+			return _List([ T*T_ for (T,T_) in self._pair(other) ])
+		return _List([ _List([ T*T_ for T_ in other ]) for T in self ])
 
 	def __imul__(self,other):
 		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
@@ -1041,6 +1041,35 @@ class _ResourceAffine(_SchedElementAffine):
 		return self.__repr__().__hash__()
 
 
+class _Slices(_List):
+	def __init__(self):
+		pass
+
+	@property
+	def max(self):
+		for SL in self:
+			SL.kind = 'max'
+		return self
+
+	@property
+	def diff(self):
+		for SL in self:
+			SL.kind = 'diff'
+		return self
+
+	@property
+	def dec(self):
+		for SL in self:
+			SL.kind = 'diff_dec'
+		return self
+
+	@property
+	def inc(self):
+		for SL in self:
+			SL.kind = 'diff_inc'
+		return self
+
+
 class _Slice(_SchedElement):
 	def __init__(self,resource):
 		_SchedElement.__init__(self)
@@ -1063,18 +1092,18 @@ class _Slice(_SchedElement):
 				self._start = key.start
 				self._end = key.stop
 				return self
-			l = _List()
+			slices = _Slices()
+			start = self._start
+			end = self._end
 			for _start in range(key.start,key.stop-key.step+1):
 				# create copy with adjusted start and stop
-				C_ = _Capacity(resource=self.resource)
-				C_._param = self._param
-				C_.bound = self.bound
-				C_.comp_operator = self.comp_operator
-				C_.kind = self.kind
-				C_._start = _start
-				C_._end = _start+key.step
-				l.append(C_)
-			return l
+				SL_ = _Slice(resource=self.resource)
+				SL_._param = self._param
+				SL_.kind = self.kind
+				SL_._start = _start
+				SL_._end = _start+key.step
+				slices.append(SL_)
+			return slices
 
 	def weight(self,T,t=None):
 		"""
@@ -1098,6 +1127,11 @@ class _Slice(_SchedElement):
 			return 0
 		w *= float(overlap)/float(T.length)
 		return w
+
+	@property
+	def max(self):
+		self.kind = 'max'
+		return self
 
 	@property
 	def diff(self):
@@ -1149,7 +1183,12 @@ class _Slice(_SchedElement):
 			operator = '.inc'
 		elif self.kind == 'diff_dec':
 			operator = '.dec'
-		s = '%s[\'%s\']%s%s' % (str(self.resource),str(param),slice,operator)
+		elif self.kind == 'max':
+			operator = '.max'
+		param_str = ''
+		#if param != 'length': #lenght is default
+		param_str = '[\'%s\']'%str(param)
+		s = '%s%s%s%s' % (str(self.resource),param_str,slice,operator)
 		return s
 
 	def __repr__(self):
@@ -1207,6 +1246,22 @@ class Capacity(_Constraint):
 	def __init__(self,SLA,bound):
 		self.SLA = SLA
 		self.bound = bound
+
+	def slices(self,kind=None):
+		if kind is None:
+			return self.SLA
+		return [ SL for SL in self.SLA if SL.kind == kind ]
+
+	def slices_sum(self):
+		return self.slices(kind='sum')
+
+	def slices_diff(self):
+		return self.slices(kind='diff')+\
+			   self.slices(kind='diff_dec')+\
+			   self.slices(kind='diff_inc')
+
+	def slices_max(self):
+		return self.slices(kind='max')
 
 	def __str__(self):
 		return str(self.SLA) + ' <= ' + str(self.bound)
