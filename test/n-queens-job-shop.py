@@ -1,6 +1,6 @@
 #! /usr/bin/python
 import sys
-sys.path.append('../src')
+sys.path += ['../src','src']
 import pyschedule
 
 # get input size
@@ -18,7 +18,8 @@ for j in range(n):
 	for i in range(n):
 		T[(i+j) % n,j] += R[i]
 
-if pyschedule.solvers.mip.solve(S,msg=1,kind='CBC'):
-	pyschedule.plotters.matplotlib.plot(S,color_prec_groups=False)
+if pyschedule.solvers.mip.solve(S,msg=0,kind='CBC'):
+	print(S.solution())
+	#pyschedule.plotters.matplotlib.plot(S,color_prec_groups=False)
 else:
 	print('no solution found')
