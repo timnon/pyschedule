@@ -89,11 +89,15 @@ class _SchedElement(object):
 class _SchedElementAffine(object) :
 	def __init__(self,unknown=None,affine_operator='+') :
 		self.map = _DICT_TYPE()
+		self.map_obj = _DICT_TYPE()
 		self.affine_operator = affine_operator
 		if isinstance(unknown,type(self)) :
 			self.map.update(unknown.map)
+			self.map_obj.update(unknown.map)
 		else:
 			self.map[unknown] = 1
+			self.map_obj[unknown] = None
+
 		'''
 		elif isinstance(unknown,list) :
 			self.map.update(_DICT_TYPE(unknown))
@@ -106,9 +110,11 @@ class _SchedElementAffine(object) :
 
 	def __setitem__(self,key,value):
 		self.map[key] = value
+		self.map_obj[key] = None
 
 	def __delitem__(self,key):
 		self.map.__delitem__(key)
+		self.map_obj.__delitem__(key)
 
 	def __iter__(self):
 		return self.map.__iter__()
@@ -118,17 +124,19 @@ class _SchedElementAffine(object) :
 
 	def __add__(self,other):
 		if isinstance(other,type(self)) :
-			new = type(self)(self)
+			new = self.copy()
 			for key in other :
 				new[key] = other[key]
+				new.map_obj[key] = other.map_obj[key]
 			return new
 		return self + type(self)(other)
 
 	def __sub__(self,other) :
 		if isinstance(other,type(self)) :
-			new = type(self)(self)
+			new = self.copy()
 			for key in other :
 				new[key] = -other[key]
+				new.map_obj[key] = other.map_obj[key]
 			return new
 		return self - type(self)(other)
 
@@ -144,23 +152,44 @@ class _SchedElementAffine(object) :
 		return self
 
 	def __mul__(self,other):
+		new = copy.copy(self)
+		for key in new.map:
+			if _isnumeric(other):
+				new.map[key] = other
+			else:
+				new.map_obj[key] = other
+		return new
+
+	def copy(self):
+		'''
+		Create a copy with new maps but the original objects in maps
+		'''
 		new = type(self)(self)
-		for key in self.map:
-			new.map[key] = other
+		new.affine_operator = self.affine_operator
+		for key in self:
+			new[key] = self[key]
+		for key in self.map_obj:
+			new.map_obj[key] = self.map_obj[key]
 		return new
 
 	def __str__(self) :
-		def format_coeff(val) :
-			if val != 1 :
-				return '*'+str(val)
+		def format_coeff(key) :
+			if self[key] != 1 :
+				return '*'+str(self[key])
 			return ''
-		return self.affine_operator.join([ str(key)+format_coeff(self[key]) for key in self ])
+		def format_obj(key):
+			if key in self.map_obj and self.map_obj[key] is not None:
+				return '*'+str(self.map_obj[key])
+			return ''
+		return self.affine_operator.join([ str(key)+format_obj(key)+format_coeff(key) for key in self ])
 
 	def __repr__(self):
 		return self.__str__()
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
+
+
 
 
 
@@ -776,6 +805,7 @@ class _TaskAffine(_SchedElementAffine) :
 		if len(neg_tasks) > 1 or len(pos_tasks) > 1 or len(offsets) > 1 :
 			raise Exception('ERROR: can only deal with simple precedences of \
 									the form T1 + 3 < T2 or T1 < 3 and not %s'%str(TA) )
+
 		# get offset
 		offset = 0
 		if offsets:
@@ -783,12 +813,15 @@ class _TaskAffine(_SchedElementAffine) :
 		if pos_tasks and neg_tasks :
 			left = pos_tasks[0]
 			right = neg_tasks[0]
+			resource_left = TA.map_obj[left]
+			resource_right = TA.map_obj[right]
+
 			if comp_operator == '<' :
-				return PrecedenceLax(task_left=left,task_right=right,offset=offset)
+				return PrecedenceLax(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 			elif comp_operator == '<=' :
-				return PrecedenceTight(task_left=left,task_right=right,offset=offset)
+				return PrecedenceTight(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 			elif comp_operator == '<<' :
-				return PrecedenceCond(task_left=left,task_right=right,offset=offset)
+				return PrecedenceCond(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 		elif pos_tasks and not neg_tasks:
 			left = pos_tasks[0]
 			right = -offset
@@ -936,10 +969,12 @@ class _Precedence(_Constraint) :
 	"""
 	A precedence constraint of two tasks, left and right, and an offset.
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
 		_Constraint.__init__(self)
 		self.task_left = task_left
+		self.resource_left = resource_left
 		self.task_right = task_right
+		self.resource_right = resource_right
 		self.offset = offset
 		self.comp_operator = '<'
 
@@ -947,10 +982,15 @@ class _Precedence(_Constraint) :
 		return [self.task_left,self.task_right]
 
 	def __repr__(self) :
-		s = str(self.task_left) + ' '
+		s = str(self.task_left)
+		if self.resource_left is not None:
+			s += '*'+str(self.resource_left)
+		s += ' '
 		if self.offset > 0 :
 			s += '+ ' + str(self.offset) + ' '
 		s += str(self.comp_operator) + ' ' + str(self.task_right)
+		if self.resource_right is not None:
+			s += '*'+str(self.resource_right)
 		if self.offset < 0 :
 			s += ' + ' + str(-self.offset) + ' '
 		return s
@@ -967,8 +1007,8 @@ class PrecedenceLax(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 < T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<'
 
 
@@ -977,18 +1017,18 @@ class PrecedenceTight(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 <= T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<='
 
 
 
 class PrecedenceCond(_Precedence) :
 	"""
-	A precedence of the form T1 + 3 <= T2
+	A precedence of the form T1 + 3 << T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<<'
 
 
@@ -1005,6 +1045,9 @@ class Resource(_SchedElement) :
 		self.cost_per_period = cost_per_period
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
+		#helper attribute to allow _TaskAffine with Resource with negative coefficients
+		#this is required for e.g. T0 <= T1*R
+		self._coeff = 1
 
 	def __mul__(self,other) :
 		return _ResourceAffine(self).__mul__(other)
@@ -1204,7 +1247,7 @@ class _SliceAffine(_SchedElementAffine):
 		_SchedElementAffine.__init__(self,unknown=unknown,affine_operator='+')
 
 	def _get_cap(self,SLA):
-		SLA_ = copy.copy(SLA)
+		SLA_ = SLA.copy()
 		offset = 0
 		for SL in SLA:
 			if _isnumeric(SL):
