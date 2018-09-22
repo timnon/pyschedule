@@ -114,11 +114,12 @@ def TIGHTPLUS() :
 	sols = ['[(T2, R1, 0, 1), (T1, R1, 2, 3)]']
 	return S,sols
 
-def COND() :
+def LAXRES() :
 	S = two_task_scenario()
 	S['T1'] += S['R1']
 	S['T2'] += S['R1']
-	S += S['T1'] + 2 << S['T2']
+	P = S['T1'] + 2 < S['T2']*S['R2']
+	S += P
 	sols = ['[(T1, R1, 0, 1), (T2, R1, 3, 4)]']
 	return S,sols
 
@@ -190,6 +191,16 @@ def CAPDIFFSLICE():
 	sols = ['[(T1, R1, 3, 4), (T2, R1, 4, 5)]']
 	return S,sols
 
+def CAPMAX():
+	S = two_task_scenario()
+	S['T1'] += S['R1']
+	S['T2'] += S['R2']
+	S.clear_objective()
+	S += S['T1']*2 + S['T2']
+	S += S['R1']['length'][:1].max + S['R2']['length'][:1].max <= 1
+	sols = ['[(T1, R1, 0, 1), (T2, R2, 1, 2)]']
+	return S,sols
+
 def SCHEDULECOST():
 	S = two_task_scenario()
 	S['T1'] += S['R1']
@@ -231,7 +242,7 @@ LAX,
 LAXPLUS,
 TIGHT,
 TIGHTPLUS,
-COND,
+LAXRES,
 ALT,
 MULT,
 TASKSREQ,
@@ -240,11 +251,12 @@ CAP,
 CAPSLICE,
 CAPDIFF,
 CAPDIFFSLICE,
+CAPMAX,
 SCHEDULECOST,
 PERIODS
 ]
 
-#scenario_methods = [COSTPERPERIOD]
+#scenario_methods = [TIGHT]
 
 solve_method_names = collections.OrderedDict([ ('%s.%s' % (solve_method.__module__,solve_method.__name__),solve_method)
                                              for solve_method in solve_methods ])

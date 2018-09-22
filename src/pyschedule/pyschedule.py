@@ -89,11 +89,17 @@ class _SchedElement(object):
 class _SchedElementAffine(object) :
 	def __init__(self,unknown=None,affine_operator='+') :
 		self.map = _DICT_TYPE()
+		# map_obj is for the case that the coefficient is e.g. a resource with a coefficient
+		# then the resource will be saved in map_obj
+		self.map_obj = _DICT_TYPE()
 		self.affine_operator = affine_operator
 		if isinstance(unknown,type(self)) :
 			self.map.update(unknown.map)
+			self.map_obj.update(unknown.map)
 		else:
 			self.map[unknown] = 1
+			self.map_obj[unknown] = None
+
 		'''
 		elif isinstance(unknown,list) :
 			self.map.update(_DICT_TYPE(unknown))
@@ -106,6 +112,11 @@ class _SchedElementAffine(object) :
 
 	def __setitem__(self,key,value):
 		self.map[key] = value
+		self.map_obj[key] = None
+
+	def __delitem__(self,key):
+		self.map.__delitem__(key)
+		self.map_obj.__delitem__(key)
 
 	def __iter__(self):
 		return self.map.__iter__()
@@ -115,17 +126,19 @@ class _SchedElementAffine(object) :
 
 	def __add__(self,other):
 		if isinstance(other,type(self)) :
-			new = type(self)(self)
+			new = self.copy()
 			for key in other :
 				new[key] = other[key]
+				new.map_obj[key] = other.map_obj[key]
 			return new
 		return self + type(self)(other)
 
 	def __sub__(self,other) :
 		if isinstance(other,type(self)) :
-			new = type(self)(self)
+			new = self.copy()
 			for key in other :
 				new[key] = -other[key]
+				new.map_obj[key] = other.map_obj[key]
 			return new
 		return self - type(self)(other)
 
@@ -141,23 +154,44 @@ class _SchedElementAffine(object) :
 		return self
 
 	def __mul__(self,other):
+		new = copy.copy(self)
+		for key in new.map:
+			if _isnumeric(other):
+				new.map[key] = other
+			else:
+				new.map_obj[key] = other
+		return new
+
+	def copy(self):
+		'''
+		Create a copy with new maps but the original objects in maps
+		'''
 		new = type(self)(self)
-		for key in self.map:
-			new.map[key] = other
+		new.affine_operator = self.affine_operator
+		for key in self:
+			new[key] = self[key]
+		for key in self.map_obj:
+			new.map_obj[key] = self.map_obj[key]
 		return new
 
 	def __str__(self) :
-		def format_coeff(val) :
-			if val != 1 :
-				return '*'+str(val)
+		def format_coeff(key) :
+			if self[key] != 1 :
+				return '*'+str(self[key])
 			return ''
-		return self.affine_operator.join([ str(key)+format_coeff(self[key]) for key in self ])
+		def format_obj(key):
+			if key in self.map_obj and self.map_obj[key] is not None:
+				return '*'+str(self.map_obj[key])
+			return ''
+		return self.affine_operator.join([ str(key)+format_obj(key)+format_coeff(key) for key in self ])
 
 	def __repr__(self):
 		return self.__str__()
 
 	def __hash__(self) :
 		return self.__repr__().__hash__()
+
+
 
 
 
@@ -177,37 +211,37 @@ class _List(list):
 		return ( (T,other) for T in self )
 
 	def __lt__(self,other) :
-		return [ T < T_ for (T,T_) in self._pair(other) ]
+		return _List([ T < T_ for (T,T_) in self._pair(other) ])
 
 	def __gt__(self,other) :
-		return [ T > T_ for (T,T_) in self._pair(other) ]
+		return _List([ T > T_ for (T,T_) in self._pair(other) ])
 
 	def __le__(self,other) :
-		return [ T <= T_ for (T,T_) in self._pair(other) ]
+		return _List([ T <= T_ for (T,T_) in self._pair(other) ])
 
 	def __ge__(self,other) :
-		return [ T >= T_ for (T,T_) in self._pair(other) ]
+		return _List([ T >= T_ for (T,T_) in self._pair(other) ])
 
 	def __ne__(self,other) :
-		return [ T != T_ for (T,T_) in self._pair(other) ]
+		return _List([ T != T_ for (T,T_) in self._pair(other) ])
 
 	def __lshift__(self,other) :
-		return [ T << T_ for (T,T_) in self._pair(other) ]
+		return _List([ T << T_ for (T,T_) in self._pair(other) ])
 
 	def __rshift__(self,other) :
-		return [ T >> T_ for (T,T_) in self._pair(other) ]
+		return _List([ T >> T_ for (T,T_) in self._pair(other) ])
 
 	def __add__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair(other) ]
+		return _List([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __sub__(self,other) :
-		return [ T - T_ for (T,T_) in self._pair(other) ]
+		return _List([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __radd__(self,other) :
-		return [ T + T_ for (T,T_) in self._pair(other) ]
+		return _List([ T + T_ for (T,T_) in self._pair(other) ])
 
 	def __rsub__(self,other) :
-		return [ T - T_ for (T,T_) in self._pair(other) ]
+		return _List([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __iadd__(self,other):
 		return _List([ T.__iadd__(T_) for (T,T_) in self._pair(other) ])
@@ -217,8 +251,8 @@ class _List(list):
 
 	def __mul__(self,other) :
 		if not _isiterable(other) and not isinstance(other,_ResourceAffine):
-			return [ T*T_ for (T,T_) in self._pair(other) ]
-		return [ [ T*T_ for T_ in other ] for T in self ]
+			return _List([ T*T_ for (T,T_) in self._pair(other) ])
+		return _List([ _List([ T*T_ for T_ in other ]) for T in self ])
 
 	def __imul__(self,other):
 		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
@@ -423,17 +457,8 @@ class Scenario(_SchedElement):
 	def bounds_up_tight(self) :
 		return self.constraints(BoundUpTight)
 
-	def capacity_low(self):
-		return self.constraints(CapacityLow)
-
-	def capacity_up(self):
-		return self.constraints(CapacityUp)
-
-	def capacity_diff_up(self):
-		return self.constraints(CapacityDiffUp)
-
-	def capacity_diff_low(self):
-		return self.constraints(CapacityDiffLow)
+	def capacity(self):
+		return self.constraints(Capacity)
 
 	def add_constraint(self,constraint):
 		for task in constraint.tasks():
@@ -600,10 +625,7 @@ class Scenario(_SchedElement):
 		s += print_constraint('UPPER BOUNDS',self.bounds_up())
 		s += print_constraint('TIGHT LOWER BOUNDS',self.bounds_low_tight())
 		s += print_constraint('TIGHT UPPER BOUNDS',self.bounds_up_tight())
-		s += print_constraint('CAPACITY LOWER BOUNDS',self.capacity_low())
-		s += print_constraint('CAPACITY UPPER BOUNDS',self.capacity_up())
-		s += print_constraint('CAPACITY DIFF LOWER BOUNDS',self.capacity_diff_low())
-		s += print_constraint('CAPACITY DIFF UPPER BOUNDS',self.capacity_diff_up())
+		s += print_constraint('CAPACITY BOUNDS',self.capacity())
 		s += '###############################################'
 		return s
 
@@ -785,6 +807,7 @@ class _TaskAffine(_SchedElementAffine) :
 		if len(neg_tasks) > 1 or len(pos_tasks) > 1 or len(offsets) > 1 :
 			raise Exception('ERROR: can only deal with simple precedences of \
 									the form T1 + 3 < T2 or T1 < 3 and not %s'%str(TA) )
+
 		# get offset
 		offset = 0
 		if offsets:
@@ -792,12 +815,15 @@ class _TaskAffine(_SchedElementAffine) :
 		if pos_tasks and neg_tasks :
 			left = pos_tasks[0]
 			right = neg_tasks[0]
+			resource_left = TA.map_obj[left]
+			resource_right = TA.map_obj[right]
+
 			if comp_operator == '<' :
-				return PrecedenceLax(task_left=left,task_right=right,offset=offset)
+				return PrecedenceLax(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 			elif comp_operator == '<=' :
-				return PrecedenceTight(task_left=left,task_right=right,offset=offset)
+				return PrecedenceTight(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 			elif comp_operator == '<<' :
-				return PrecedenceCond(task_left=left,task_right=right,offset=offset)
+				return PrecedenceCond(task_left=left,resource_left=resource_left,task_right=right,resource_right=resource_right,offset=offset)
 		elif pos_tasks and not neg_tasks:
 			left = pos_tasks[0]
 			right = -offset
@@ -945,10 +971,12 @@ class _Precedence(_Constraint) :
 	"""
 	A precedence constraint of two tasks, left and right, and an offset.
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
 		_Constraint.__init__(self)
 		self.task_left = task_left
+		self.resource_left = resource_left
 		self.task_right = task_right
+		self.resource_right = resource_right
 		self.offset = offset
 		self.comp_operator = '<'
 
@@ -956,10 +984,15 @@ class _Precedence(_Constraint) :
 		return [self.task_left,self.task_right]
 
 	def __repr__(self) :
-		s = str(self.task_left) + ' '
+		s = str(self.task_left)
+		if self.resource_left is not None:
+			s += '*'+str(self.resource_left)
+		s += ' '
 		if self.offset > 0 :
 			s += '+ ' + str(self.offset) + ' '
 		s += str(self.comp_operator) + ' ' + str(self.task_right)
+		if self.resource_right is not None:
+			s += '*'+str(self.resource_right)
 		if self.offset < 0 :
 			s += ' + ' + str(-self.offset) + ' '
 		return s
@@ -976,8 +1009,8 @@ class PrecedenceLax(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 < T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<'
 
 
@@ -986,18 +1019,18 @@ class PrecedenceTight(_Precedence) :
 	"""
 	A precedence of the form T1 + 3 <= T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<='
 
 
 
 class PrecedenceCond(_Precedence) :
 	"""
-	A precedence of the form T1 + 3 <= T2
+	A precedence of the form T1 + 3 << T2
 	"""
-	def __init__(self,task_left,task_right,offset=0) :
-		_Precedence.__init__(self,task_left,task_right,offset)
+	def __init__(self,task_left,resource_left,task_right,resource_right,offset=0) :
+		_Precedence.__init__(self,task_left,resource_left,task_right,resource_right,offset)
 		self.comp_operator = '<<'
 
 
@@ -1014,6 +1047,9 @@ class Resource(_SchedElement) :
 		self.cost_per_period = cost_per_period
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])
+		#helper attribute to allow _TaskAffine with Resource with negative coefficients
+		#this is required for e.g. T0 <= T1*R
+		self._coeff = 1
 
 	def __mul__(self,other) :
 		return _ResourceAffine(self).__mul__(other)
@@ -1022,14 +1058,14 @@ class Resource(_SchedElement) :
 		return _ResourceAffine(self) | other
 
 	def __getitem__(self, key):
-		C = _Capacity(resource=self)
-		return C[key]
+		SL = _Slice(resource=self)
+		return SL[key]
 
 	def __le__(self,other):
-		return _Capacity(resource=self) <= other
+		return _Slice(resource=self) <= other
 
 	def __ge__(self,other):
-		return _Capacity(resource=self) >= other
+		return _Slice(resource=self) >= other
 
 
 
@@ -1050,36 +1086,43 @@ class _ResourceAffine(_SchedElementAffine):
 		return self.__repr__().__hash__()
 
 
-class _Capacity(_Constraint):
+class _Slices(_List):
+	def __init__(self):
+		pass
+
+	@property
+	def max(self):
+		for SL in self:
+			SL.kind = 'max'
+		return self
+
+	@property
+	def diff(self):
+		for SL in self:
+			SL.kind = 'diff'
+		return self
+
+	@property
+	def dec(self):
+		for SL in self:
+			SL.kind = 'diff_dec'
+		return self
+
+	@property
+	def inc(self):
+		for SL in self:
+			SL.kind = 'diff_inc'
+		return self
+
+
+class _Slice(_SchedElement):
 	def __init__(self,resource):
-		_Constraint.__init__(self)
+		_SchedElement.__init__(self)
 		self.resource = resource
 		self._param = 'length'
 		self._start = None
 		self._end = None
-		self.bound = None
-		self.comp_operator = None
 		self.kind = 'sum'
-
-	def __ge__(self, other):
-		if not _isnumeric(other):
-			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
-		self.__class__ = CapacityLow
-		if 'diff' in self.kind:
-			self.__class__ = CapacityDiffLow
-		self.comp_operator = '>='
-		self.bound = other
-		return self
-
-	def __le__(self, other):
-		if not _isnumeric(other):
-			raise Exception('ERROR: %s is not an integer, only integers are allowed'%str(other))
-		self.__class__ = CapacityUp
-		if 'diff' in self.kind:
-			self.__class__ = CapacityDiffUp
-		self.comp_operator = '<='
-		self.bound = other
-		return self
 
 	def __getitem__(self,key):
 		if isinstance(key,str):
@@ -1094,18 +1137,18 @@ class _Capacity(_Constraint):
 				self._start = key.start
 				self._end = key.stop
 				return self
-			l = _List()
+			slices = _Slices()
+			start = self._start
+			end = self._end
 			for _start in range(key.start,key.stop-key.step+1):
 				# create copy with adjusted start and stop
-				C_ = _Capacity(resource=self.resource)
-				C_._param = self._param
-				C_.bound = self.bound
-				C_.comp_operator = self.comp_operator
-				C_.kind = self.kind
-				C_._start = _start
-				C_._end = _start+key.step
-				l.append(C_)
-			return l
+				SL_ = _Slice(resource=self.resource)
+				SL_._param = self._param
+				SL_.kind = self.kind
+				SL_._start = _start
+				SL_._end = _start+key.step
+				slices.append(SL_)
+			return slices
 
 	def weight(self,T,t=None):
 		"""
@@ -1131,6 +1174,11 @@ class _Capacity(_Constraint):
 		return w
 
 	@property
+	def max(self):
+		self.kind = 'max'
+		return self
+
+	@property
 	def diff(self):
 		self.kind = 'diff'
 		return self
@@ -1144,6 +1192,21 @@ class _Capacity(_Constraint):
 	def inc(self):
 		self.kind = 'diff_inc'
 		return self
+
+	def __mul__(self,other) :
+		return _SliceAffine(self).__mul__(other)
+
+	def __add__(self,other) :
+		return _SliceAffine(self) + other
+
+	def __sub__(self,other) :
+		return _SliceAffine(self) - other
+
+	def __le__(self,other) :
+		return _SliceAffine(self) <= other
+
+	def __ge__(self,other) :
+		return _SliceAffine(self) >= other
 
 	def __str__(self):
 		param = self._param
@@ -1160,14 +1223,17 @@ class _Capacity(_Constraint):
 			slice += ']'
 		operator = ''
 		if self.kind == 'diff':
-			operator = '.diff()'
+			operator = '.diff'
 		elif self.kind == 'diff_inc':
-			operator = '.inc()'
+			operator = '.inc'
 		elif self.kind == 'diff_dec':
-			operator = '.dec()'
-		s = '%s[\'%s\']%s%s' % (str(self.resource),str(param),slice,operator)
-		if self.comp_operator is not None:
-			s += ' %s %s'%(str(self.comp_operator),str(self.bound))
+			operator = '.dec'
+		elif self.kind == 'max':
+			operator = '.max'
+		param_str = ''
+		#if param != 'length': #lenght is default
+		param_str = '[\'%s\']'%str(param)
+		s = '%s%s%s%s' % (str(self.resource),param_str,slice,operator)
 		return s
 
 	def __repr__(self):
@@ -1175,36 +1241,79 @@ class _Capacity(_Constraint):
 
 
 
-class CapacityLow(_Capacity):
+class _SliceAffine(_SchedElementAffine):
 	"""
-	A lower capacity bound on one resource in an interval
+	linear combination of resource slices to be turned into a capacity contraint
 	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __init__(self,unknown=None):
+		_SchedElementAffine.__init__(self,unknown=unknown,affine_operator='+')
+
+	def _get_cap(self,SLA):
+		SLA_ = SLA.copy()
+		# sum up offset
+		offset = 0
+		for SL in SLA:
+			if _isnumeric(SL):
+				offset -= SL*SLA[SL]
+				del SLA_[SL]
+		return Capacity(SLA=SLA_,bound=offset)
+
+	def __le__(self,other):
+		if _isiterable(other):
+			return [ self <= x for x in other ]
+		if not isinstance(other,type(self)):
+			return self <= _SliceAffine(other)
+		return self._get_cap(self-other)
+
+	def __ge__(self,other) :
+		if _isiterable(other) :
+			return [ self >= x for x in other ]
+		if not isinstance(other,type(self)) :
+			return self >= _SliceAffine(other)
+		return self._get_cap(other-self)
+
+	def __add__(self,other):
+		return super(_SliceAffine,self).__add__(_SliceAffine(other)) #add of superclass
+
+	def __str__(self):
+		return ' + '.join( str(SL) if self[SL] == 1 else '%s*%s'%(str(self[SL]),str(SL)) for SL in self )
+
+	def __repr__(self):
+		return self.__str__()
+
+	def __hash__(self):
+		return self.__repr__().__hash__()
 
 
-
-class CapacityDiffLow(_Capacity):
+class Capacity(_Constraint):
 	"""
-	A lower bound on the number of on/off-switches for the capacity
+	A capacity constraint
 	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __init__(self,SLA,bound):
+		self.SLA = SLA
+		self.bound = bound
 
+	def slices(self,kind=None):
+		if kind is None:
+			return self.SLA
+		return [ SL for SL in self.SLA if SL.kind == kind ]
 
+	def slices_sum(self):
+		return self.slices(kind='sum')
 
-class CapacityUp(_Capacity):
-	"""
-	An upper capacity bound on one resource in an interval
-	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def slices_diff(self):
+		return self.slices(kind='diff')+\
+			   self.slices(kind='diff_dec')+\
+			   self.slices(kind='diff_inc')
 
+	def slices_max(self):
+		return self.slices(kind='max')
 
+	def __str__(self):
+		return str(self.SLA) + ' <= ' + str(self.bound)
 
-class CapacityDiffUp(_Capacity):
-	"""
-	An upper bound on the number of on/off-switches for the capacity
-	"""
-	def __init__(self,resource):
-		_Capacity.__init__(self,resource)
+	def __repr__(self):
+		return self.__str__()
+
+	def __hash__(self):
+		return self.__repr__().__hash__()

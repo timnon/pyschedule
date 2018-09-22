@@ -24,7 +24,7 @@ pyschedule tries to gain the best of two worlds by supporting classical MIP-mode
 - **mip.solve(scenario,kind) :** time-indexed MIP-formulation build on top of package [pulp](https://github.com/coin-or/pulp). Use parameter "kind" to select the MIP-solver ("CBC" (default if kind is not provided), "CPLEX", "GLPK", "SCIP", "GUROBI"). CBC is part of pulp and hence works out of the box. For CBC, CPLEX, SCIP and GUROBI you can pass parameters "time_limit" or "ratio_gap" (only CBC and SCIP) to limit the running time and receive suboptimal solutions.
 - **mip_bigm.solve(scenario,kind) :** classical bigM-type MIP-formulation, works for small models.
 
-There are some more solvers not based on MIPs, but they are not supported that well yet:
+There are some more solvers not based on MIPs, but they are not supported that well, so please dont use yet (volunteers welcome!):
 
 - **ortools.solve(scenario) :** the open source CP-solver of Google, a little restricted but good to ensure feasibility of larger models. Make sure that package [ortools](https://github.com/google/or-tools) is installed.
 - **cpoptimizer.solve(scenario) :** [IBM CP Optimizer](http://www-01.ibm.com/software/commerce/optimization/cplex-cp-optimizer/), requires command "oplrun" to be executable. Industrial-scale solver that runs fast on very large problems.
@@ -65,6 +65,7 @@ each task needs at least one resource. To keep the syntax concise, pyschedule us
 - **CAPSLICE :** capacities, e.g. `R1['length'][:10] <= 4`, the sum of the lengths of the tasks assigned to R1 during periods 0 to 9 must be at most 4. In case a task starts before period 9 and ends after period 9, the capacity requirement of this task is proportional to the overlap
 - **CAPDIFF :** change in capacity over time like a derivate, e.g. `R1['length'].diff <= 4`, the number of times resource R switches from running to not running or vice versa is at most 4. We can also use other parameters than length, e.g. first set `T1.work = 3` and then `R1['work'].diff <= 4`.
 - **CAPDIFFSLICE :** change of capacity over time in slice, e.g. `R1['length'][:10].diff <= 4`, the number of times resource R switches from running to not running or vice versa in periods 0 to 9 is at most 4.
+- **CAPMAX :** maximum capacity at any time, e.g. `R1['length'][:10].max <= 2`, only tasks with length at most 2 are allowed in periods 0 to 9.
 - **SCHEDULECOST :** if schedule_cost is set, e.g. `T1.schedule_cost = 1`, then this task is optional, but the schedule_cost will be added from the objective. This is for situations where not all tasks can be scheduled, and hence the most valuable ones with the lowest schedule_cost should be selected. Note that the schedule_cost can also be negative.
 - **PERIODS :** restrict the periods of a resource or a task by setting the periods parameter, e.g. `R.periods = [1,2,3]` or `T.periods = [2,5,6]`. This can also be combined
 
@@ -78,11 +79,9 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th></th>
       <th>mip.solve</th>
       <th>mip_bigm.solve</th>
-      <th>ortools.solve</th>
     </tr>
     <tr>
       <th>scenario</th>
-      <th></th>
       <th></th>
       <th></th>
     </tr>
@@ -92,11 +91,9 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>ZERO</th>
       <td>X</td>
       <td>X</td>
-      <td>X</td>
     </tr>
     <tr>
       <th>NONUNIT</th>
-      <td>X</td>
       <td>X</td>
       <td>X</td>
     </tr>
@@ -104,11 +101,9 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>BOUND</th>
       <td>X</td>
       <td>X</td>
-      <td>X</td>
     </tr>
     <tr>
       <th>BOUNDTIGHT</th>
-      <td>X</td>
       <td>X</td>
       <td>X</td>
     </tr>
@@ -116,17 +111,14 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>LAX</th>
       <td>X</td>
       <td>X</td>
-      <td>X</td>
     </tr>
     <tr>
       <th>LAXPLUS</th>
       <td>X</td>
       <td>X</td>
-      <td></td>
     </tr>
     <tr>
       <th>TIGHT</th>
-      <td>X</td>
       <td>X</td>
       <td>X</td>
     </tr>
@@ -134,17 +126,14 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>TIGHTPLUS</th>
       <td>X</td>
       <td>X</td>
-      <td></td>
     </tr>
     <tr>
       <th>COND</th>
       <td>X</td>
       <td>X</td>
-      <td></td>
     </tr>
     <tr>
       <th>ALT</th>
-      <td>X</td>
       <td>X</td>
       <td>X</td>
     </tr>
@@ -152,11 +141,9 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>MULT</th>
       <td>X</td>
       <td>X</td>
-      <td>X</td>
     </tr>
     <tr>
       <th>TASKSREQ</th>
-      <td>X</td>
       <td>X</td>
       <td>X</td>
     </tr>
@@ -164,42 +151,40 @@ output of [test script](https://github.com/timnon/pyschedule/blob/master/example
       <th>CUMUL</th>
       <td>X</td>
       <td></td>
-      <td></td>
     </tr>
     <tr>
       <th>CAP</th>
       <td>X</td>
       <td>X</td>
-      <td></td>
     </tr>
     <tr>
       <th>CAPSLICE</th>
       <td>X</td>
-      <td></td>
       <td></td>
     </tr>
     <tr>
       <th>CAPDIFF</th>
       <td>X</td>
       <td></td>
-      <td></td>
     </tr>
     <tr>
       <th>CAPDIFFSLICE</th>
       <td>X</td>
       <td></td>
+    </tr>
+	<tr>
+      <th>CAPMAP</th>
+      <td>X</td>
       <td></td>
     </tr>
     <tr>
       <th>SCHEDULECOST</th>
       <td>X</td>
       <td></td>
-      <td></td>
     </tr>
 	<tr>
       <th>PERIODS</th>
       <td>X</td>
-      <td></td>
       <td></td>
     </tr>
   </tbody>

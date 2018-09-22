@@ -1,6 +1,7 @@
 #! /usr/bin/python
 from __future__ import absolute_import as _absolute_import
 from __future__ import print_function
+import copy
 
 '''
 Copyright 2015 Tim Nonner
@@ -143,7 +144,7 @@ class DiscreteMIP(object):
 					cons.append(mip.con(affine, sense=1, rhs=0))
 					continue
 				for T_ in TR:
-					R = TR[T_]
+					R = TR.map_obj[T_]
 					T_ = self.task_groups[T_][0]
 					if R not in S.resources():
 						continue
@@ -212,18 +213,48 @@ class DiscreteMIP(object):
 			#in the default case it is expected that the task groups have similar
 			#size, so the first task in the left task group must be scheduled before
 			#the first task in the right task group, and so on
-			if left_size == right_size:
-				for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
+
+			# make projection x_ on specified resource
+			x_ = copy.copy(x)
+			if P.resource_left is not None:
+				for t_ in range(self.horizon):
+					if (P.task_left,P.resource_left,t_) in x:
+						x_[P.task_left,t_] = x_[P.task_left,P.resource_left,t_]
+			if P.resource_right is not None:
+				for t_ in range(self.horizon):
+					if (P.task_right,P.resource_right,t_) in x:
+						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]
+
+			if left_size == right_size or min(left_size,right_size) > 1:
+				for t in range(self.horizon) :
 					affine = \
-						[ (x[P.task_left, t_],1)
-						for t_ in range(t,self.horizon)
-						if (P.task_left,t_) in x ] + \
-						[ (x[P.task_right, t_],-1)
-						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
+						[ (x_[P.task_left, t_],1)
+						for t_ in range(t)
+						if (P.task_left,t_) in x ]
+					affine += \
+						[ (x_[P.task_right, t_],-1)
+						for t_ in range(t+P.task_left.length+P.offset)
 						if (P.task_right,t_) in x ]
-					cons.append(mip.con(affine, sense=-1, rhs=0))
+					cons.append(mip.con(affine, sense=1, rhs=0))
 				if left_size == 1:
 					continue
+
+				# removed this because of projection
+				'''
+				if left_size == right_size:
+					for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
+						affine = \
+							[ (x_[P.task_left, t_],1)
+							for t_ in range(t,self.horizon)
+							if (P.task_left,t_) in x ] + \
+							[ (x_[P.task_right, t_],-1)
+							for t_ in range(t+P.task_left.length+P.offset,self.horizon)
+							if (P.task_right,t_) in x ]
+						cons.append(mip.con(affine, sense=-1, rhs=0))
+					if left_size == 1:
+						continue
+				'''
+
 				'''
 				# case of syncronous resources. Syncronous resource only work for
 				# task groups of similar size, so only this case needs to get covered
@@ -233,19 +264,21 @@ class DiscreteMIP(object):
 					for R in RA:
 						for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
 							affine = \
-								[(x[P.task_left, R, t_],1) for t_ in range(t,self.horizon)] + \
-								[(x[P.task_right, R, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
+								[(x_[P.task_left, R, t_],1) for t_ in range(t,self.horizon)] + \
+								[(x_[P.task_right, R, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
 							cons.append(mip.con(affine, sense=-1, rhs=0))
 				'''
 			#covers the case that the left or right task group has size one
 			#in which case this task should be scheduled before or after all tasks in the
 			#left task group, respectively
-			elif left_size == 1 or right_size == 1:
+			#elif left_size == 1 or right_size == 1:
+			else: #left_size == 1 or right_size == 1
 				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
 					affine = \
 						[ (x[P.task_left,t_],1/left_size)
 						for t_ in range(t,self.horizon)
-						if (P.task_left,t_) in x ] + \
+						if (P.task_left,t_) in x ]
+					affine += \
 						[ (x[P.task_right,t_],-1/right_size)
 						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
 						if (P.task_right,t_) in x ]
@@ -253,6 +286,7 @@ class DiscreteMIP(object):
 			#covers the cases that the task groups have different sizes != 1
 			#if the right task group is larger, then the  additonal tasks
 			#will have no contraints
+			'''
 			else:
 				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
 					affine = \
@@ -263,31 +297,42 @@ class DiscreteMIP(object):
 						for t_ in range(t)
 						if (P.task_right,t_) in x ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
+			'''
 
 		# tight precedence constraints
 		for P in S.precs_tight():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-			if P.offset >= 0:
-				for t in range(self.horizon):
-					affine = \
-						[ (x[P.task_left,t_],1)
-						for t_ in range(t,self.horizon)
-						if (P.task_left,t_) in x ] + \
-						[ (x[P.task_right,t_],-1)
-						for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)
-						if (P.task_right,t_) in x]
-					cons.append(mip.con(affine, sense=0, rhs=0))
-			elif P.offset < 0:
-				for t in range(self.horizon):
-					affine = \
-						[ (x[P.task_right,t_],1)
-						for t_ in range(t)
-						if (P.task_right,t_) in x ] + \
-						[ (x[P.task_left, t_],-1)
-						for t_ in range(min(t+P.task_right.length-P.offset,self.horizon))
-						if (P.task_left,t_) in x ]
-					cons.append(mip.con(affine, sense=0, rhs=0))
+
+			# create projection
+			x_ = copy.copy(x)
+			if P.resource_left is not None:
+				for t_ in range(self.horizon):
+					if (P.task_left,P.resource_left,t_) in x:
+						x_[P.task_left,t_] = x_[P.task_left,P.resource_left,t_]
+			if P.resource_right is not None:
+				for t_ in range(self.horizon):
+					if (P.task_right,P.resource_right,t_) in x:
+						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]
+
+			for t in range(self.horizon):
+				affine = []
+				if (P.task_left,t) in x:
+					affine += [ (x_[P.task_left,t],1) ]
+				if (P.task_right,t+P.task_left.length+P.offset) in x:
+					affine += [ (x_[P.task_right,t+P.task_left.length+P.offset],-1) ]
+				cons.append(mip.con(affine, sense=-1, rhs=0))
+				'''
+				affine = \
+					[ (x_[P.task_left,t_],1)
+					for t_ in range(t,self.horizon)
+					if (P.task_left,t_) in x ]
+				affine += [ (x_[P.task_right,t_],-1)
+					for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)
+					if (P.task_right,t_) in x]
+				cons.append(mip.con(affine, sense=0, rhs=0))
+				'''
+
 
 		# low bounds
 		for P in S.bounds_low():
@@ -376,76 +421,104 @@ class DiscreteMIP(object):
 				else:
 					print('ERROR: at least one task group in conditional precedence constraint should have size 1')
 
-		# capacity upper and lower bounds
-		for C in S.capacity_up() + S.capacity_low():
-			R = C.resource
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end
-			else:
-				end = S.horizon
-			affine = [ (x[T,R,t-T.length+1], C.weight(T,t-T.length+1))
-					  for t in range(start,end)
-					  for T in self.task_groups
-					  if (T,R,t-T.length+1) in x
-					  and C.weight(T,t-T.length+1) ]
-			if not affine:
-				continue
-			# sum up (pulp doesnt do this)
-			affine_ = { a:0 for a,b in affine }
-			for a,b in affine:
-				affine_[a] += b
-			affine = [ (a,affine_[a]) for a in affine_ ]
-			if C in S.capacity_up():
-				sense = -1
-			else:
-				sense = 1
-			cons.append(mip.con(affine, sense=sense, rhs=C.bound))
+		#capacities
+		count = 0 #to distinguish variables
+		for C in S.capacity():
+			affines = list()
+			for SL in C.slices_sum():
+				R = SL.resource
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				coeff = C.SLA[SL]
+				affine = [ (x[T,R,t-T.length+1], coeff*SL.weight(T,t-T.length+1))
+						  for t in range(start,end)
+						  for T in self.task_groups
+						  if (T,R,t-T.length+1) in x
+						  and SL.weight(T,t-T.length+1) ]
+				if not affine:
+					continue
+				# sum up (pulp doesnt do this)
+				affine_ = { a:0 for a,b in affine }
+				for a,b in affine:
+					affine_[a] += b
+				affine = [ (a,affine_[a]) for a in affine_ ]
+				affines += affine
 
-		# capacity switch bounds
-		for count, C in enumerate(S.capacity_diff_up()):
-			R = C.resource
-
-			def get_diff_con(count,C,t,flip):
-				affine_1 = \
-					[ (x[T,R,t-T.length+1],flip*C.weight(T))
-					for T in self.task_groups
-					if (T,R,t-T.length+1) in x and C.weight(T) ]
-				affine_2 = \
-					[ (x[T,R,t+1],-flip*C.weight(T))
-					for T in self.task_groups
-					if (T,R,t+1) in x and C.weight(T) ]
-				if affine_1 and affine_2:
-					if ('switch_%i'%count,R,t) not in x:
-						x['switch_%i'%count,R,t] = mip.var(str(('switch_%i'%count,R, t)), 0, C.bound)
-					affine = affine_1 + affine_2 + [ (x['switch_%i'%count,R,t],1) ]
-					con = mip.con(affine, sense=1, rhs=0)
-					return con
-				return None
-
-			if C._start is not None:
-				start = C._start
-			else:
-				start = 0
-			if C._end is not None:
-				end = C._end
-			else:
-				end = S.horizon
-			for t in range(start,end-1):
-				if C.kind == 'diff' or C.kind == 'diff_dec':
-					con = get_diff_con(count,C,t,-1)
-					if con is not None:
+			# max slices
+			for SL in C.slices_max():
+				R = SL.resource
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				affines_ = list()
+				coeff = C.SLA[SL] #TODO: is muliplying here correct as for sum
+				for t in range(start,end):
+					for T in self.task_groups:
+						if (T,R,t-T.length+1) in x and SL.weight(T,t-T.length+1):
+							affine_ = [ (x[T,R,t-T.length+1], coeff*SL.weight(T,t-T.length+1)) ]
+							affines_.append(affine_)
+				if affines_:
+					x['cap_%i'%count,R] = mip.var(str(('cap_%i'%count,R)), 0, C.bound)
+					x_ = x['cap_%i'%count,R]
+					count += 1
+					affines += [ (x_,1) ]
+					for affine_ in affines_:
+						affine_ += [ (x_,-1) ]
+						con = mip.con(affine_, sense=-1, rhs=0)
 						cons.append(con)
-				if C.kind == 'diff' or C.kind == 'diff_inc':
-					con = get_diff_con(count,C,t,1)
-					if con is not None:
+
+			# diff slices
+			for SL in C.slices_diff():
+				R = SL.resource
+
+				def add_diff_con(count,SL,t,flip):
+					coeff = C.SLA[SL] #TODO: is muliplying here correct as for sum
+					affine_1 = \
+						[ (x[T,R,t-T.length+1],flip*coeff*SL.weight(T))
+						for T in self.task_groups
+						if (T,R,t-T.length+1) in x and SL.weight(T) ]
+					affine_2 = \
+						[ (x[T,R,t+1],-flip*SL.weight(T))
+						for T in self.task_groups
+						if (T,R,t+1) in x and SL.weight(T) ]
+					if affine_1 and affine_2:
+						if ('cap_%i'%count,R,t) not in x:
+							x['cap_%i'%count,R,t] = mip.var(str(('cap_%i'%count,R, t)), 0, C.bound)
+						affine = affine_1 + affine_2 + [ (x['cap_%i'%count,R,t],1) ]
+						con = mip.con(affine, sense=1, rhs=0)
 						cons.append(con)
-			affine = [ (x['switch_%i'%count,R,t],1) for t in range(S.horizon) if ('switch_%i'%count,R,t) in x ]
-			if affine:
-				cons.append(mip.con(affine, sense=-1, rhs=C.bound))
+					return None
+
+				if SL._start is not None:
+					start = SL._start
+				else:
+					start = 0
+				if SL._end is not None:
+					end = SL._end
+				else:
+					end = S.horizon
+				for t in range(start,end-1):
+					if SL.kind == 'diff' or SL.kind == 'diff_dec':
+						add_diff_con(count,SL,t,-1)
+					if SL.kind == 'diff' or SL.kind == 'diff_inc':
+						add_diff_con(count,SL,t,1)
+				affine = [ (x['cap_%i'%count,R,t],1) for t in range(S.horizon) if ('cap_%i'%count,R,t) in x ]
+				affines += affine
+				count += 1
+
+			if affines:
+				cons.append(mip.con(affines, sense=-1, rhs=C.bound))
 
 		def task2cost(T,t):
 			cost = 0

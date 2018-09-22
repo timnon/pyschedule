@@ -212,6 +212,7 @@ class ContinuousMIP(object):
 			cons.append(mip.con(affine,sense=0,rhs=P.bound))
 			#mip += x[P.task] == P.bound
 
+		'''
 		# capacity lower bounds
 		for C in S.capacity_low():
 			# ignore sliced capacity constraints
@@ -233,6 +234,7 @@ class ContinuousMIP(object):
 			if not affine:
 				continue
 			cons.append(mip.con(affine, sense=-1, rhs=C.bound))
+		'''
 
 		'''
 		for con in cons:
