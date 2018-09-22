@@ -2,8 +2,9 @@
 # read from folder
 import sys
 sys.path += ['../src','src']
+import getopt
+opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 
-# working day with eight hours
 from pyschedule import Scenario, solvers, plotters, Task
 S = Scenario('shift_bounds',horizon=8)
 
@@ -38,9 +39,13 @@ S += empl1_beg < T*empl1, T*empl1 < empl1_fin
 
 
 if solvers.mip.solve(S,msg=0,kind='CBC'):
-	assert(empl0_fin.start_value == 4)
-	assert(empl1_fin.start_value == 4)
-	print(S.solution())
-	#plotters.matplotlib.plot(S)
+	opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
+	if ('--test','') in opts:
+		assert(empl0_fin.start_value == 4)
+		assert(empl1_fin.start_value == 4)
+		print('test passed')
+	else:
+		plotters.matplotlib.plot(S)
 else:
 	print('no solution found')
+	assert(1==00)

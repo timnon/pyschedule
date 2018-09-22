@@ -1,6 +1,8 @@
 
 import sys
 sys.path += ['../src','src']
+import getopt
+opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 from pyschedule import Scenario, solvers, plotters
 
 horizon = 20
@@ -43,9 +45,12 @@ for task_type in task_types:
 
 S.use_flowtime_objective()
 if solvers.mip.solve(S,msg=0,kind='CBC'):
-	assert( S['S_0'].start_value == 3 )
-	assert( S['S_1'].start_value == 6 )
-	print(S.solution())
-	#plotters.matplotlib.plot(S,task_colors=task_colors)
+	if ('--test','') in opts:
+		assert( S['S_0'].start_value == 3 )
+		assert( S['S_1'].start_value == 6 )
+		print('test passed')
+	else:
+		plotters.matplotlib.plot(S,task_colors=task_colors)
 else:
 	print('no solution found')
+	assert(1==0)

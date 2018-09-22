@@ -89,6 +89,8 @@ class _SchedElement(object):
 class _SchedElementAffine(object) :
 	def __init__(self,unknown=None,affine_operator='+') :
 		self.map = _DICT_TYPE()
+		# map_obj is for the case that the coefficient is e.g. a resource with a coefficient
+		# then the resource will be saved in map_obj
 		self.map_obj = _DICT_TYPE()
 		self.affine_operator = affine_operator
 		if isinstance(unknown,type(self)) :
@@ -1248,6 +1250,7 @@ class _SliceAffine(_SchedElementAffine):
 
 	def _get_cap(self,SLA):
 		SLA_ = SLA.copy()
+		# sum up offset
 		offset = 0
 		for SL in SLA:
 			if _isnumeric(SL):

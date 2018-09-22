@@ -2,7 +2,8 @@
 # read from folder
 import sys
 sys.path.append('../src')
-
+import getopt
+opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 from pyschedule import Scenario, solvers, plotters, alt
 
 horizon = 20
@@ -20,10 +21,12 @@ Courses_Math += Teacher
 S += Teacher['english'][0:horizon:1].max + Teacher['math'][0:horizon:1].max <= 1
 
 
-
 if solvers.mip.solve(S,time_limit=600,msg=0):
-	assert(len(set( T.start_value for T in Courses_English ) & set( T.start_value for T in Courses_Math )) == 0)
-	print(S.solution())
-	#plotters.matplotlib.plot(S,show_task_labels=True)
+	if ('--test','') in opts:
+		assert(len(set( T.start_value for T in Courses_English ) & set( T.start_value for T in Courses_Math )) == 0)
+		print('test passed')
+	else:
+		plotters.matplotlib.plot(S,show_task_labels=True)
 else:
-    print('no solution found')
+	print('no solution found')
+	assert(1==0)

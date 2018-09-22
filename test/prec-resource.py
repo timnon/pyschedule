@@ -4,7 +4,8 @@ import sys
 sys.path.append('../src')
 horizon=5
 
-# working day with eight hours
+import getopt
+opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 from pyschedule import Scenario, solvers, plotters, alt
 S = Scenario('test',horizon=horizon)
 
@@ -23,10 +24,14 @@ T2 += alt(R)
 S += T1*R[0] <= T0
 S += T2*R[0] <= T0
 
-solvers.mip.solve(S, msg=0)
-print(S.solution())
-
-assert(T0.start_value == 0)
-assert(T1.start_value == 0)
-assert(T2.start_value == 2)
-#plotters.matplotlib.plot(S, fig_size=(10, 5), vertical_text=True)
+if solvers.mip.solve(S, msg=0):
+	if ('--test','') in opts:
+		assert(T0.start_value == 0)
+		assert(T1.start_value == 0)
+		assert(T2.start_value == 2)
+		print('test passed')
+	else:
+		plotters.matplotlib.plot(S, fig_size=(10, 5), vertical_text=True)
+else:
+	print('no solution found')
+	assert(1==0)

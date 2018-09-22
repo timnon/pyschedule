@@ -1,12 +1,13 @@
 import sys
 sys.path.append('../src')
+import getopt
+opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 
 n_night_shifts = 5
 n_day_shifts = 5
 n_tasks = n_night_shifts+n_day_shifts
 horizon = n_tasks
 
-# working day with eight hours
 from pyschedule import Scenario, solvers, plotters
 S = Scenario('shift_bounds',horizon=horizon)
 
@@ -34,9 +35,12 @@ for i in range(horizon):
 	S += R[:i]['shift_type'] >= -1
 
 if solvers.mip.solve(S,msg=0,kind='CBC'):
-	assert( set( T.start_value % 2 for T in S.tasks() if T.name.startswith('N') ) == {0} )
-	assert( set( T.start_value % 2 for T in S.tasks() if T.name.startswith('D') ) == {1} )
-	print(S.solution())
-	#plotters.matplotlib.plot(S)
+	if ('--test','') in opts:
+		assert( set( T.start_value % 2 for T in S.tasks() if T.name.startswith('N') ) == {0} )
+		assert( set( T.start_value % 2 for T in S.tasks() if T.name.startswith('D') ) == {1} )
+		print('test passed')
+	else:
+		plotters.matplotlib.plot(S)
 else:
 	print('no solution found')
+	assert(1==0)
