@@ -47,6 +47,11 @@ class MIP(object):
 		return pl.LpVariable(name, low, up, cat=cat)
 
 	def con(self,affine,sense=0,rhs=0):
+		# sum up (pulp doesnt do this)
+		affine_ = { a:0 for a,b in affine }
+		for a,b in affine:
+			affine_[a] += b
+		affine = [ (a,affine_[a]) for a in affine_ ]
 		con = pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
 		self.mip += con
 		return con

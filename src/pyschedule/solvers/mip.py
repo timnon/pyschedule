@@ -443,11 +443,6 @@ class DiscreteMIP(object):
 						  and SL.weight(T,t-T.length+1) ]
 				if not affine:
 					continue
-				# sum up (pulp doesnt do this)
-				affine_ = { a:0 for a,b in affine }
-				for a,b in affine:
-					affine_[a] += b
-				affine = [ (a,affine_[a]) for a in affine_ ]
 				affines += affine
 
 			# max slices
