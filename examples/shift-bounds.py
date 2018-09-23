@@ -48,4 +48,4 @@ if solvers.mip.solve(S,msg=0,kind='CBC'):
 		plotters.matplotlib.plot(S)
 else:
 	print('no solution found')
-	assert(1==00)
+	assert(1==0)
