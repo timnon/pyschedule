@@ -1,12 +1,7 @@
 #! /usr/bin/python
 import sys
 sys.path += ['../src','src']
-import getopt
-opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
-
 import pyschedule
-
-opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 
 # get input size
 n = 15
@@ -24,6 +19,8 @@ for j in range(n):
 		T[(i+j) % n,j] += R[i]
 
 if pyschedule.solvers.mip.solve(S,msg=0,kind='CBC'):
+	import getopt
+	opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 	if ('--test','') in opts:
 		print('test passed')
 	else:
