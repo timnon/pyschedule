@@ -257,6 +257,8 @@ class _List(list):
 	def __imul__(self,other):
 		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
 
+	def __getitem__(self,key):
+		return _List([ T[key] for T in self ])
 
 
 class Scenario(_SchedElement):
