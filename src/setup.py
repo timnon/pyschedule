@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pyschedule',
-    version='0.2.29',
+    version='0.2.30',
     description='A python package to formulate and solve resource-constrained scheduling problems',
     url='https://github.com/timnon/pyschedule',
     author='Tim Nonner',

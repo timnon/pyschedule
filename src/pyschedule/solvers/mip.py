@@ -436,11 +436,11 @@ class DiscreteMIP(object):
 				else:
 					end = S.horizon
 				coeff = C.SLA[SL]
-				affine = [ (x[T,R,t-T.length+1], coeff*SL.weight(T,t-T.length+1))
-						  for t in range(start,end)
+				affine = [ (x[T,R,t], coeff*SL.weight(T,t))
+						  for t in range(start-T.length+1,end)
 						  for T in self.task_groups
-						  if (T,R,t-T.length+1) in x
-						  and SL.weight(T,t-T.length+1) ]
+						  if (T,R,t) in x
+						  and SL.weight(T,t) ]
 				if not affine:
 					continue
 				affines += affine
@@ -458,10 +458,10 @@ class DiscreteMIP(object):
 					end = S.horizon
 				affines_ = list()
 				coeff = C.SLA[SL] #TODO: is muliplying here correct as for sum
-				for t in range(start,end):
-					for T in self.task_groups:
-						if (T,R,t-T.length+1) in x and SL.weight(T,t-T.length+1):
-							affine_ = [ (x[T,R,t-T.length+1], coeff*SL.weight(T,t-T.length+1)) ]
+				for T in self.task_groups:
+					for t in range(start-T.length+1,end):
+						if (T,R,t) in x and SL.weight(T,t):
+							affine_ = [ (x[T,R,t], coeff*SL.weight(T,t)) ]
 							affines_.append(affine_)
 				if affines_:
 					x['cap_%i'%count,R] = mip.var(str(('cap_%i'%count,R)), 0, C.bound)
@@ -514,6 +514,7 @@ class DiscreteMIP(object):
 
 			if affines:
 				cons.append(mip.con(affines, sense=-1, rhs=C.bound))
+
 
 		def task2cost(T,t):
 			cost = 0
