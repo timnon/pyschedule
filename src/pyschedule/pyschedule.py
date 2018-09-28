@@ -258,7 +258,9 @@ class _List(list):
 		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
 
 	def __getitem__(self,key):
-		return _List([ T[key] for T in self ])
+		if type(key) == str:
+			return _List([ T[key] for T in self ])
+		return super(_List, self).__getitem__(key)
 
 
 class Scenario(_SchedElement):
