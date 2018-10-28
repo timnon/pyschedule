@@ -35,6 +35,9 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 		msg:         0 means no feedback (default) during computation, 1 means feedback
 	"""
 	try :
+		import matplotlib
+		if img_filename is not None:
+			matplotlib.use('Agg')
 		import matplotlib.patches as patches, matplotlib.pyplot as plt
 	except :
 		raise Exception('ERROR: matplotlib is not installed')
@@ -152,7 +155,7 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(R_ticks)) ],R_ticks[::-1])
 	plt.ylim(0,resource_sizes_count*resource_height)#resource_height*len(resources))
 	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution if R in visible_resources ]))
-	if img_filename :
+	if img_filename is not None:
 		fig.figsize=(1,1)
 		plt.savefig(img_filename,dpi=200,bbox_inches='tight')
 	else :
