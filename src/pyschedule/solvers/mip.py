@@ -208,96 +208,54 @@ class DiscreteMIP(object):
 		for P in S.precs_lax():
 			if P.task_left not in self.task_groups or P.task_right not in self.task_groups:
 				continue
-			left_size = float(len(self.task_groups[P.task_left]))
-			right_size = float(len(self.task_groups[P.task_right]))
-			#in the default case it is expected that the task groups have similar
-			#size, so the first task in the left task group must be scheduled before
-			#the first task in the right task group, and so on
-
-			# make projection x_ on specified resource
+			# make projection x_ on specified resource for the case
+			# that some resource is selected. This ensures that only
+			# the variables from this resources are taken in the
+			# constraints
 			x_ = copy.copy(x)
 			if P.resource_left is not None:
 				for t_ in range(self.horizon):
-					if (P.task_left,P.resource_left,t_) in x:
+					if (P.task_left,P.resource_left,t_) in x_:
 						x_[P.task_left,t_] = x_[P.task_left,P.resource_left,t_]
 			if P.resource_right is not None:
 				for t_ in range(self.horizon):
-					if (P.task_right,P.resource_right,t_) in x:
+					if (P.task_right,P.resource_right,t_) in x_:
 						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]
 
+			#in the default case it is expected that the task groups have
+			# similar size, so the first task in the left task group must be
+			# scheduled before the first task in the right task group, and so on
+			left_size = float(len(self.task_groups[P.task_left]))
+			right_size = float(len(self.task_groups[P.task_right]))
 			if left_size == right_size or min(left_size,right_size) > 1:
 				for t in range(self.horizon) :
 					affine = \
 						[ (x_[P.task_left, t_],1)
 						for t_ in range(t)
-						if (P.task_left,t_) in x ]
+						if (P.task_left,t_) in x_ ]
 					affine += \
 						[ (x_[P.task_right, t_],-1)
 						for t_ in range(t+P.task_left.length+P.offset)
-						if (P.task_right,t_) in x ]
+						if (P.task_right,t_) in x_ ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
-				if left_size == 1:
-					continue
-
-				# removed this because of projection
-				'''
-				if left_size == right_size:
-					for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
-						affine = \
-							[ (x_[P.task_left, t_],1)
-							for t_ in range(t,self.horizon)
-							if (P.task_left,t_) in x ] + \
-							[ (x_[P.task_right, t_],-1)
-							for t_ in range(t+P.task_left.length+P.offset,self.horizon)
-							if (P.task_right,t_) in x ]
-						cons.append(mip.con(affine, sense=-1, rhs=0))
-					if left_size == 1:
-						continue
-				'''
-
-				'''
-				# case of syncronous resources. Syncronous resource only work for
-				# task groups of similar size, so only this case needs to get covered
-				for RA in set(P.task_left.resources_req) & set(P.task_right.resources_req):
-					if len(RA) == 1:
-						continue
-					for R in RA:
-						for t in range(max(-P.task_left.length-P.offset,0),min(self.horizon-P.task_left.length-P.offset,self.horizon)) :
-							affine = \
-								[(x_[P.task_left, R, t_],1) for t_ in range(t,self.horizon)] + \
-								[(x_[P.task_right, R, t_],-1) for t_ in range(t+P.task_left.length+P.offset,self.horizon)]
-							cons.append(mip.con(affine, sense=-1, rhs=0))
-				'''
-			#covers the case that the left or right task group has size one
-			#in which case this task should be scheduled before or after all tasks in the
-			#left task group, respectively
-			#elif left_size == 1 or right_size == 1:
-			else: #left_size == 1 or right_size == 1
-				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
-					affine = \
-						[ (x[P.task_left,t_],1/left_size)
-						for t_ in range(t,self.horizon)
-						if (P.task_left,t_) in x ]
+			# for the case that only one of the task groups has one task,
+			# we need to distinguish two cases:
+			elif left_size == 1:
+				for t in range(self.horizon):
+					affine = [ (x_[P.task_left,t],1) ]
 					affine += \
-						[ (x[P.task_right,t_],-1/right_size)
-						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
-						if (P.task_right,t_) in x ]
-					cons.append(mip.con(affine, sense=-1, rhs=0))
-			#covers the cases that the task groups have different sizes != 1
-			#if the right task group is larger, then the  additonal tasks
-			#will have no contraints
-			'''
-			else:
-				for t in range(max(P.task_left.length+P.offset,0),min(self.horizon+P.task_left.length+P.offset,self.horizon)):
-					affine = \
-						[ (x[P.task_left,t_],1)
-						for t_ in range(t-P.task_left.length-P.offset)
-						if (P.task_left,t_) in x ] + \
-						[ (x[P.task_right,t_],-1)
-						for t_ in range(t)
-						if (P.task_right,t_) in x ]
-					cons.append(mip.con(affine, sense=1, rhs=0))
-			'''
+						[ (x_[P.task_right,t_],1/right_size)
+						for t_ in range(t+P.task_left.length+P.offset)
+						if (P.task_right,t_) in x_ ]
+					cons.append(mip.con(affine, sense=-1, rhs=1))
+			elif right_size == 1:
+				for t in range(self.horizon):
+					affine = [ (x_[P.task_right,t],1) ]
+					affine += \
+						[ (x_[P.task_left,t_],1/left_size)
+						for t_ in range(t-P.task_left.length-P.offset+1,self.horizon)
+						if (P.task_left,t_) in x_ ]
+					cons.append(mip.con(affine, sense=-1, rhs=1))
 
 		# tight precedence constraints
 		for P in S.precs_tight():
@@ -322,17 +280,6 @@ class DiscreteMIP(object):
 				if (P.task_right,t+P.task_left.length+P.offset) in x:
 					affine += [ (x_[P.task_right,t+P.task_left.length+P.offset],-1) ]
 				cons.append(mip.con(affine, sense=-1, rhs=0))
-				'''
-				affine = \
-					[ (x_[P.task_left,t_],1)
-					for t_ in range(t,self.horizon)
-					if (P.task_left,t_) in x ]
-				affine += [ (x_[P.task_right,t_],-1)
-					for t_ in range(min(t+P.task_left.length+P.offset,self.horizon),self.horizon)
-					if (P.task_right,t_) in x]
-				cons.append(mip.con(affine, sense=0, rhs=0))
-				'''
-
 
 		# low bounds
 		for P in S.bounds_low():
