@@ -274,7 +274,7 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,periods=None,group=None,schedule_cost=None,completion_time_cost=1,**kwargs) :
+	def Task(self,name,length=1,periods=None,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		"""
 		Adds a new task to the scenario
 		name : unique task name, must not contain special characters
@@ -639,7 +639,7 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,periods=None,schedule_cost=None,completion_time_cost=1,**kwargs) :
+	def __init__(self,name,length=1,group=None,periods=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
