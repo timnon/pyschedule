@@ -21,6 +21,9 @@ Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
 # Create three tasks with lengths 1,2 and 3
 cook, wash, clean = S.Task('cook',1), S.Task('wash',2), S.Task('clean',3)
 
+# Set the completion time cost of all tasks to 1
+S.use_flowtime_objective()
+
 # Assign tasks to resources, either Alice or Bob
 cook += Alice | Bob
 wash += Alice | Bob
@@ -38,10 +41,7 @@ INFO: objective = 1.0
 [(clean, Alice, 0, 3), (cook, Bob, 0, 1), (wash, Bob, 1, 3)]
 ```
 
-The default objective is to minimize the weighted sum of starting times of all jobs, which
-is `1 = 1*0+1*0+1*1` in the example.
-It is possible to change the weight to 2 by e.g. setting `S.Task('cook',1,completion_time_cost=2)`.
-Setting the weight to `None` also removes the weight.
+Since we do not have any specific requirements, we use the flow time objective. This sets the completion time cost of each job to 1, meaning that the objective is to minimize the sum of starting times of all jobs. This ensures that the short tasks of cooking and washing are put on the same resource. It is possible to change the weights e.g. try `cook.completion_time_cost = 3` to see a change. Setting the `completion_time_cost` to `None` removes it.
 
 Hence, according to the solution above, Bob should do the cooking from 0 to 1 and then do the washing from 1 to 3, whereas Alice will only do the cleaning from 0 to 3. This will ensure that both are done after three hours. This table representation is a little hard to read, we can visualize the plan using matplotlib:
 
