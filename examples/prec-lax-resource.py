@@ -12,13 +12,13 @@ S = Scenario('test',horizon=horizon)
 # define two employees
 R = S.Resources('R',num=2)
 
-T0 = S.Task('T0',length=2,completion_time_cost=4)
+T0 = S.Task('T0',length=2,delay_cost=4)
 T0 += alt(R)
 
-T1 = S.Task('T1',completion_time_cost=1)
+T1 = S.Task('T1',delay_cost=1)
 T1 += R[0]
 
-T2 = S.Task('T2',completion_time_cost=3)
+T2 = S.Task('T2',delay_cost=3)
 T2 += alt(R)
 
 S += T1 < T0*R[0]

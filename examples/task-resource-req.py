@@ -13,10 +13,10 @@ S = Scenario('shift_bounds',horizon=horizon)
 # define two employees
 R = S.Resources('R',num=2)
 
-T0 = S.Task('T0',completion_time_cost=3)
+T0 = S.Task('T0',delay_cost=3)
 T0 += alt(R)
 
-T1 = S.Task('T1',completion_time_cost=1)
+T1 = S.Task('T1',delay_cost=1)
 T1 += alt(R)
 
 T1 += T0*R[0]

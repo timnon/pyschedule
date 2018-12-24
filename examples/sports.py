@@ -20,7 +20,7 @@ for Team0 in Teams:
 	for Team1 in Teams:
 		if Team0.name >= Team1.name:
 			continue
-		Game = S.Task('%s%s'%(Team0,Team1),completion_time_cost=2**count)
+		Game = S.Task('%s%s'%(Team0,Team1),delay_cost=2**count)
 		Game[Team0.name] = 1
 		Game[Team1.name] = 1
 		Games.append(Game)

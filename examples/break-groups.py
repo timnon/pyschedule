@@ -7,8 +7,8 @@ from pyschedule import Scenario, solvers, plotters
 
 horizon = 10
 S = Scenario('Scenario',horizon=horizon)
-tasks = S.Tasks('T',num=int(horizon/2),is_group=True,completion_time_cost=2,state=1)
-breaks = S.Tasks('B',num=int(horizon/2),is_group=True,completion_time_cost=1,state=-1)
+tasks = S.Tasks('T',num=int(horizon/2),is_group=True,delay_cost=2,state=1)
+breaks = S.Tasks('B',num=int(horizon/2),is_group=True,delay_cost=1,state=-1)
 
 R = S.Resource('R')
 tasks += R

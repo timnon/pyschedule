@@ -13,15 +13,15 @@ S = Scenario('shift_bounds',horizon=horizon)
 
 R = S.Resource('P')
 for i in range(n_night_shifts):
-	# added some completion time cost, so without any
+	# added some delay cost, so without any
 	# constraint, there would be first 5 night shifts
 	# and then 5 day shifts
-	T = S.Task('N%i'%i,completion_time_cost=2)
+	T = S.Task('N%i'%i,delay_cost=2)
 	# the shift type of night shifts is -1
 	T.shift_type = -1
 	T += R
 for i in range(n_day_shifts):
-	T = S.Task('D%i'%i,completion_time_cost=1)
+	T = S.Task('D%i'%i,delay_cost=1)
 	# the shift type of day shifts is -1
 	T.shift_type = 1
 	T += R

@@ -215,8 +215,8 @@ def PERIODS():
 	S = two_task_scenario()
 	S['T1'] += S['R1']
 	S['T2'] += S['R1']
-	S['T1'].completion_time_cost = 1
-	S['T2'].completion_time_cost = 2
+	S['T1'].delay_cost = 1
+	S['T2'].delay_cost = 2
 	S['R1'].periods = [1,3,4]
 	S['T2'].periods = [3]
 	sols = ['[(T1, R1, 1, 2), (T2, R1, 3, 4)]']
@@ -226,8 +226,8 @@ def COSTPERPERIOD():
 	S = two_task_scenario()
 	S['T1'] += S['R1']|S['R2']
 	S['T2'] += S['R1']|S['R2']
-	S['T1'].completion_time_cost = 2
-	S['T2'].completion_time_cost = 1
+	S['T1'].delay_cost = 2
+	S['T2'].delay_cost = 1
 	S['R1'].cost_per_period = 10
 	sols = ['[(T1, R2, 0, 1), (T2, R2, 1, 2)]']
 	return S,sols
