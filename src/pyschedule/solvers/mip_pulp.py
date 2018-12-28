@@ -46,17 +46,22 @@ class MIP(object):
 	def var(self,name,low=0,up=0,cat='Binary'):
 		return pl.LpVariable(name, low, up, cat=cat)
 
-	def con(self,affine,sense=0,rhs=0):
+	def _compress_affine(self,affine):
 		# sum up (pulp doesnt do this)
 		affine_ = { a:0 for a,b in affine }
 		for a,b in affine:
 			affine_[a] += b
 		affine = [ (a,affine_[a]) for a in affine_ ]
+		return affine		
+
+	def con(self,affine,sense=0,rhs=0):
+		affine = self._compress_affine(affine)
 		con = pl.LpConstraint(pl.LpAffineExpression(affine),sense=sense,rhs=rhs)
 		self.mip += con
 		return con
 
 	def obj(self,affine):
+		affine = self._compress_affine(affine)
 		self.mip += pl.LpAffineExpression(affine)
 
 	def solve(self,msg=0,**kwarg):
