@@ -244,10 +244,10 @@ class _List(list):
 		return _List([ T - T_ for (T,T_) in self._pair(other) ])
 
 	def __iadd__(self,other):
-		return _List([ T.__iadd__(T_) for (T,T_) in self._pair(other) ])
+		return _List([ T.__iadd__(other) for T in self ])
 
 	def __isub__(self,other):
-		return _List([ T.__isub__(T_) for (T,T_) in self._pair(other) ])
+		return _List([ T.__isub__(other) for T in self ])
 
 	def __mul__(self,other) :
 		if not _isiterable(other) and not isinstance(other,_ResourceAffine):
@@ -255,7 +255,7 @@ class _List(list):
 		return _List([ _List([ T*T_ for T_ in other ]) for T in self ])
 
 	def __imul__(self,other):
-		return _List([ T.__imul__(T_) for (T,T_) in self._pair(other) ])
+		return _List([ T.__imul__(other) for T in self ])
 
 	def __getitem__(self,key):
 		if type(key) == str:
@@ -274,7 +274,7 @@ class Scenario(_SchedElement):
 		self._resources = _DICT_TYPE() #resources
 		self._constraints = list()
 
-	def Task(self,name,length=1,periods=None,group=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
+	def Task(self,name,length=1,periods=None,group=None,schedule_cost=None,delay_cost=None,**kwargs) :
 		"""
 		Adds a new task to the scenario
 		name : unique task name, must not contain special characters
@@ -282,7 +282,7 @@ class Scenario(_SchedElement):
 		periods : fixed set of periods when the task can be scheduled
 		group : task group. Tasks in same task group must be completely interchangeable
 		schedule_cost : additional cost if job is scheduled. If cost is negative, then this can be used as a reward
-		completion_time_cost : cost for each period a job is delayed after period 0
+		delay_cost : cost for each period a job is delayed after period 0
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
@@ -292,7 +292,7 @@ class Scenario(_SchedElement):
 			length=length,
 			periods=periods,
 			group=group,
-			completion_time_cost=completion_time_cost,
+			delay_cost=delay_cost,
 			schedule_cost=schedule_cost,
 			**kwargs)
 		self.add_task(task)
@@ -384,7 +384,7 @@ class Scenario(_SchedElement):
 		"""
 		Returns a representation of all objectives
 		"""
-		tasks_objective = [T*T['completion_time_cost'] for T in self.tasks() if 'completion_time_cost' in T ]
+		tasks_objective = [T*T['delay_cost'] for T in self.tasks() if 'delay_cost' in T ]
 		if tasks_objective:
 			return functools.reduce(lambda x,y:x+y,tasks_objective)
 		return None
@@ -393,8 +393,8 @@ class Scenario(_SchedElement):
 		"""
 		Returns the value of the objective
 		"""
-		return sum([ T['_completion_time_cost']*(T.start_value+T.length) for T in self.tasks()
-		 			if '_completion_time_cost' in T])
+		return sum([ T['_delay_cost']*(T.start_value+T.length) for T in self.tasks()
+		 			if '_delay_cost' in T])
 
 	def use_makespan_objective(self) :
 		"""
@@ -418,7 +418,7 @@ class Scenario(_SchedElement):
 		Sets the objective to a uniform flow-time objective
 		"""
 		for T in self.tasks():
-			T.completion_time_cost = 1
+			T.delay_cost = 1
 
 	def clear_solution(self):
 		"""
@@ -433,7 +433,7 @@ class Scenario(_SchedElement):
 		Removes all objective annotations
 		"""
 		for T in self.tasks():
-			T.completion_time_cost = None
+			T.delay_cost = None
 
 	def constraints(self,constraint_class=None):
 		if constraint_class is None:
@@ -498,7 +498,7 @@ class Scenario(_SchedElement):
 			if isinstance(task,Task):
 				if task not in self:
 					raise Exception('ERROR: task %s is not contained in scenario %s'%(str(task.name),str(self.name)))
-			task.completion_time_cost = task_affine[task]
+			task.delay_cost = task_affine[task]
 
 	def add_resource(self,resource):
 		if resource.name in self._resources and resource is not self._resources[resource.name]:
@@ -639,7 +639,7 @@ class Task(_SchedElement) :
 	"""
 	A task to be processed by at least one resource
 	"""
-	def __init__(self,name,length=1,group=None,periods=None,schedule_cost=None,completion_time_cost=None,**kwargs) :
+	def __init__(self,name,length=1,group=None,periods=None,schedule_cost=None,delay_cost=None,**kwargs) :
 		_SchedElement.__init__(self,name)
 		if not _isnumeric(length):
 			raise Exception('ERROR: task length must be an integer')
@@ -654,7 +654,7 @@ class Task(_SchedElement) :
 		self.resources_req = list() # required resources
 		self.tasks_req = list() # resource usage is inherited from these tasks
 		self.schedule_cost = schedule_cost # in case not None, then the task is optional adds the schedule_cost to the objective if the task is scheduled
-		self.completion_time_cost = completion_time_cost # cost on the final completion time
+		self.delay_cost = delay_cost # cost on the final completion time
 
 		for key in kwargs:
 			self.__setattr__(key,kwargs[key])

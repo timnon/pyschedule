@@ -30,7 +30,7 @@ empl1_fin += empl1
 
 # interchangeable tasks that need to be finished as
 # by the two employees as early as possible
-T = S.Tasks(name='T',num=6,is_group=True)
+T = S.Tasks(name='T',num=6,delay_cost=1,is_group=True)
 T += empl0 | empl1
 
 # bound tasks of employees by shift begin and finish

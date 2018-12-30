@@ -9,20 +9,19 @@ opts, _ = getopt.getopt(sys.argv[1:], 't:', ['test'])
 from pyschedule import Scenario, solvers, plotters, alt
 S = Scenario('test',horizon=horizon)
 
-# define two employees
 R = S.Resources('R',num=2)
 
-T0 = S.Task('T0',length=2,delay_cost=4)
-T0 += alt(R)
+T0 = S.Task('T0',delay_cost=1)
+T0 += R[0]
 
-T1 = S.Task('T1',delay_cost=1)
-T1 += R[0]
+T1 = S.Task('T1',length=2,delay_cost=4)
+T1 += alt(R)
 
 T2 = S.Task('T2',delay_cost=3)
 T2 += alt(R)
 
-S += T1 < T0*R[0]
-S += T1 < T2*R[0]
+S += T0 < T1*R[0]
+S += T0 < T2*R[0]
 
 #S += T1 < T0*R[0]
 #S += T1 < T2*R[0]

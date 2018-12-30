@@ -106,11 +106,11 @@ class ContinuousMIP(object):
 					#mip += x[(T, R)] == x[(T_, R)]
 
 		# objective
-		affine = [ (x[T], T.completion_time_cost) for T in S.tasks()
-				   if 'completion_time_cost' in T and T in x ]
+		affine = [ (x[T], T.delay_cost) for T in S.tasks()
+				   if 'delay_cost' in T and T in x ]
 		mip.obj(affine)
-		#mip += pl.LpAffineExpression([ (x[T], T.completion_time_cost) for T in S.tasks()
-		#                                        if 'completion_time_cost' in T and T in x ])
+		#mip += pl.LpAffineExpression([ (x[T], T.delay_cost) for T in S.tasks()
+		#                                        if 'delay_cost' in T and T in x ])
 
 		# same resource variable
 		task_pairs = [(T, T_) for T in S.tasks() for T_ in S.tasks() if str(T) < str(T_)]

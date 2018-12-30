@@ -220,26 +220,39 @@ class DiscreteMIP(object):
 			if P.resource_right is not None:
 				for t_ in range(self.horizon):
 					if (P.task_right,P.resource_right,t_) in x_:
-						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]
-
+						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]					
 			#in the default case it is expected that the task groups have
 			# similar size, so the first task in the left task group must be
 			# scheduled before the first task in the right task group, and so on
 			left_size = float(len(self.task_groups[P.task_left]))
 			right_size = float(len(self.task_groups[P.task_right]))
-			if left_size == right_size or min(left_size,right_size) > 1:
-				for t in range(self.horizon) :
+			#if left_size == right_size or min(left_size,right_size) > 1:
+			for t in range(self.horizon) :
+				# the fix one needs to be larger than the optional one
+				if P.resource_right is not None:
 					affine = \
-						[ (x_[P.task_left, t_],1)
+						[ (x_[P.task_left, t_],1/left_size)
 						for t_ in range(t)
 						if (P.task_left,t_) in x_ ]
 					affine += \
-						[ (x_[P.task_right, t_],-1)
+						[ (x_[P.task_right, t_],-1/right_size)
 						for t_ in range(t+P.task_left.length+P.offset)
 						if (P.task_right,t_) in x_ ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
+				if ( P.resource_left is not None or 
+					( P.resource_left is None and P.resource_left is None ) ):	
+					affine = \
+						[ (x_[P.task_left, t_],1/left_size)
+						for t_ in range(t,self.horizon)
+						if (P.task_left,t_) in x_ ]
+					affine += \
+						[ (x_[P.task_right, t_],-1/right_size)
+						for t_ in range(t+P.task_left.length+P.offset,self.horizon)
+						if (P.task_right,t_) in x_ ]
+					cons.append(mip.con(affine, sense=-1, rhs=0))
 			# for the case that only one of the task groups has one task,
 			# we need to distinguish two cases:
+			'''
 			elif left_size == 1:
 				for t in range(self.horizon):
 					affine = [ (x_[P.task_left,t],1) ]
@@ -256,6 +269,7 @@ class DiscreteMIP(object):
 						for t_ in range(t-P.task_left.length-P.offset+1,self.horizon)
 						if (P.task_left,t_) in x_ ]
 					cons.append(mip.con(affine, sense=-1, rhs=1))
+			'''
 
 		# tight precedence constraints
 		for P in S.precs_tight():
@@ -342,7 +356,7 @@ class DiscreteMIP(object):
 						# if the sum of x[P.task_left, R, t_] is one, then there is
 						# no slack in the next constraint (1 in coefficient), and
 						# then the monotonicity defined by -1*(t_<t-P.offset-P.task_left.length)
-						# needs to get saisfied
+						# needs to get satisfied
 						affine = \
 							[ (x[P.task_left, R, t_],1-1*(t_<t-P.offset-P.task_left.length))
 							for t_ in range(self.horizon)
@@ -465,13 +479,13 @@ class DiscreteMIP(object):
 
 		def task2cost(T,t):
 			cost = 0
-			if T.completion_time_cost is not None:
-				cost += T.completion_time_cost*t
+			if T.delay_cost is not None:
+				cost += T.delay_cost*t
 			if T.schedule_cost is not None:
 				cost += T.schedule_cost
 			return cost
 
-		# completion and schedule costs of tasks
+		# delay and schedule costs of tasks
 		objective = [
 			(x[T, t], task2cost(T,t))
 			for T in S.tasks()
@@ -481,7 +495,7 @@ class DiscreteMIP(object):
 
 		# add costs per periods of resources to objective
 		objective += [
-			(x[T,R,t],R.cost_per_period)
+			(x[T,R,t],R.cost_per_period*T.length)
 			for R in S.resources() if R.cost_per_period is not None
 			for T in S.tasks(resource=R)
 			for t in S.get_periods(R)

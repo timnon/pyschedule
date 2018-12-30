@@ -171,8 +171,8 @@ def _get_dat_filename(scenario,msg=0) :
 		count += 1
 
 	# objective
-	Objectives = [ (task_to_id[T],T.completion_time_cost) for T in S.tasks()
-	              if 'completion_time_cost' in T ]
+	Objectives = [ (task_to_id[T],T.delay_cost) for T in S.tasks()
+	              if 'delay_cost' in T ]
 	Objectives = sorted(Objectives)
 
 	# function to convert table into opl type typle lists
