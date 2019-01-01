@@ -1,12 +1,12 @@
-# Pyschedule
+# pyschedule
 
-Pyschedule is python package to compute resource-constrained schedules. If you need to get some tasks done, and you have some resources to accomplish this, then pyschedule might be helpful to compute schedules. Some features are: 
+pyschedule is python package to compute resource-constrained task schedules. Some features are: 
 
 - **precedence relations:** e.g. task A should be done before task B
-- **resource requirements:** e.g. some task A can be done by resource X or Y
+- **resource requirements:** e.g. task A can be done by resource X or Y
 - **resource capacities:** e.g. resource X can only process a few tasks
 
-Some previous use-cases where pyschedule has been applied to assign tasks to resources:
+Previous use-cases include:
 
 - school timetables: assign teachers to classes
 - beer brewing: assign equipment to brewing stages
