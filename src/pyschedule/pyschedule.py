@@ -769,6 +769,14 @@ class Task(_SchedElement) :
 		if getattr(self,key) is None:
 			return False
 		return True
+	
+	def __setattr__(self, attr, value):
+		if attr == 'completion_time_cost':
+			import warnings
+			warnings.warn('WARNING: attribute completion_time_cost is deprecated, use attribute delay_cost instead')
+			attr = 'delay_cost'
+		self.__dict__[attr] = value
+
 
 
 class Tasks(_List):
