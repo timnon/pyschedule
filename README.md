@@ -2,15 +2,15 @@
 
 Pyschedule is python package to compute resource-constrained schedules. If you need to get some tasks done, and you have some resources to accomplish this, then pyschedule might be helpful to compute schedules. Some features are: 
 
-- precedence relations between tasks: e.g. task A should be done before task B
-- resource requirements: e.g. some task A can be done by resource X or Y
-- capacities: e.g. resource X can only process a few tasks
+- **precedence relations:** e.g. task A should be done before task B
+- **resource requirements:** e.g. some task A can be done by resource X or Y
+- **resource capacities:** e.g. resource X can only process a few tasks
 
-The number of possible applications are endless, some cases to which pyschedule has been applied to compute schedules that assign tasks to resources:
+Some previous use-cases where pyschedule has been applied to assign tasks to resources:
 
-- school timetables: teachers to classes
-- beer brewing: equipment to brewing stages
-- sport schedules: stadiums to games
+- school timetables: assign teachers to classes
+- beer brewing: assign equipment to brewing stages
+- sport schedules: assign stadiums to games
 
 A simple pyschedule scenario where houshold tasks need to get assigned to two persons, called Alice and Bob, could look as follows:
 
@@ -48,7 +48,7 @@ We can also plot the schedule as a GANTT-chart and write it to a file:
 plotters.matplotlib.plot(S,img_filename='pics/hello-world.png')
 ```
 
-![](houshold.png)
+![png](pics/household.png)
 
 There are example notebooks <a href="https://github.com/timnon/pyschedule/tree/master/example-notebooks">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>.
 
