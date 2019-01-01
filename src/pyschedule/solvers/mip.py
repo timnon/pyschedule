@@ -27,26 +27,33 @@ under the License.
 from .mip_pulp import MIP
 import collections
 
-def _get_task_groups(scenario):
+def _get_groups(scenario,elements):
 	"""
-	computes the task groups according to the _task_group parameter
-	returns a mapping a task group representative to the task group
+	computes the elements according to the group parameter
+	returns a mapping a group representative to the group
 	"""
-	_task_groups = collections.OrderedDict()
-	for T in scenario.tasks():
-		if 'group' in T:
-			task_group_name = T.group
-			if task_group_name in _task_groups:
-				_task_groups[task_group_name].append(T)
+	_groups = collections.OrderedDict()
+	for T in elements:
+		if T.group is not None:
+			group_name = T.group
+			if group_name in _groups:
+				_groups[group_name].append(T)
 			else:
-				_task_groups[task_group_name] = [T]
-	task_groups = collections.OrderedDict([ (_task_groups[task_group_name][0],
-											 _task_groups[task_group_name])
-										  for task_group_name in _task_groups])
-	tasks_in_task_groups = [ T_ for T in task_groups for T_ in task_groups[T] ]
-	task_groups.update([ (T,[T]) for T in scenario.tasks()
-								 if T not in tasks_in_task_groups ])
-	return task_groups
+				_groups[group_name] = [T]
+	groups = collections.OrderedDict([ (_groups[group_name][0],_groups[group_name])
+										  for group_name in _groups])
+	el_in_groups = [ T_ for T in groups for T_ in groups[T] ]
+	groups.update([ (T,[T]) for T in elements if T not in el_in_groups ])
+	return groups
+	
+def _get_task_groups(scenario):
+	elements = scenario.tasks()
+	return _get_groups(scenario,elements)
+	
+def _get_resource_groups(scenario):
+	elements = scenario.resources()
+	return _get_groups(scenario,elements)
+
 
 def solve(scenario, kind='CBC', time_limit=None, random_seed=None, ratio_gap=0.0, msg=0):
 	"""
@@ -79,13 +86,17 @@ class DiscreteMIP(object):
 		self.scenario = None
 		self.horizon = None
 		self.task_groups = None
+		self.resource_groups = None
 		self.x = None  # mip variables shortcut
 
 	def build_mip_from_scenario(self, msg=0):
 		S = self.scenario
 		mip = self.mip
 		self.task_groups = _get_task_groups(self.scenario)
-
+		#self.resource_groups = _get_resource_groups(self.scenario)
+		#group_resource = { R:R_group for R_group in self.resource_groups 
+		#	for R in self.resource_groups[R_group] }
+		
 		x = dict()  # mip variables
 		cons = list()  # log of constraints for debugging
 		for T in self.task_groups:
@@ -114,9 +125,20 @@ class DiscreteMIP(object):
 				# check if contains a single resource
 				if len(RA) <= 1:
 					continue
-				# create variables if necessary except the first one
-				x.update({ (T,R,t) : mip.var(str((T, R, t)), 0, task_group_size, cat)
+					
+				# create variables if necessary
+				x.update({ (T,R,t) : mip.var(str((T,R, t)),'Binary')
+						   for R in RA for t in S.get_periods(R) if (T,R,t) not in x})				
+				
+				'''
+				# create variables if necessary
+				x.update({ (T,R,t) : mip.var(str((T, R, t)), 'Binary')
 						   for R in RA for t in S.get_periods(R) if (T,R,t) not in x})
+				'''
+				'''
+				x.update({ (T,R,t) : mip.var(str((T, R, task_group_size)), 0, 1, cat)
+						   for R in RA for t in S.get_periods(R) if (T,R,t) not in x})
+				'''
 				# enough position needs to get selected
 				# synchronize with base variables
 				for t in task_periods:
@@ -174,11 +196,14 @@ class DiscreteMIP(object):
 		'''
 
 		# everybody is finished before the horizon TODO: why is this check necessary
+		'''
 		affine = [ (x[T, t],1) for T in S.tasks()
 		           for t in range(self.horizon-T.length+1,self.horizon)
 				   if (T,t) in x ]
 		cons.append(mip.con(affine, sense=-1, rhs=0))
-
+		'''
+		
+		'''
 		# tasks are not allowed to be scheduled in the same resource at the same time
 		coeffs = { (T,R) : RA[R] for T in S.tasks() for RA in T.resources_req for R in RA }
 		for R in S.resources():
@@ -203,6 +228,32 @@ class DiscreteMIP(object):
 						   for T in set(S.tasks(resource=R)) & set(self.task_groups)
 						   if T.length == 0 and (T,R,t) in x ]
 				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
+		'''
+		
+		# tasks are not allowed to be scheduled in the same resource at the same time
+		coeffs = { (T,R) : RA[R] for T in S.tasks() for RA in T.resources_req for R in RA }
+		for R in S.resources():
+			if R.size is not None:
+				resource_size = R.size
+			else:
+				resource_size = 1.0
+			for t in range(self.horizon):
+				# the max is for the case T.length == 1
+				affine = [ (x[T,R_,t_], coeffs[T,R]) 
+					for T,R_,t_ in ( _ for _ in x if len(_) == 3 )
+					if R_ == R and t+1-T.length <= t_ <= t 
+					]
+				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
+			# case of task of length zero, then can block tasks of length > 1
+			if min( T.length for T in S.tasks() ) == 0:
+				for t in range(1,self.horizon):
+					affine = [ (x[T,R_,t_], coeffs[T,R]) 
+						for T,R_,t_ in ( _ for _ in x if len(_) == 3 )
+						if R_ == R 
+						and ( T.length == 0 or T.length > 1 )
+						and t+1-max(T.length,1) <= t_ <= t
+						]
+					cons.append(mip.con(affine, sense=-1, rhs=resource_size))
 
 		# lax precedence constraints
 		for P in S.precs_lax():
@@ -240,7 +291,7 @@ class DiscreteMIP(object):
 						if (P.task_right,t_) in x_ ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
 				if ( P.resource_left is not None or 
-					( P.resource_left is None and P.resource_left is None ) ):	
+					( P.resource_left is None and P.resource_right is None ) ):	
 					affine = \
 						[ (x_[P.task_left, t_],1/left_size)
 						for t_ in range(t,self.horizon)

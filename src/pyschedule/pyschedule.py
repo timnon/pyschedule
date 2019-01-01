@@ -315,20 +315,21 @@ class Scenario(_SchedElement):
 		else :
 			return list({ T for T in self.tasks() for RA in T.resources_req if resource in RA })
 
-	def Resource(self,name,size=1,periods=None,cost_per_period=None,**kwargs) :
+	def Resource(self,name,size=1,periods=None,group=None,cost_per_period=None,**kwargs) :
 		"""
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
 		size   : the size of the resource, if size > 1, then we get a cumulative resource that can process
 		 		different tasks in parallel
 		periods : the periods which are available for scheduling
+		group : resource group. Resources in same resource group must be completely interchangeable
 		cost_per_period : the cost for one period
 		"""
 		if name in self._tasks or name in self._resources:
 			raise Exception('ERROR: resource or task with name %s already contained in scenario'%str(name))
 		#if periods is None and self.horizon is not None:
 		#	periods = list(range(self.horizon))
-		resource = Resource(name,size=size,periods=periods,cost_per_period=cost_per_period,**kwargs)
+		resource = Resource(name,size=size,periods=periods,group=group,cost_per_period=cost_per_period,**kwargs)
 		self.add_resource(resource)
 		return resource
 
@@ -768,7 +769,6 @@ class Task(_SchedElement) :
 		if getattr(self,key) is None:
 			return False
 		return True
-
 
 
 class Tasks(_List):
