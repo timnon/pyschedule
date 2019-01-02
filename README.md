@@ -12,13 +12,13 @@ Previous use-cases include:
 - beer brewing: assign equipment to brewing stages
 - sport schedules: assign stadiums to games
 
-A simple pyschedule scenario where houshold tasks need to get assigned to two persons, called Alice and Bob, could look as follows:
+A simple pyschedule scenario where three houshold tasks need to get assigned to two persons, Alice and Bob:
 
 ```python
-from pyschedule import Scenario, solvers, plotters
+from pyschedule import Scenario, solvers, plotters, alt
 
 # the planning horizon has 10 periods
-S = Scenario('houshold',horizon=10)
+S = Scenario('household',horizon=10)
 
 # two resources: Alice and Bob
 Alice, Bob = S.Resource('Alice'), S.Resource('Bob')
@@ -45,12 +45,16 @@ INFO: objective = 1.0
 We can also plot the schedule as a GANTT-chart and write it to a file:
 
 ```python
-plotters.matplotlib.plot(S,img_filename='pics/hello-world.png')
+plotters.matplotlib.plot(S,img_filename='pics/household.png')
 ```
 
 ![png](pics/household.png)
 
-There are example notebooks <a href="https://github.com/timnon/pyschedule/tree/master/example-notebooks">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>.
+There are example notebooks <a href="https://github.com/timnon/pyschedule/tree/master/example-notebooks">here</a> and simpler examples in the <a href="https://github.com/timnon/pyschedule/tree/master/examples">examples folder</a>. Install it with pip:
+```
+pip install pyschedule
+```
+
 
 
 ## Limits
