@@ -45,11 +45,11 @@ def _get_groups(scenario,elements):
 	el_in_groups = [ T_ for T in groups for T_ in groups[T] ]
 	groups.update([ (T,[T]) for T in elements if T not in el_in_groups ])
 	return groups
-	
+
 def _get_task_groups(scenario):
 	elements = scenario.tasks()
 	return _get_groups(scenario,elements)
-	
+
 def _get_resource_groups(scenario):
 	elements = scenario.resources()
 	return _get_groups(scenario,elements)
@@ -94,9 +94,9 @@ class DiscreteMIP(object):
 		mip = self.mip
 		self.task_groups = _get_task_groups(self.scenario)
 		#self.resource_groups = _get_resource_groups(self.scenario)
-		#group_resource = { R:R_group for R_group in self.resource_groups 
+		#group_resource = { R:R_group for R_group in self.resource_groups
 		#	for R in self.resource_groups[R_group] }
-		
+
 		x = dict()  # mip variables
 		cons = list()  # log of constraints for debugging
 		for T in self.task_groups:
@@ -125,11 +125,11 @@ class DiscreteMIP(object):
 				# check if contains a single resource
 				if len(RA) <= 1:
 					continue
-					
+
 				# create variables if necessary
 				x.update({ (T,R,t) : mip.var(str((T,R, t)),'Binary')
-						   for R in RA for t in S.get_periods(R) if (T,R,t) not in x})				
-				
+						   for R in RA for t in S.get_periods(R) if (T,R,t) not in x})
+
 				'''
 				# create variables if necessary
 				x.update({ (T,R,t) : mip.var(str((T, R, t)), 'Binary')
@@ -202,7 +202,7 @@ class DiscreteMIP(object):
 				   if (T,t) in x ]
 		cons.append(mip.con(affine, sense=-1, rhs=0))
 		'''
-		
+
 		'''
 		# tasks are not allowed to be scheduled in the same resource at the same time
 		coeffs = { (T,R) : RA[R] for T in S.tasks() for RA in T.resources_req for R in RA }
@@ -229,7 +229,7 @@ class DiscreteMIP(object):
 						   if T.length == 0 and (T,R,t) in x ]
 				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
 		'''
-		
+
 		# tasks are not allowed to be scheduled in the same resource at the same time
 		coeffs = { (T,R) : RA[R] for T in S.tasks() for RA in T.resources_req for R in RA }
 		for R in S.resources():
@@ -239,17 +239,17 @@ class DiscreteMIP(object):
 				resource_size = 1.0
 			for t in range(self.horizon):
 				# the max is for the case T.length == 1
-				affine = [ (x[T,R_,t_], coeffs[T,R]) 
+				affine = [ (x[T,R_,t_], coeffs[T,R])
 					for T,R_,t_ in ( _ for _ in x if len(_) == 3 )
-					if R_ == R and t+1-T.length <= t_ <= t 
+					if R_ == R and t+1-T.length <= t_ <= t
 					]
 				cons.append(mip.con(affine, sense=-1, rhs=resource_size))
 			# case of task of length zero, then can block tasks of length > 1
 			if min( T.length for T in S.tasks() ) == 0:
 				for t in range(1,self.horizon):
-					affine = [ (x[T,R_,t_], coeffs[T,R]) 
+					affine = [ (x[T,R_,t_], coeffs[T,R])
 						for T,R_,t_ in ( _ for _ in x if len(_) == 3 )
-						if R_ == R 
+						if R_ == R
 						and ( T.length == 0 or T.length > 1 )
 						and t+1-max(T.length,1) <= t_ <= t
 						]
@@ -271,7 +271,7 @@ class DiscreteMIP(object):
 			if P.resource_right is not None:
 				for t_ in range(self.horizon):
 					if (P.task_right,P.resource_right,t_) in x_:
-						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]					
+						x_[P.task_right,t_] = x_[P.task_right,P.resource_right,t_]
 			#in the default case it is expected that the task groups have
 			# similar size, so the first task in the left task group must be
 			# scheduled before the first task in the right task group, and so on
@@ -290,8 +290,8 @@ class DiscreteMIP(object):
 						for t_ in range(t+P.task_left.length+P.offset)
 						if (P.task_right,t_) in x_ ]
 					cons.append(mip.con(affine, sense=1, rhs=0))
-				if ( P.resource_left is not None or 
-					( P.resource_left is None and P.resource_right is None ) ):	
+				if ( P.resource_left is not None or
+					( P.resource_left is None and P.resource_right is None ) ):
 					affine = \
 						[ (x_[P.task_left, t_],1/left_size)
 						for t_ in range(t,self.horizon)
@@ -449,8 +449,8 @@ class DiscreteMIP(object):
 					end = S.horizon
 				coeff = C.SLA[SL]
 				affine = [ (x[T,R,t], coeff*SL.weight(T,t))
-						  for t in range(start-T.length+1,end)
 						  for T in self.task_groups
+						  for t in range(start-T.length+1,end)
 						  if (T,R,t) in x
 						  and SL.weight(T,t) ]
 				if not affine:
