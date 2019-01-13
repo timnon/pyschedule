@@ -476,6 +476,30 @@ Finally, if we want to bound the maximum instead of the sum, we can write:
 S += R['length'][0:5].max <= 3
 ```
 
+### Non-unit Tasks
+
+Cases where task lengths are larger than one deserve a special treatment:
+
+```python
+from pyschedule import Scenario, solvers, plotters
+S = Scenario('capacities',horizon=10)
+R = S.Resource('R')
+
+# task with non-unit length
+T = S.Task('T',length=4,delay_cost=1)
+T += R
+
+S += R[0:5] <= 3
+
+solvers.mip.solve(S,msg=1)
+print(S.solution())
+```
+```
+INFO: execution time for solving mip (sec) = 0.022754907608032227
+INFO: objective = 2.0
+[(T, R, 2, 6)]
+```
+Task `T` has to start in period 2 because of the capacity constraint. This is possible because the length of the part of this task which lies within the capacity constraint is 3. Specifically, the part scheduled in periods 2,3 and 4. This holds in general, a task contributes to a standard capacity constraint proportionally to how much it *overlaps* with the capacity constraint. This generalizes to user-defined task attributes as described in the next section.
 
 ### User-Defined Task Attributes
 
@@ -666,5 +690,5 @@ plotters.matplotlib.plot(S,img_filename='tmp.png',img_size=(5,5),hide_tasks=[T])
 
 ```python
 import sys
-sys.path.append('../src')
+sys.path.append('src')
 ``` 
