@@ -258,8 +258,13 @@ class _List(list):
 		return _List([ T.__imul__(other) for T in self ])
 
 	def __getitem__(self,key):
+		'''
+		automatically casts in _List
+		'''
 		if type(key) == str:
 			return _List([ T[key] for T in self ])
+		elif type(key) == slice:
+			return _List([ T for T in list(self)[key] ])
 		return super(_List, self).__getitem__(key)
 
 
@@ -320,7 +325,7 @@ class Scenario(_SchedElement):
 		Adds a new resource to the scenario
 		name   : unique resource name, must not contain special characters
 		size   : the size of the resource, if size > 1, then we get a cumulative resource that can process
-		 		different tasks in parallel
+				different tasks in parallel
 		periods : the periods which are available for scheduling
 		group : resource group. Resources in same resource group must be completely interchangeable
 		cost_per_period : the cost for one period
@@ -395,7 +400,7 @@ class Scenario(_SchedElement):
 		Returns the value of the objective
 		"""
 		return sum([ T['_delay_cost']*(T.start_value+T.length) for T in self.tasks()
-		 			if '_delay_cost' in T])
+					if '_delay_cost' in T])
 
 	def use_makespan_objective(self) :
 		"""
@@ -769,7 +774,7 @@ class Task(_SchedElement) :
 		if getattr(self,key) is None:
 			return False
 		return True
-	
+
 	def __setattr__(self, attr, value):
 		if attr == 'completion_time_cost':
 			import warnings
