@@ -1,5 +1,5 @@
 import os
-from time import clock
+from time import perf_counter as clock
 import re
 import subprocess
 import pulp
