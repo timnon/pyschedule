@@ -1,5 +1,5 @@
 import os
-from time import clock
+from time import perf_counter
 import re
 import subprocess
 import pulp
@@ -41,7 +41,7 @@ class SCIP_CMD(pulp.solvers.LpSolver_CMD):
         proc += ["-c", "optimize", "-c", "write solution \"%s\"" % tmpSol, "-c", "quit"]
         proc.extend(self.options)
 
-        self.solution_time = clock()
+        self.solution_time = perf_counter()
         if not self.msg:
             proc[0] = self.path
             pipe = open(os.devnull, 'w')
@@ -56,7 +56,7 @@ class SCIP_CMD(pulp.solvers.LpSolver_CMD):
                 rc = os.spawnv(os.P_WAIT, self.executable(self.path), proc)
             if rc == 127:
                 raise pulp.PulpSolverError("PuLP: Error while trying to execute "+self.path)
-        self.solution_time += clock()
+        self.solution_time += perf_counter()
 
         if not os.path.exists(tmpSol):
             raise pulp.PulpSolverError("PuLP: Error while executing "+self.path)
