@@ -2,8 +2,12 @@ import sys
 sys.path.append('../src')
 from pyschedule import Scenario, solvers, plotters, alt
 
+# event_duration: 9:00..18:00
+event_duration_in_minutes = 9 * 60
+unit_in_minutes = 5
 
-scenario = Scenario('umm_saturday', horizon=144)
+num_units = event_duration_in_minutes // unit_in_minutes
+scenario = Scenario('umm_saturday', horizon=num_units)
 
 disziplinen = {
         "U12W_4K": {
