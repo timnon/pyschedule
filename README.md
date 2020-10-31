@@ -678,7 +678,7 @@ The default pyschedule backend to plot a schedule is <a href="https://matplotlib
 E.g. this could be used as follows:
 
 ```python
-plotters.matplotlib.plot(S,img_filename='tmp.png',img_size=(5,5),hide_tasks=[T])
+plotters.matplotlib.plot(S,img_filename='tmp.png',fig_size=(5,5),hide_tasks=[T])
 ```
 
 
