@@ -141,6 +141,8 @@ scenario += U12M_Gr30_to_Gr34_600m > U12M_Gr34_Weit+2
 scenario += U12M_Gr30_to_Gr34_600m > U12M_Gr34_Kugel+2
 
 
+print("scenario: {}".format(scenario))
+
 if solvers.mip.solve(scenario, time_limit=600, msg=1):
     print(scenario.solution())
     plotters.matplotlib.plot(scenario, show_task_labels=True)
