@@ -6,7 +6,7 @@ import functools
 import operator
 from pyschedule import Scenario, solvers, plotters, alt
 
-event_duration_in_minutes = 15 * 60  # 09:00..18:00
+event_duration_in_minutes = 18 * 60  # 09:00..18:00
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
@@ -142,6 +142,7 @@ teilnehmer_data = {
     },
 }
 
+objective_pairs = []
 gruppen = {}
 disziplinen = {}
 hide_tasks = []
@@ -172,14 +173,14 @@ for wettkampf_name in disziplinen_data:
             if "Pause" in disziplinen_name:
                 hide_tasks.append(disziplin)
 
+        first_disziplin = gruppen_disziplinen[0]
+        last_disziplin = gruppen_disziplinen[-1]
         if False:
-            first_disziplin = gruppen_disziplinen[0]
             for disziplin in gruppen_disziplinen[1:-1]:
                 if "Pause" in disziplin.name:
                     continue
                 scenario += first_disziplin < disziplin
     
-            last_disziplin = gruppen_disziplinen[-1]
             for disziplin in gruppen_disziplinen[1:-1]:
                 if "Pause" in disziplin.name:
                     continue
@@ -189,6 +190,7 @@ for wettkampf_name in disziplinen_data:
             for next_disziplin in gruppen_disziplinen[1:]:
                 scenario += current_disziplin < next_disziplin
                 current_disziplin = next_disziplin
+        objective_pairs.append((last_disziplin, first_disziplin))
 
 for anlage, num_disziplinen in used_anlagen.items():
     for candidate in anlagen.values():
@@ -199,6 +201,15 @@ for anlage, num_disziplinen in used_anlagen.items():
                 task += candidate
                 hide_tasks.append(task)
 
+
+scenario += disziplinen["U12M_4K_Gr30_to_Gr34_60m"] >= 0
+scenario += disziplinen["U16M_6K_Gr24_to_Gr25_100mHü"] >= 6
+scenario += disziplinen["WOM_7K_Gr1_to_Gr2_100mHü"] >= 9
+scenario += disziplinen["U16W_5K_Gr3_to_Gr6_80m"] >= 13
+scenario += disziplinen["MAN_10K_Gr23_to_Gr23_100m"] >= 20
+scenario += disziplinen["U12W_4K_Gr14_to_Gr20_60m"] >= 22
+
+
 for i in range(event_duration_in_units):
     #for _, gruppe in gruppen.items():
     #    scenario += gruppe['state'][:i] <= 1
@@ -207,7 +218,11 @@ for i in range(event_duration_in_units):
         scenario += anlage['state'][:i] <= 1
         scenario += anlage['state'][:i] >= 0
 
-print("scenario: {}".format(scenario))
+scenario.clear_objective()
+for op1, op2 in objective_pairs:
+    scenario += op1 - op2
+
+#print("scenario: {}".format(scenario))
 
 if solvers.mip.solve(scenario, time_limit=600, msg=1):
     print(scenario.solution())
