@@ -220,7 +220,7 @@ for i in range(event_duration_in_units):
 
 scenario.clear_objective()
 for op1, op2 in objective_pairs:
-    scenario += op1 - op2
+    scenario += op1 * 2 - op2
 
 #print("scenario: {}".format(scenario))
 
