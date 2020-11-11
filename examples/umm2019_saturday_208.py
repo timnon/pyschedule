@@ -224,7 +224,7 @@ for op1, op2 in objective_pairs:
 
 #print("scenario: {}".format(scenario))
 
-if solvers.mip.solve(scenario, time_limit=600, msg=1):
+if solvers.mip.solve(scenario, time_limit=None, msg=1):
     print(scenario.solution())
     plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm_saturday.png', fig_size=(45, 5), hide_tasks=hide_tasks)
 else:
