@@ -46,70 +46,77 @@ used_anlagen = defaultdict(int)
 
 disziplinen_data = {
     "U14M_5K": [
-        dict(name="60m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="orange")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='orange')),
-        dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="orange")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='orange')),
-        dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="orange")),
-        dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='orange')),
-        dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="orange")),
-        dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='orange')),
-        dict(name="600m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="orange")),
+        dict(name="60m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="orange")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='orange')),
+        dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="orange")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='orange')),
+        dict(name="Kugel", together=False, resource="Kugel", kwargs=dict(length=2, state=1, plot_color="orange")),
+        dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='orange')),
+        dict(name="Hoch", together=False, resource="Hoch", kwargs=dict(length=3, state=1, plot_color="orange")),
+        dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='orange')),
+        dict(name="600m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="orange")),
     ],
     "MAN_6K": [
-        dict(name="100m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightblue")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-        dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="lightblue")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-        dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="lightblue")),
-        dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-        dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightblue")),
-        dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-        dict(name="Speer", together=False, resource="Speer", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightblue")),
-        dict(name="Pause_5", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-        dict(name="600m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightblue")),
+        dict(name="100m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="lightblue")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
+        dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="lightblue")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
+        dict(name="Kugel", together=False, resource="Kugel", kwargs=dict(length=2, state=1, plot_color="lightblue")),
+        dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
+        dict(name="Hoch", together=False, resource="Hoch", kwargs=dict(length=3, state=1, plot_color="lightblue")),
+        dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
+        dict(name="Speer", together=False, resource="Speer", kwargs=dict(length=3, state=1, plot_color="lightblue")),
+        dict(name="Pause_5", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
+        dict(name="600m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="lightblue")),
     ],
     "WOM_5K": [
-        dict(name="100m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="olive")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='olive')),
-        dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="olive")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='olive')),
-        dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="olive")),
-        dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='olive')),
-        dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="olive")),
-        dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='olive')),
-        dict(name="1000m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="olive")),
+        dict(name="100m", together=True, resource="Läufe", kwargs=dict(length=2, state=1, plot_color="olive")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='olive')),
+        dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="olive")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='olive')),
+        dict(name="Kugel", together=False, resource="Kugel", kwargs=dict(length=2, state=1, plot_color="olive")),
+        dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='olive')),
+        dict(name="Hoch", together=False, resource="Hoch", kwargs=dict(length=3, state=1, plot_color="olive")),
+        dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='olive')),
+        dict(name="1000m", together=True, resource="Läufe", kwargs=dict(length=2, state=1, plot_color="olive")),
     ],
     "MAN_10K": [
-        dict(name="110mHü", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="red")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=3, state=-1, plot_color='red')),
-        dict(name="Diskus", together=False, resource="Diskus", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="red")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=4, state=-1, plot_color='red')),
-        dict(name="Stab", together=False, resource="Stab", sequence_free=False, kwargs=dict(length=11, state=1, plot_color="red")),
-        dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=6, state=-1, plot_color='red')),
-        dict(name="Speer", together=False, resource="Speer", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="red")),
-        dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=3, state=-1, plot_color='red')),
-        dict(name="1500m", together=False, resource="Läufe", sequence_free=False, kwargs=dict(length=1, state=1, plot_color="red")),
+        dict(name="110mHü", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="red")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='red')),
+        dict(name="Diskus", together=False, resource="Diskus", kwargs=dict(length=2, state=1, plot_color="red")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=4, state=-1, plot_color='red')),
+        dict(name="Stab", together=False, resource="Stab", kwargs=dict(length=11, state=1, plot_color="red")),
+        dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=6, state=-1, plot_color='red')),
+        dict(name="Speer", together=False, resource="Speer", kwargs=dict(length=3, state=1, plot_color="red")),
+        dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='red')),
+        dict(name="1500m", together=False, resource="Läufe", kwargs=dict(length=1, state=1, plot_color="red")),
     ],
     "U14W_5K": [
-        dict(name="60m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=5, state=1, plot_color="pink")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='pink')),
-        dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="pink")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='pink')),
-        dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="pink")),
-        dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='pink')),
-        dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="pink")),
-        dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='pink')),
-        dict(name="600m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="pink")),
+        dict(name="60m", together=True, resource="Läufe", kwargs=dict(length=5, state=1, plot_color="pink")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
+        dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="pink")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
+        dict(name="Kugel", together=False, resource="Kugel", kwargs=dict(length=2, state=1, plot_color="pink")),
+        dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
+        dict(name="Hoch", together=False, resource="Hoch", kwargs=dict(length=3, state=1, plot_color="pink")),
+        dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
+        dict(name="600m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="pink")),
     ],
     "WOM_7K": [
-        dict(name="Weit", together=True, resource="Weit", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightgreen")),
-        dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
-        dict(name="Speer", together=False, resource="Speer", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="lightgreen")),
-        dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
-        dict(name="200m", together=False, resource="Läufe", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="lightgreen")),
+        dict(name="Weit", together=True, resource="Weit", kwargs=dict(length=3, state=1, plot_color="lightgreen")),
+        dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
+        dict(name="Speer", together=False, resource="Speer", kwargs=dict(length=3, state=1, plot_color="lightgreen")),
+        dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
+        dict(name="200m", together=False, resource="Läufe", kwargs=dict(length=2, state=1, plot_color="lightgreen")),
     ],
 }
+
+disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K"]
+
+
+def is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
+    return wettkampf_name in disziplinen_sequence_strict_data
+
 
 teilnehmer_data = {
     "U14M_5K": {
@@ -147,6 +154,7 @@ teilnehmer_data = {
 
 objective_pairs = []
 gruppen = {}
+sequence_not_strict_gruppen = []
 disziplinen = {}
 hide_tasks = []
 for wettkampf_name in disziplinen_data:
@@ -178,7 +186,14 @@ for wettkampf_name in disziplinen_data:
 
         first_disziplin = gruppen_disziplinen[0]
         last_disziplin = gruppen_disziplinen[-1]
-        if False:
+        if is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
+            # one after another: 1st, 2nd, 3rd,...
+            current_disziplin = gruppen_disziplinen[0]
+            for next_disziplin in gruppen_disziplinen[1:]:
+                scenario += current_disziplin < next_disziplin
+                current_disziplin = next_disziplin
+        else:
+            # 1st and last together - rest free
             for disziplin in gruppen_disziplinen[1:-1]:
                 if "Pause" in disziplin.name:
                     continue
@@ -188,11 +203,7 @@ for wettkampf_name in disziplinen_data:
                 if "Pause" in disziplin.name:
                     continue
                 scenario += disziplin < last_disziplin
-        else:
-            current_disziplin = gruppen_disziplinen[0]
-            for next_disziplin in gruppen_disziplinen[1:]:
-                scenario += current_disziplin < next_disziplin
-                current_disziplin = next_disziplin
+            sequence_not_strict_gruppen.append(gruppe)
         objective_pairs.append((last_disziplin, first_disziplin))
 
 for anlage, num_disziplinen in used_anlagen.items():
@@ -214,9 +225,9 @@ scenario += disziplinen["WOM_7K_Gr1_to_Gr2_Weit"] >= 23
 
 
 for i in range(event_duration_in_units):
-    #for _, gruppe in gruppen.items():
-    #    scenario += gruppe['state'][:i] <= 1
-    #    scenario += gruppe['state'][:i] >= 0
+    for gruppe in sequence_not_strict_gruppen:
+        scenario += gruppe['state'][:i] <= 1
+        scenario += gruppe['state'][:i] >= 0
     for _, anlage in anlagen.items():
         scenario += anlage['state'][:i] <= 1
         scenario += anlage['state'][:i] >= 0
@@ -227,7 +238,7 @@ for op1, op2 in objective_pairs:
 
 #print("scenario: {}".format(scenario))
 
-if solvers.mip.solve(scenario, time_limit=3600, msg=1):
+if solvers.mip.solve(scenario, time_limit=3*3600, msg=1):
     print(scenario.solution())
     plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm_sunday.png', fig_size=(60, 5), hide_tasks=hide_tasks)
 else:
