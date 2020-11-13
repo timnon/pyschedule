@@ -33,6 +33,10 @@ def get_all_anlagen(pattern):
     return resources
 
 
+def any_anlage(pattern):
+    return functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(item["resource"]))
+
+
 create_anlage("Läufe")
 create_anlage("Weit", 2)
 create_anlage("Kugel", 2)
@@ -177,7 +181,7 @@ for wettkampf_name in disziplinen_data:
             if item["resource"]:
                 used_anlagen[item["resource"]] += 1
                 if not item["together"] or gruppen_name == gruppen_names[0]:
-                    disziplin += functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(item["resource"]))
+                    disziplin += any_anlage(item["resource"])
 
             disziplin += gruppe
 
