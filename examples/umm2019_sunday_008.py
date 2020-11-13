@@ -245,6 +245,7 @@ for i in range(event_duration_in_units):
 scenario.clear_objective()
 for objective_term in set(objective_terms):
     scenario += objective_term
+print("objective: {}".format(scenario.objective()))
 
 #print("scenario: {}".format(scenario))
 
