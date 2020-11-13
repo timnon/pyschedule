@@ -250,7 +250,7 @@ for objective_term in set(objective_terms):
 
 if solvers.mip.solve(scenario, time_limit=3*3600, msg=1):
     print(scenario.solution())
-    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm_sunday.png', fig_size=(60, 5), hide_tasks=hide_tasks)
+    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm_sunday.png', fig_size=(100, 5), hide_tasks=hide_tasks)
 else:
     print('no solution found')
     assert(1==0)
