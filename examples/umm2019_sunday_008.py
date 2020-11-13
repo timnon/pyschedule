@@ -122,6 +122,15 @@ def is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
     return wettkampf_name in disziplinen_sequence_strict_data
 
 
+wettkampf_start_times = {
+    "U14M_5K_Gr26_to_Gr29_60m": 0,
+    "MAN_6K_Gr35_to_Gr37_100m": 4,
+    "WOM_5K_Gr21_to_Gr22_100m": 10,
+    "MAN_10K_Gr23_to_Gr23_110mHü": 14,
+    "U14W_5K_Gr7_to_Gr13_60m": 18,
+    "WOM_7K_Gr1_to_Gr2_Weit": 23,
+}
+
 teilnehmer_data = {
     "U14M_5K": {
         "Gr26": 12,
@@ -219,14 +228,11 @@ for anlage, num_disziplinen in used_anlagen.items():
                 task += candidate
                 hide_tasks.append(task)
 
-
-scenario += disziplinen["U14M_5K_Gr26_to_Gr29_60m"] >= 0
-scenario += disziplinen["MAN_6K_Gr35_to_Gr37_100m"] >= 4
-scenario += disziplinen["WOM_5K_Gr21_to_Gr22_100m"] >= 10
-scenario += disziplinen["MAN_10K_Gr23_to_Gr23_110mHü"] >= 14
-scenario += disziplinen["U14W_5K_Gr7_to_Gr13_60m"] >= 18
-scenario += disziplinen["WOM_7K_Gr1_to_Gr2_Weit"] >= 23
-
+for disziplinen_name, start_times in wettkampf_start_times.items():
+    try:
+        scenario += disziplinen[disziplinen_name] >= start_times
+    except KeyError:
+        pass
 
 for i in range(event_duration_in_units):
     for gruppe in sequence_not_strict_gruppen:
