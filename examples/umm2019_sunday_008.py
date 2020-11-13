@@ -156,7 +156,7 @@ teilnehmer_data = {
     },
 }
 
-objective_pairs = []
+objective_terms = []
 gruppen = {}
 sequence_not_strict_gruppen = []
 disziplinen = {}
@@ -208,7 +208,7 @@ for wettkampf_name in disziplinen_data:
                     continue
                 scenario += disziplin < last_disziplin
             sequence_not_strict_gruppen.append(gruppe)
-        objective_pairs.append((last_disziplin, first_disziplin))
+        objective_terms.append(last_disziplin * (1 + 2) - first_disziplin)
 
 for anlage, num_disziplinen in used_anlagen.items():
     for candidate in anlagen.values():
@@ -237,8 +237,8 @@ for i in range(event_duration_in_units):
         scenario += anlage['state'][:i] >= 0
 
 scenario.clear_objective()
-for op1, op2 in objective_pairs:
-    scenario += op1 * 2 - op2
+for objective_term in set(objective_terms):
+    scenario += objective_term
 
 #print("scenario: {}".format(scenario))
 
