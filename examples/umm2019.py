@@ -14,6 +14,7 @@ parser.add_argument('--print-scenario-and-exit', action="store_true",
 default_time_limit = '10m'
 help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_time_limit)
 parser.add_argument('--time-limit', default=default_time_limit, help=help_text)
+parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
 valid_wettkampf_days = ['saturday', 'sunday']
 parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
 args = parser.parse_args()
@@ -237,12 +238,22 @@ def is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
 
 
 wettkampf_start_times = {
-    "U14M_5K_Gr26_to_Gr29_60m": 0,
-    "MAN_6K_Gr35_to_Gr37_100m": 4,
-    "WOM_5K_Gr21_to_Gr22_100m": 10,
-    "MAN_10K_Gr23_to_Gr23_110mHü": 14,
-    "U14W_5K_Gr7_to_Gr13_60m": 18,
-    "WOM_7K_Gr1_to_Gr2_Weit": 23,
+    "saturday": {
+        "U12M_4K_Gr30_to_Gr34_60m": 0,
+        "U16M_6K_Gr24_to_Gr25_100mHü": 6,
+        "WOM_7K_Gr1_to_Gr2_100mHü": 9,
+        "U16W_5K_Gr3_to_Gr6_80m": 13,
+        "MAN_10K_Gr23_to_Gr23_100m": 20,
+        "U12W_4K_Gr14_to_Gr20_60m": 22,
+    },
+    "sunday": {
+        "U14M_5K_Gr26_to_Gr29_60m": 0,
+        "MAN_6K_Gr35_to_Gr37_100m": 4,
+        "WOM_5K_Gr21_to_Gr22_100m": 10,
+        "MAN_10K_Gr23_to_Gr23_110mHü": 14,
+        "U14W_5K_Gr7_to_Gr13_60m": 18,
+        "WOM_7K_Gr1_to_Gr2_Weit": 23,
+    },
 }
 
 wettkampf_duration_budget = {
@@ -379,12 +390,13 @@ for anlage, num_disziplinen in used_anlagen.items():
                 task += candidate
                 hide_tasks.append(task)
 
-print('forcing wettkampf start times...')
-for disziplinen_name, start_times in wettkampf_start_times.items():
-    try:
-        scenario += disziplinen[disziplinen_name] >= start_times
-    except KeyError:
-        pass
+if not args.dont_set_start_time:
+    print('forcing wettkampf start times...')
+    for disziplinen_name, start_times in wettkampf_start_times[args.day].items():
+        try:
+            scenario += disziplinen[disziplinen_name] >= start_times
+        except KeyError:
+            pass
 
 print('ensuring pauses for groups and anlagen...')
 for i in range(event_duration_in_units):
