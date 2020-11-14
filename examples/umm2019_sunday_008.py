@@ -1,26 +1,61 @@
 import sys
 sys.path.append('../src')
 
+import argparse
 from collections import defaultdict
 import functools
 import operator
 from pyschedule import Scenario, solvers, plotters, alt
 
-event_duration_in_minutes = 18 * 60  # 09:00..18:00
+
+parser = argparse.ArgumentParser(description='calculate event timetable')
+parser.add_argument('--print-scenario-and-exit', action="store_true",
+                    help='print scenario and exit')
+default_time_limit = '10m'
+help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_time_limit)
+parser.add_argument('--time-limit', default=default_time_limit, help=help_text)
+valid_wettkampf_days = ['saturday', 'sunday']
+parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
+args = parser.parse_args()
+if args.time_limit.endswith('s'):
+    args.time_limit = float(args.time_limit[:-1])
+elif args.time_limit.endswith('m'):
+    args.time_limit = float(args.time_limit[:-1]) * 60
+elif args.time_limit.endswith('h'):
+    args.time_limit = float(args.time_limit[:-1]) * 3600
+else:
+    args.time_limit = float(args.time_limit)
+#print('args: {}'.format(args))
+
+event_duration_in_minutes = 10 * 60  # 09:00..18:00 + 1h (margin)
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
 scenario = Scenario('umm_saturday', horizon=event_duration_in_units)
 
+print('creating anlagen...')
 anlagen = {}
 
 
-def create_anlage(name, size=1):
-    resources = []
-    for i in range(size):
-        anlagen_name = name
-        if size > 1:
-            anlagen_name = "{}{}".format(name, i + 1)
+class AnlagenDescriptor(object):
+    def __init__(self, name, size=1):
+        self._name = name
+        self._size = size
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def size(self):
+        return self._size
+
+
+def create_anlage(descriptor):
+    for i in range(descriptor.size):
+        anlagen_name = descriptor.name
+        if descriptor.size > 1:
+            anlagen_name += "{}".format(i + 1)
         anlage = scenario.Resource(anlagen_name)
         anlagen[anlagen_name] = anlage
 
@@ -37,13 +72,17 @@ def any_anlage(pattern):
     return functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(item["resource"]))
 
 
-create_anlage("Läufe")
-create_anlage("Weit", 2)
-create_anlage("Kugel", 2)
-create_anlage("Hoch", 2)
-create_anlage("Diskus")
-create_anlage("Speer", 2)
-create_anlage("Stab")
+anlagen_descriptors = [
+    AnlagenDescriptor("Läufe"),
+    AnlagenDescriptor("Weit", 2),
+    AnlagenDescriptor("Kugel", 2),
+    AnlagenDescriptor("Hoch", 2),
+    AnlagenDescriptor("Diskus"),
+    AnlagenDescriptor("Speer"),
+    AnlagenDescriptor("Stab"),
+]
+for anlagen_descriptor in anlagen_descriptors:
+    create_anlage(anlagen_descriptor)
 
 
 used_anlagen = defaultdict(int)
@@ -131,6 +170,15 @@ wettkampf_start_times = {
     "WOM_7K_Gr1_to_Gr2_Weit": 23,
 }
 
+wettkampf_duration_budget = {
+    "U14M_5K": 26,
+    "MAN_6K": 41,
+    "WOM_5K": 28,
+    "MAN_10K": 39,
+    "U14W_5K": 31,
+    "WOM_7K": 18,
+}
+
 teilnehmer_data = {
     "U14M_5K": {
         "Gr26": 12,
@@ -165,6 +213,7 @@ teilnehmer_data = {
     },
 }
 
+print('creating disziplinen...')
 objective_terms = []
 gruppen = {}
 sequence_not_strict_gruppen = []
@@ -181,6 +230,7 @@ for wettkampf_name in disziplinen_data:
             if item["together"]:
                 disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
             if disziplinen_name not in disziplinen.keys():
+                print('  {}'.format(disziplinen_name))
                 disziplin = scenario.Task(disziplinen_name, **item['kwargs'])
                 disziplinen[disziplinen_name] = disziplin
             else:
@@ -217,8 +267,9 @@ for wettkampf_name in disziplinen_data:
                     continue
                 scenario += disziplin < last_disziplin
             sequence_not_strict_gruppen.append(gruppe)
-        objective_terms.append(last_disziplin * (1 + 2) - first_disziplin)
+        objective_terms.append(last_disziplin * (1 + 1) - first_disziplin)
 
+print('creating anlagen pauses...')
 for anlage, num_disziplinen in used_anlagen.items():
     for candidate in anlagen.values():
         if candidate.name.startswith(anlage):
@@ -228,12 +279,14 @@ for anlage, num_disziplinen in used_anlagen.items():
                 task += candidate
                 hide_tasks.append(task)
 
+print('forcing wettkampf start times...')
 for disziplinen_name, start_times in wettkampf_start_times.items():
     try:
         scenario += disziplinen[disziplinen_name] >= start_times
     except KeyError:
         pass
 
+print('ensuring pauses for groups and anlagen...')
 for i in range(event_duration_in_units):
     for gruppe in sequence_not_strict_gruppen:
         scenario += gruppe['state'][:i] <= 1
@@ -242,16 +295,19 @@ for i in range(event_duration_in_units):
         scenario += anlage['state'][:i] <= 1
         scenario += anlage['state'][:i] >= 0
 
+print('assembling objective...')
 scenario.clear_objective()
 for objective_term in set(objective_terms):
     scenario += objective_term
 print("objective: {}".format(scenario.objective()))
 
-#print("scenario: {}".format(scenario))
+if args.print_scenario_and_exit:
+    print("scenario: {}".format(scenario))
+    sys.exit()
 
-if solvers.mip.solve(scenario, time_limit=3*3600, msg=1):
+if solvers.mip.solve(scenario, time_limit=args.time_limit, msg=1):
     print(scenario.solution())
-    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm_sunday.png', fig_size=(100, 5), hide_tasks=hide_tasks)
+    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm2019_{}.png'.format(args.day), fig_size=(100, 5), hide_tasks=hide_tasks)
 else:
     print('no solution found')
     assert(1==0)
