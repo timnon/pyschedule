@@ -423,7 +423,10 @@ if args.print_scenario_and_exit:
     print("scenario: {}".format(scenario))
     sys.exit()
 
-print('solving problem...')
+if args.verbose:
+    print("scenario: {}".format(scenario))
+    print('solving problem...')
+
 if solvers.mip.solve(scenario, time_limit=args.time_limit, msg=1):
     print(scenario.solution())
     plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm2019_{}.png'.format(args.day), fig_size=(100, 5), hide_tasks=hide_tasks)
