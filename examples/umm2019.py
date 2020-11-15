@@ -70,7 +70,7 @@ def get_all_anlagen(pattern):
 
 
 def any_anlage(pattern):
-    return functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(item["resource"]))
+    return functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(pattern))
 
 
 anlagen_descriptors = {
