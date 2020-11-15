@@ -258,14 +258,36 @@ wettkampf_start_times = {
     },
 }
 
-wettkampf_duration_budget = {
-    "U14M_5K": 26,
-    "MAN_6K": 41,
-    "WOM_5K": 28,
-    "MAN_10K": 39,
-    "U14W_5K": 31,
-    "WOM_7K": 18,
+wettkampf_budget_data = {
+    "saturday": {
+        "U12W_4K": (22, 49),
+        "U16W_5K": (13, 42),
+        "WOM_7K": (9, 35),
+        "U12M_4K": (0, 27),
+        "U16M_6K": (6, 45),
+        "MAN_10K": (20, 53),
+    },
+    "sunday": {
+        "U14W_5K": (18, 49),
+        "WOM_7K": (23, 41),
+        "WOM_5K": (10, 38),
+        "U14M_5K": (0, 26),
+        "MAN_10K": (14,53),
+        "MAN_6K": (4, 45),
+    },
 }
+
+
+def get_objective_weight_factors(wettkampf_name):
+    sum_of_event_end_times = 0
+    for _, end_time in wettkampf_budget_data[args.day].values():
+        sum_of_event_end_times += end_time
+    event_end_time_factor = 500. / sum_of_event_end_times
+    event_start_time, event_end_time = wettkampf_budget_data[args.day][wettkampf_name]
+    event_duration = event_end_time - event_start_time
+    event_duration_factor = 100. / event_duration
+    return (round(event_end_time_factor + event_duration_factor), round(event_duration_factor))
+
 
 teilnehmer_data = {
     "U12W_4K": {
@@ -386,7 +408,8 @@ for wettkampf_name in disziplinen_data[args.day]:
                     continue
                 scenario += disziplin < last_disziplin
             sequence_not_strict_gruppen.append(gruppe)
-        objective_terms.append(last_disziplin * (1 + 1) - first_disziplin)
+        objective_weight_factors = get_objective_weight_factors(wettkampf_name)
+        objective_terms.append(last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1])
 
 if args.verbose:
     print('creating anlagen pauses...')
