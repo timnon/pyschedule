@@ -32,7 +32,7 @@ event_duration_in_minutes = 10 * 60  # 09:00..18:00 + 1h (margin)
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
-scenario = Scenario('umm_saturday', horizon=event_duration_in_units)
+scenario = Scenario('umm2019_{}'.format(args.day), horizon=event_duration_in_units)
 
 print('creating anlagen...')
 anlagen = {}
