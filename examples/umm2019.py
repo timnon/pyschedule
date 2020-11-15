@@ -375,7 +375,7 @@ for wettkampf_name in disziplinen_data[args.day]:
                 scenario += current_disziplin < next_disziplin
                 current_disziplin = next_disziplin
         else:
-            # 1st and last together - rest free
+            # 1st and last set - rest free
             for disziplin in gruppen_disziplinen[1:-1]:
                 if "Pause" in disziplin.name:
                     continue
