@@ -146,7 +146,7 @@ disziplinen_data = {
             dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
             dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=4, state=1, plot_color="lightblue")),
             dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-            dict(name="Diskus", together=False, resource="Diskus", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="lightblue")),
+            dict(name="Diskus", together=True, resource="Diskus", sequence_free=False, kwargs=dict(length=5, state=1, plot_color="lightblue")),
             dict(name="Pause_5", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
             dict(name="1000m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="lightblue")),
         ],
