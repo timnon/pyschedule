@@ -29,7 +29,7 @@ else:
     args.time_limit = float(args.time_limit)
 #print('args: {}'.format(args))
 
-event_duration_in_minutes = 10 * 60  # 09:00..18:00 + 1h (margin)
+event_duration_in_minutes = 12 * 60  # 09:00..18:00 + 3h (margin)
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
