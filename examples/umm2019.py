@@ -232,6 +232,8 @@ disziplinen_data = {
     }
 }
 
+last_wettkampf_of_the_day = "MAN_10K"
+
 disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K", "U16W_5K"]
 
 
@@ -351,7 +353,7 @@ teilnehmer_data = {
 
 if args.verbose:
     print('creating disziplinen...')
-objective_terms = []
+objective_terms = {}
 gruppen = {}
 sequence_not_strict_gruppen = []
 disziplinen = {}
@@ -408,8 +410,11 @@ for wettkampf_name in disziplinen_data[args.day]:
                     continue
                 scenario += disziplin < last_disziplin
             sequence_not_strict_gruppen.append(gruppe)
-        objective_weight_factors = get_objective_weight_factors(wettkampf_name)
-        objective_terms.append(last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1])
+    objective_weight_factors = get_objective_weight_factors(wettkampf_name)
+    objective_terms[wettkampf_name] = {
+        "formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
+        "last_disziplin": last_disziplin,
+    }
 
 if args.verbose:
     print('creating anlagen pauses...')
@@ -442,10 +447,17 @@ for i in range(event_duration_in_units):
         scenario += anlage['state'][:i] >= 0
 
 if args.verbose:
+    print('ensuring last wettkampf of the day...')
+last_disziplin_of_the_day = objective_terms[last_wettkampf_of_the_day]["last_disziplin"]
+for wettkampf_name, objective_term in objective_terms.items():
+    if wettkampf_name != last_wettkampf_of_the_day:
+        scenario += objective_term["last_disziplin"] < last_disziplin_of_the_day
+
+if args.verbose:
     print('assembling objective...')
 scenario.clear_objective()
-for objective_term in set(objective_terms):
-    scenario += objective_term
+for objective_term in objective_terms.values():
+    scenario += objective_term["formula"]
 
 if args.print_scenario_and_exit:
     print("scenario: {}".format(scenario))
