@@ -80,7 +80,7 @@ anlagen_descriptors = {
         AnlagenDescriptor("Läufe"),
         AnlagenDescriptor("Weit", 2),
         AnlagenDescriptor("Kugel", 2),
-        AnlagenDescriptor("Hoch"),
+        AnlagenDescriptor("Hoch", 2),
         AnlagenDescriptor("Diskus"),
     ],
     'sunday': [
