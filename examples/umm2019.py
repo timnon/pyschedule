@@ -13,6 +13,7 @@ parser.add_argument('--print-scenario-and-exit', action="store_true",
                     help='print scenario and exit')
 default_time_limit = '10m'
 help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_time_limit)
+parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
 parser.add_argument('--time-limit', default=default_time_limit, help=help_text)
 parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
 valid_wettkampf_days = ['saturday', 'sunday']
@@ -34,7 +35,8 @@ minutes_per_unit = 10
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
 scenario = Scenario('umm2019_{}'.format(args.day), horizon=event_duration_in_units)
 
-print('creating anlagen...')
+if args.verbose:
+    print('creating anlagen...')
 anlagen = {}
 
 
@@ -325,7 +327,8 @@ teilnehmer_data = {
     },
 }
 
-print('creating disziplinen...')
+if args.verbose:
+    print('creating disziplinen...')
 objective_terms = []
 gruppen = {}
 sequence_not_strict_gruppen = []
@@ -380,7 +383,8 @@ for wettkampf_name in disziplinen_data[args.day]:
             sequence_not_strict_gruppen.append(gruppe)
         objective_terms.append(last_disziplin * (1 + 1) - first_disziplin)
 
-print('creating anlagen pauses...')
+if args.verbose:
+    print('creating anlagen pauses...')
 for anlage, num_disziplinen in used_anlagen.items():
     for candidate in anlagen.values():
         if candidate.name.startswith(anlage):
@@ -391,14 +395,16 @@ for anlage, num_disziplinen in used_anlagen.items():
                 hide_tasks.append(task)
 
 if not args.dont_set_start_time:
-    print('forcing wettkampf start times...')
+    if args.verbose:
+        print('forcing wettkampf start times...')
     for disziplinen_name, start_times in wettkampf_start_times[args.day].items():
         try:
             scenario += disziplinen[disziplinen_name] >= start_times
         except KeyError:
             pass
 
-print('ensuring pauses for groups and anlagen...')
+if args.verbose:
+    print('ensuring pauses for groups and anlagen...')
 for i in range(event_duration_in_units):
     for gruppe in sequence_not_strict_gruppen:
         scenario += gruppe['state'][:i] <= 1
@@ -407,7 +413,8 @@ for i in range(event_duration_in_units):
         scenario += anlage['state'][:i] <= 1
         scenario += anlage['state'][:i] >= 0
 
-print('assembling objective...')
+if args.verbose:
+    print('assembling objective...')
 scenario.clear_objective()
 for objective_term in set(objective_terms):
     scenario += objective_term
