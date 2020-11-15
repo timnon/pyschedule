@@ -155,11 +155,11 @@ disziplinen_data = {
         "MAN_10K": [
             dict(name="100m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=1, state=1, plot_color="red")),
             dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=5, state=-1, plot_color='white')),
-            dict(name="Weit", together=False, resource="Weit", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="red")),
+            dict(name="Weit", together=False, resource="Weit1&Weit2", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="red")),
             dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=3, state=-1, plot_color='white')),
-            dict(name="Kugel", together=False, resource="Kugel", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="red")),
+            dict(name="Kugel", together=False, resource="Kugel1&Kugel2", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="red")),
             dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=4, state=-1, plot_color='white')),
-            dict(name="Hoch", together=False, resource="Hoch", sequence_free=False, kwargs=dict(length=4, state=1, plot_color="red")),
+            dict(name="Hoch", together=False, resource="Hoch1&Hoch2", sequence_free=False, kwargs=dict(length=4, state=1, plot_color="red")),
             dict(name="Pause_4", together=False, resource=None, sequence_free=False, kwargs=dict(length=2, state=-1, plot_color='white')),
             dict(name="400m", together=False, resource="Läufe", sequence_free=False, kwargs=dict(length=2, state=1, plot_color="red")),
         ],
@@ -181,7 +181,7 @@ disziplinen_data = {
             dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
             dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="lightblue")),
             dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
-            dict(name="Kugel", together=False, resource="Kugel", kwargs=dict(length=2, state=1, plot_color="lightblue")),
+            dict(name="Kugel", together=False, resource="Kugel1&Kugel2", kwargs=dict(length=2, state=1, plot_color="lightblue")),
             dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
             dict(name="Hoch", together=False, resource="Hoch", kwargs=dict(length=3, state=1, plot_color="lightblue")),
             dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='lightblue')),
@@ -352,9 +352,14 @@ for wettkampf_name in disziplinen_data[args.day]:
             gruppen_disziplinen.append(disziplin)
     
             if item["resource"]:
-                used_anlagen[item["resource"]] += 1
+                resource_base_name = item["resource"]
+                resource_names = item["resource"].split("&")
+                if resource_names[0][-1].isdigit():
+                    resource_base_name = resource_names[0][:-1]
+                used_anlagen[resource_base_name] += 1
                 if not item["together"] or gruppen_name == gruppen_names[0]:
-                    disziplin += any_anlage(item["resource"])
+                    for resource_name in resource_names:
+                        disziplin += any_anlage(resource_name)
 
             disziplin += gruppe
 
