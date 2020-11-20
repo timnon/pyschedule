@@ -34,6 +34,10 @@ output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), ev
 if args.verbose:
     print('creating output folder {!r}...'.format(output_folder_name))
 os.mkdir(output_folder_name)
+link_name = "latest"
+if os.path.exists(link_name):
+    os.remove(link_name)
+os.symlink(output_folder_name, link_name)
 os.chdir(output_folder_name)
 
 
