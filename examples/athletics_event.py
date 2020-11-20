@@ -137,10 +137,10 @@ class AthleticsEventScheduler(object):
                 "last_disziplin": last_disziplin,
             }
 
-    disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K", "U16W_5K"]
+    _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K", "U16W_5K"]
 
     def _is_wettkampf_disziplinen_sequence_strict(self, wettkampf_name):
-        return True  #wettkampf_name in disziplinen_sequence_strict_data
+        return wettkampf_name in self._disziplinen_sequence_strict_data
 
     def _get_objective_weight_factors(self, wettkampf_name):
         sum_of_event_end_times = 0
