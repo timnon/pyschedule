@@ -33,8 +33,8 @@ else:
 
 
 start_time = datetime.datetime.now()
-scenario_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
-output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), scenario_name)
+event_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
+output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), event_name)
 if args.verbose:
     print('creating output folder {!r}...'.format(output_folder_name))
 os.mkdir(output_folder_name)
@@ -45,11 +45,6 @@ event_duration_in_minutes = 12 * 60  # 09:00..18:00 + 3h (margin)
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
-scenario = Scenario(scenario_name, horizon=event_duration_in_units)
-
-if args.verbose:
-    print('creating anlagen...')
-anlagen = {}
 
 
 class AnlagenDescriptor(object):
@@ -64,27 +59,6 @@ class AnlagenDescriptor(object):
     @property
     def size(self):
         return self._size
-
-
-def create_anlage(descriptor):
-    for i in range(descriptor.size):
-        anlagen_name = descriptor.name
-        if descriptor.size > 1:
-            anlagen_name += "{}".format(i + 1)
-        anlage = scenario.Resource(anlagen_name)
-        anlagen[anlagen_name] = anlage
-
-
-def get_all_anlagen(pattern):
-    resources = []
-    for anlagen_name, anlage in anlagen.items():
-        if anlagen_name.startswith(pattern):
-            resources.append(anlage)
-    return resources
-
-
-def any_anlage(pattern):
-    return functools.reduce(lambda a, b: operator.or_(a, b), get_all_anlagen(pattern))
 
 
 anlagen_descriptors = {
@@ -105,11 +79,7 @@ anlagen_descriptors = {
         AnlagenDescriptor("Stab"),
     ],
 }
-for anlagen_descriptor in anlagen_descriptors[args.day]:
-    create_anlage(anlagen_descriptor)
 
-
-used_anlagen = defaultdict(int)
 
 disziplinen_data = {
     'saturday': {
@@ -363,132 +333,197 @@ teilnehmer_data = {
     },
 }
 
-if args.verbose:
-    print('creating disziplinen...')
-objective_terms = {}
-gruppen = {}
-sequence_not_strict_gruppen = []
-disziplinen = {}
-hide_tasks = []
-for wettkampf_name in disziplinen_data[args.day]:
-    gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
-    for gruppen_name in gruppen_names:
-        gruppe = scenario.Resource(gruppen_name)
-        gruppen[gruppen_name] = gruppe
-        gruppen_disziplinen = []
-        for item in disziplinen_data[args.day][wettkampf_name]:
-            disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
-            if item["together"]:
-                disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
-            if disziplinen_name not in disziplinen.keys():
-                disziplin = scenario.Task(disziplinen_name, **item['kwargs'])
-                disziplinen[disziplinen_name] = disziplin
-            else:
-                disziplin = disziplinen[disziplinen_name]
-            gruppen_disziplinen.append(disziplin)
-    
-            if item["resource"]:
-                resource_base_name = item["resource"]
-                resource_names = item["resource"].split("&")
-                if resource_names[0][-1].isdigit():
-                    resource_base_name = resource_names[0][:-1]
-                used_anlagen[resource_base_name] += 1
-                if not item["together"] or gruppen_name == gruppen_names[0]:
-                    for resource_name in resource_names:
-                        disziplin += any_anlage(resource_name)
 
-            disziplin += gruppe
+class AthleticsEvent(object):
+    def __init__(self, name, duration_in_units, verbose):
+        self._name = name
+        self._duration_in_units = duration_in_units
+        self._verbose = verbose
+        self._anlagen = {}
+        self._objective_terms = {}
+        self._used_anlagen = defaultdict(int)
+        self._disziplinen = {}
+        self._hide_tasks = []
+        self._sequence_not_strict_gruppen = []
+        self.create_scenario()
 
-            if "Pause" in disziplinen_name:
-                hide_tasks.append(disziplin)
+    def create_scenario(self):
+        self._scenario = Scenario(self._name, horizon=self._duration_in_units)
 
-        first_disziplin = gruppen_disziplinen[0]
-        last_disziplin = gruppen_disziplinen[-1]
-        if is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
-            # one after another: 1st, 2nd, 3rd,...
-            current_disziplin = gruppen_disziplinen[0]
-            for next_disziplin in gruppen_disziplinen[1:]:
-                scenario += current_disziplin < next_disziplin
-                current_disziplin = next_disziplin
+    @property
+    def scenario(self):
+        return self._scenario
+
+    def create_anlagen(self, descriptors):
+        if self._verbose:
+            print('creating anlagen...')
+        for descriptor in descriptors:
+            self._create_anlage(descriptor)
+
+    def _create_anlage(self, descriptor):
+        for i in range(descriptor.size):
+            anlagen_name = descriptor.name
+            if descriptor.size > 1:
+                anlagen_name += "{}".format(i + 1)
+            print("  {}".format(anlagen_name))
+            anlage = self._scenario.Resource(anlagen_name)
+            self._anlagen[anlagen_name] = anlage
+
+    def any_anlage(self, pattern):
+        return functools.reduce(lambda a, b: operator.or_(a, b), self._get_all_anlagen(pattern))
+
+    def _get_all_anlagen(self, pattern):
+        resources = []
+        for anlagen_name, anlage in self._anlagen.items():
+            if anlagen_name.startswith(pattern):
+                resources.append(anlage)
+        return resources
+
+    def create_disziplinen(self, disziplinen_data, teilnehmer_data):
+        gruppen = {}
+        if self._verbose:
+            print('creating disziplinen...')
+        for wettkampf_name in disziplinen_data:
+            if self._verbose:
+                print("  wettkampf: {}".format(wettkampf_name))
+            gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
+            for gruppen_name in gruppen_names:
+                if self._verbose:
+                    print("    gruppe: {}".format(gruppen_name))
+                gruppe = self._scenario.Resource(gruppen_name)
+                gruppen[gruppen_name] = gruppe
+                gruppen_disziplinen = []
+                for item in disziplinen_data[wettkampf_name]:
+                    disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
+                    if item["together"]:
+                        disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
+                    if disziplinen_name not in self._disziplinen.keys():
+                        disziplin = self._scenario.Task(disziplinen_name, **item['kwargs'])
+                        self._disziplinen[disziplinen_name] = disziplin
+                    else:
+                        disziplin = self._disziplinen[disziplinen_name]
+                    gruppen_disziplinen.append(disziplin)
+
+                    if item["resource"]:
+                        resource_base_name = item["resource"]
+                        resource_names = item["resource"].split("&")
+                        if resource_names[0][-1].isdigit():
+                            resource_base_name = resource_names[0][:-1]
+                        self._used_anlagen[resource_base_name] += 1
+                        if not item["together"] or gruppen_name == gruppen_names[0]:
+                            for resource_name in resource_names:
+                                disziplin += event.any_anlage(resource_name)
+
+                    disziplin += gruppe
+
+                    if "Pause" in disziplinen_name:
+                        self._hide_tasks.append(disziplin)
+
+                first_disziplin = gruppen_disziplinen[0]
+                last_disziplin = gruppen_disziplinen[-1]
+                if is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
+                    # one after another: 1st, 2nd, 3rd,...
+                    current_disziplin = gruppen_disziplinen[0]
+                    for next_disziplin in gruppen_disziplinen[1:]:
+                        self._scenario += current_disziplin < next_disziplin
+                        current_disziplin = next_disziplin
+                else:
+                    # 1st and last set - rest free
+                    for disziplin in gruppen_disziplinen[1:-1]:
+                        if "Pause" in disziplin.name:
+                            continue
+                        self._scenario += first_disziplin < disziplin
+
+                    for disziplin in gruppen_disziplinen[1:-1]:
+                        if "Pause" in disziplin.name:
+                            continue
+                        self._scenario += disziplin < last_disziplin
+                    self._sequence_not_strict_gruppen.append(gruppe)
+            objective_weight_factors = get_objective_weight_factors(wettkampf_name)
+            self._objective_terms[wettkampf_name] = {
+                "formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
+                "last_disziplin": last_disziplin,
+            }
+
+    def create_anlagen_pausen(self):
+        if self._verbose:
+            print('creating anlagen pausen...')
+        for anlage, num_disziplinen in self._used_anlagen.items():
+            for candidate in self._anlagen.values():
+                if candidate.name.startswith(anlage):
+                    for i in range(num_disziplinen):
+                        task_name = "{}_Pause_{}".format(candidate, i + 1)
+                        task = self._scenario.Task(task_name, length=1, schedule_cost=-1, state=-1, plot_color='white')
+                        task += candidate
+                        self._hide_tasks.append(task)
+
+    def set_wettkampf_start_times(self, wettkampf_start_times):
+        if args.verbose:
+            print('setting wettkampf start times...')
+        for disziplinen_name, start_times in wettkampf_start_times.items():
+            try:
+                self._scenario += self._disziplinen[disziplinen_name] >= start_times
+            except KeyError:
+                pass
+
+    def ensure_pausen_for_gruppen_and_anlagen(self):
+        if self._verbose:
+            print('ensuring pausen for groups and anlagen...')
+        for i in range(self._duration_in_units):
+            for gruppe in self._sequence_not_strict_gruppen:
+                self._scenario += gruppe['state'][:i] <= 1
+                self._scenario += gruppe['state'][:i] >= 0
+            for _, anlage in self._anlagen.items():
+                self._scenario += anlage['state'][:i] <= 1
+                self._scenario += anlage['state'][:i] >= 0
+
+    def ensure_last_wettkampf_of_the_day(self, last_wettkampf_of_the_day):
+        if self._verbose:
+            print('ensuring last wettkampf of the day...')
+        last_disziplin_of_the_day = self._objective_terms[last_wettkampf_of_the_day]["last_disziplin"]
+        for wettkampf_name, objective_term in self._objective_terms.items():
+            if wettkampf_name != last_wettkampf_of_the_day:
+                self._scenario += objective_term["last_disziplin"] < last_disziplin_of_the_day
+        
+    def set_objective(self):
+        if self._verbose:
+            print('setting objective...')
+        self._scenario.clear_objective()
+        for objective_term in self._objective_terms.values():
+            self._scenario += objective_term["formula"]
+
+    def solve(self, time_limit):
+        if self._verbose:
+            print('solving problem...')
+        if solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1):
+            solution_as_string = str(self._scenario.solution())
+            solution_filename = '{}_solution.txt'.format(self._name)
+            with open(solution_filename, 'w') as f:
+                f.write(solution_as_string)
+            print(solution_as_string)
+            plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
+                                     fig_size=(100, 5), hide_tasks=self._hide_tasks)
         else:
-            # 1st and last set - rest free
-            for disziplin in gruppen_disziplinen[1:-1]:
-                if "Pause" in disziplin.name:
-                    continue
-                scenario += first_disziplin < disziplin
-    
-            for disziplin in gruppen_disziplinen[1:-1]:
-                if "Pause" in disziplin.name:
-                    continue
-                scenario += disziplin < last_disziplin
-            sequence_not_strict_gruppen.append(gruppe)
-    objective_weight_factors = get_objective_weight_factors(wettkampf_name)
-    objective_terms[wettkampf_name] = {
-        "formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
-        "last_disziplin": last_disziplin,
-    }
+            print('no solution found')
+            assert(1==0)
+        
 
-if args.verbose:
-    print('creating anlagen pauses...')
-for anlage, num_disziplinen in used_anlagen.items():
-    for candidate in anlagen.values():
-        if candidate.name.startswith(anlage):
-            for i in range(num_disziplinen):
-                task_name = "{}_Pause_{}".format(candidate, i + 1)
-                task = scenario.Task(task_name, length=1, schedule_cost=-1, state=-1, plot_color='white')
-                task += candidate
-                hide_tasks.append(task)
-
+event = AthleticsEvent(name=event_name, duration_in_units=event_duration_in_units, verbose=args.verbose)
+event.create_anlagen(anlagen_descriptors[args.day])
+event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
+event.create_anlagen_pausen()
 if not args.dont_set_start_time:
-    if args.verbose:
-        print('forcing wettkampf start times...')
-    for disziplinen_name, start_times in wettkampf_start_times[args.day].items():
-        try:
-            scenario += disziplinen[disziplinen_name] >= start_times
-        except KeyError:
-            pass
-
-if args.verbose:
-    print('ensuring pauses for groups and anlagen...')
-for i in range(event_duration_in_units):
-    for gruppe in sequence_not_strict_gruppen:
-        scenario += gruppe['state'][:i] <= 1
-        scenario += gruppe['state'][:i] >= 0
-    for _, anlage in anlagen.items():
-        scenario += anlage['state'][:i] <= 1
-        scenario += anlage['state'][:i] >= 0
-
-if args.verbose:
-    print('ensuring last wettkampf of the day...')
-last_disziplin_of_the_day = objective_terms[last_wettkampf_of_the_day]["last_disziplin"]
-for wettkampf_name, objective_term in objective_terms.items():
-    if wettkampf_name != last_wettkampf_of_the_day:
-        scenario += objective_term["last_disziplin"] < last_disziplin_of_the_day
-
-if args.verbose:
-    print('assembling objective...')
-scenario.clear_objective()
-for objective_term in objective_terms.values():
-    scenario += objective_term["formula"]
-
-scenario_as_string = str(scenario)
-scenario_filename = '{}_scenario.txt'.format(scenario_name)
+    event.set_wettkampf_start_times(wettkampf_start_times[args.day])
+event.ensure_pausen_for_gruppen_and_anlagen()
+event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
+event.set_objective()
+scenario_as_string = str(event.scenario)
+scenario_filename = '{}_scenario.txt'.format(event_name)
 with open(scenario_filename, 'w') as f:
     f.write(scenario_as_string)
 if args.print_scenario_and_exit:
     print("scenario: {}".format(scenario_as_string))
     sys.exit()
-
 if args.verbose:
     print("scenario: {}".format(scenario_as_string))
-    print('solving problem...')
-if solvers.mip.solve(scenario, time_limit=args.time_limit, msg=1):
-    solution_as_string = str(scenario.solution())
-    print(solution_as_string)
-    solution_filename = '{}_solution.txt'.format(scenario_name)
-    with open(solution_filename, 'w') as f:
-        f.write(solution_as_string)
-    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='{}.png'.format(scenario_name), fig_size=(100, 5), hide_tasks=hide_tasks)
-else:
-    print('no solution found')
-    assert(1==0)
+event.solve(args.time_limit)
