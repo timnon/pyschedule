@@ -201,14 +201,13 @@ class AthleticsEventScheduler(object):
     def solve(self, time_limit):
         if self._verbose:
             print('solving problem...')
-        if solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1):
-            solution_as_string = str(self._scenario.solution())
-            solution_filename = '{}_solution.txt'.format(self._name)
-            with open(solution_filename, 'w') as f:
-                f.write(solution_as_string)
-            print(solution_as_string)
-            plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
-                                     fig_size=(100, 5), hide_tasks=self._hide_tasks)
-        else:
-            print('no solution found')
-            assert(1==0)
+        if not solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1):
+            sys.exit(1)
+
+        solution_as_string = str(self._scenario.solution())
+        solution_filename = '{}_solution.txt'.format(self._name)
+        with open(solution_filename, 'w') as f:
+            f.write(solution_as_string)
+        print(solution_as_string)
+        plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
+                                 fig_size=(100, 5), hide_tasks=self._hide_tasks)
