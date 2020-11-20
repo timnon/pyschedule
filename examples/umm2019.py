@@ -334,7 +334,7 @@ teilnehmer_data = {
 }
 
 
-class AthleticsEvent(object):
+class AthleticsEventScheduler(object):
     def __init__(self, name, duration_in_units, verbose):
         self._name = name
         self._duration_in_units = duration_in_units
@@ -508,7 +508,7 @@ class AthleticsEvent(object):
             assert(1==0)
         
 
-event = AthleticsEvent(name=event_name, duration_in_units=event_duration_in_units, verbose=args.verbose)
+event = AthleticsEventScheduler(name=event_name, duration_in_units=event_duration_in_units, verbose=args.verbose)
 event.create_anlagen(anlagen_descriptors[args.day])
 event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
 event.create_anlagen_pausen()
