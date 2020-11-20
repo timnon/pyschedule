@@ -191,7 +191,7 @@ disziplinen_data = {
             dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
             dict(name="Speer", together=True, resource="Speer", kwargs=dict(length=6, state=1, plot_color="lightgreen")),
             dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='lightgreen')),
-            dict(name="200m", together=False, resource="Läufe", kwargs=dict(length=2, state=1, plot_color="lightgreen")),
+            dict(name="800m", together=False, resource="Läufe", kwargs=dict(length=2, state=1, plot_color="lightgreen")),
         ],
     }
 }
