@@ -3,8 +3,10 @@ sys.path.append('../src')
 
 import argparse
 from collections import defaultdict
+import datetime
 import functools
 import operator
+import os
 from pyschedule import Scenario, solvers, plotters, alt
 
 
@@ -29,11 +31,21 @@ else:
     args.time_limit = float(args.time_limit)
 #print('args: {}'.format(args))
 
+
+start_time = datetime.datetime.now()
+scenario_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
+output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), scenario_name)
+if args.verbose:
+    print('creating output folder {!r}...'.format(output_folder_name))
+os.mkdir(output_folder_name)
+os.chdir(output_folder_name)
+
+
 event_duration_in_minutes = 12 * 60  # 09:00..18:00 + 3h (margin)
 minutes_per_unit = 10
 
 event_duration_in_units = event_duration_in_minutes // minutes_per_unit
-scenario = Scenario('umm2019_{}'.format(args.day), horizon=event_duration_in_units)
+scenario = Scenario(scenario_name, horizon=event_duration_in_units)
 
 if args.verbose:
     print('creating anlagen...')
@@ -459,17 +471,24 @@ scenario.clear_objective()
 for objective_term in objective_terms.values():
     scenario += objective_term["formula"]
 
+scenario_as_string = str(scenario)
+scenario_filename = '{}_scenario.txt'.format(scenario_name)
+with open(scenario_filename, 'w') as f:
+    f.write(scenario_as_string)
 if args.print_scenario_and_exit:
-    print("scenario: {}".format(scenario))
+    print("scenario: {}".format(scenario_as_string))
     sys.exit()
 
 if args.verbose:
-    print("scenario: {}".format(scenario))
+    print("scenario: {}".format(scenario_as_string))
     print('solving problem...')
-
 if solvers.mip.solve(scenario, time_limit=args.time_limit, msg=1):
-    print(scenario.solution())
-    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='umm2019_{}.png'.format(args.day), fig_size=(100, 5), hide_tasks=hide_tasks)
+    solution_as_string = str(scenario.solution())
+    print(solution_as_string)
+    solution_filename = '{}_solution.txt'.format(scenario_name)
+    with open(solution_filename, 'w') as f:
+        f.write(solution_as_string)
+    plotters.matplotlib.plot(scenario, show_task_labels=True, img_filename='{}.png'.format(scenario_name), fig_size=(100, 5), hide_tasks=hide_tasks)
 else:
     print('no solution found')
     assert(1==0)
