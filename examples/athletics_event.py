@@ -58,7 +58,8 @@ class AthleticsEventScheduler(object):
             anlagen_name = descriptor.name
             if descriptor.size > 1:
                 anlagen_name += "{}".format(i + 1)
-            print("  {}".format(anlagen_name))
+            if self._verbose:
+                print("  {}".format(anlagen_name))
             anlage = self._scenario.Resource(anlagen_name)
             self._anlagen[anlagen_name] = anlage
 
