@@ -154,7 +154,9 @@ def plot(scenario,img_filename=None,resource_height=1.0,show_task_labels=True,
 	plt.title(str(S.name))
 	plt.yticks([ resource_height*x + resource_height/2.0 for x in range(len(R_ticks)) ],R_ticks[::-1])
 	plt.ylim(0,resource_sizes_count*resource_height)#resource_height*len(resources))
-	plt.xlim(0,max([ x_ for (I,R,x,x_) in solution if R in visible_resources ]))
+	xlimit = max([ x_ for (I,R,x,x_) in solution if R in visible_resources ])
+	plt.xlim(0,xlimit)
+	plt.xticks(range(xlimit+1))
 	if img_filename is not None:
 		fig.figsize=(1,1)
 		plt.savefig(img_filename,dpi=200,bbox_inches='tight')
