@@ -43,16 +43,18 @@ os.chdir(output_folder_name)
 log_level = logging.INFO
 if args.verbose:
     log_level=logging.DEBUG
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('{}.log'.format(event_name))
 fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(log_level)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
-logger.addHandler(ch)
-logger.addHandler(fh)
+root_logger.addHandler(ch)
+root_logger.addHandler(fh)
+matplotlib_logger = logging.getLogger("matplotlib")
+matplotlib_logger.setLevel(logging.INFO)
 
 
 logging.debug('output folder: {!r}'.format(output_folder_name))
