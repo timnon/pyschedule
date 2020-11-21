@@ -174,7 +174,7 @@ disziplinen_data = {
             dict(name="Diskus", together=False, resource="Diskus", kwargs=dict(length=2, state=1, plot_color="red")),
             dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=4, state=-1, plot_color='red')),
             dict(name="Stab", together=False, resource="Stab", kwargs=dict(length=11, state=1, plot_color="red")),
-            dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=6, state=-1, plot_color='red')),
+            dict(name="Pause_3", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='red')),
             dict(name="Speer", together=False, resource="Speer", kwargs=dict(length=3, state=1, plot_color="red")),
             dict(name="Pause_4", together=False, resource=None, kwargs=dict(length=3, state=-1, plot_color='red')),
             dict(name="1500m", together=True, resource="Läufe", kwargs=dict(length=1, state=1, plot_color="red")),
