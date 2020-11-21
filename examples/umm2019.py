@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import logging
 import os
 import sys
 
@@ -31,14 +32,30 @@ else:
 start_time = datetime.datetime.now()
 event_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
 output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), event_name)
-if args.verbose:
-    print('creating output folder {!r}...'.format(output_folder_name))
 os.mkdir(output_folder_name)
 link_name = "latest"
 if os.path.exists(link_name):
     os.remove(link_name)
 os.symlink(output_folder_name, link_name)
 os.chdir(output_folder_name)
+
+
+log_level = logging.INFO
+if args.verbose:
+    log_level=logging.DEBUG
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('{}.log'.format(event_name))
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(log_level)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+logger.addHandler(ch)
+logger.addHandler(fh)
+
+
+logging.debug('output folder: {!r}'.format(output_folder_name))
 
 
 event_duration_in_minutes = 12 * 60  # 09:00..18:00 + 3h (margin)
@@ -306,7 +323,7 @@ teilnehmer_data = {
 
 event = athletics_event.AthleticsEventScheduler(
     name=event_name, duration_in_units=event_duration_in_units,
-    wettkampf_budget_data=wettkampf_budget_data[args.day], verbose=args.verbose)
+    wettkampf_budget_data=wettkampf_budget_data[args.day])
 event.create_anlagen(anlagen_descriptors[args.day])
 event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
 event.create_anlagen_pausen()
@@ -320,8 +337,7 @@ scenario_filename = '{}_scenario.txt'.format(event_name)
 with open(scenario_filename, 'w') as f:
     f.write(scenario_as_string)
 if args.print_scenario_and_exit:
-    print("scenario: {}".format(scenario_as_string))
+    logging.info("scenario: {}".format(scenario_as_string))
     sys.exit()
-if args.verbose:
-    print("scenario: {}".format(scenario_as_string))
+logging.info("scenario: {}".format(scenario_as_string))
 event.solve(args.time_limit)

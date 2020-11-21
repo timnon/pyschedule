@@ -5,6 +5,7 @@ import argparse
 from collections import defaultdict
 import datetime
 import functools
+import logging
 import operator
 import os
 from pyschedule import Scenario, solvers, plotters, alt
@@ -25,11 +26,10 @@ class AnlagenDescriptor(object):
 
 
 class AthleticsEventScheduler(object):
-    def __init__(self, name, duration_in_units, wettkampf_budget_data, verbose):
+    def __init__(self, name, duration_in_units, wettkampf_budget_data):
         self._name = name
         self._duration_in_units = duration_in_units
         self._wettkampf_budget_data = wettkampf_budget_data
-        self._verbose = verbose
         self._anlagen = {}
         self._objective_terms = {}
         self._used_anlagen = defaultdict(int)
@@ -46,9 +46,7 @@ class AthleticsEventScheduler(object):
         return self._scenario
 
     def create_anlagen(self, descriptors):
-        if self._verbose:
-            print('creating anlagen...')
-            print('descriptors: {}'.format(descriptors))
+        logging.debug('creating anlagen...')
         for descriptor in descriptors:
             self._create_anlage(descriptor)
 
@@ -58,8 +56,7 @@ class AthleticsEventScheduler(object):
             anlagen_name = descriptor.name
             if descriptor.size > 1:
                 anlagen_name += "{}".format(i + 1)
-            if self._verbose:
-                print("  {}".format(anlagen_name))
+            logging.debug("  {}".format(anlagen_name))
             anlage = self._scenario.Resource(anlagen_name)
             self._anlagen[anlagen_name] = anlage
 
@@ -74,15 +71,12 @@ class AthleticsEventScheduler(object):
         return resources
 
     def create_disziplinen(self, disziplinen_data, teilnehmer_data):
-        if self._verbose:
-            print('creating disziplinen...')
+        logging.debug('creating disziplinen...')
         for wettkampf_name in disziplinen_data:
-            if self._verbose:
-                print("  wettkampf: {}".format(wettkampf_name))
+            logging.debug("  wettkampf: {}".format(wettkampf_name))
             gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
             for gruppen_name in gruppen_names:
-                if self._verbose:
-                    print("    gruppe: {}".format(gruppen_name))
+                logging.debug("    gruppe: {}".format(gruppen_name))
                 gruppe = self._scenario.Resource(gruppen_name)
                 gruppen_disziplinen = []
                 for item in disziplinen_data[wettkampf_name]:
@@ -153,8 +147,7 @@ class AthleticsEventScheduler(object):
         return (round(event_end_time_factor + event_duration_factor), round(event_duration_factor))
 
     def create_anlagen_pausen(self):
-        if self._verbose:
-            print('creating anlagen pausen...')
+        logging.debug('creating anlagen pausen...')
         for anlage, num_disziplinen in self._used_anlagen.items():
             for candidate in self._anlagen.values():
                 if candidate.name.startswith(anlage):
@@ -165,8 +158,7 @@ class AthleticsEventScheduler(object):
                         self._hide_tasks.append(task)
 
     def set_wettkampf_start_times(self, wettkampf_start_times):
-        if self._verbose:
-            print('setting wettkampf start times...')
+        logging.debug('setting wettkampf start times...')
         for disziplinen_name, start_times in wettkampf_start_times.items():
             try:
                 self._scenario += self._disziplinen[disziplinen_name] >= start_times
@@ -174,8 +166,7 @@ class AthleticsEventScheduler(object):
                 pass
 
     def ensure_pausen_for_gruppen_and_anlagen(self):
-        if self._verbose:
-            print('ensuring pausen for groups and anlagen...')
+        logging.debug('ensuring pausen for groups and anlagen...')
         for i in range(self._duration_in_units):
             for gruppe in self._sequence_not_strict_gruppen:
                 self._scenario += gruppe['state'][:i] <= 1
@@ -185,23 +176,20 @@ class AthleticsEventScheduler(object):
                 self._scenario += anlage['state'][:i] >= 0
 
     def ensure_last_wettkampf_of_the_day(self, last_wettkampf_of_the_day):
-        if self._verbose:
-            print('ensuring last wettkampf of the day...')
+        logging.debug('ensuring last wettkampf of the day...')
         last_disziplin_of_the_day = self._objective_terms[last_wettkampf_of_the_day]["last_disziplin"]
         for wettkampf_name, objective_term in self._objective_terms.items():
             if wettkampf_name != last_wettkampf_of_the_day:
                 self._scenario += objective_term["last_disziplin"] < last_disziplin_of_the_day
         
     def set_objective(self):
-        if self._verbose:
-            print('setting objective...')
+        logging.debug('setting objective...')
         self._scenario.clear_objective()
         for objective_term in self._objective_terms.values():
             self._scenario += objective_term["formula"]
 
     def solve(self, time_limit):
-        if self._verbose:
-            print('solving problem...')
+        logging.debug('solving problem...')
         if not solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1):
             sys.exit(1)
 
@@ -209,6 +197,6 @@ class AthleticsEventScheduler(object):
         solution_filename = '{}_solution.txt'.format(self._name)
         with open(solution_filename, 'w') as f:
             f.write(solution_as_string)
-        print(solution_as_string)
+        logging.info(solution_as_string)
         plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
                                  fig_size=(100, 5), hide_tasks=self._hide_tasks)
