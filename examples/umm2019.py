@@ -180,7 +180,7 @@ disziplinen_data = {
             dict(name="1500m", together=True, resource="Läufe", kwargs=dict(length=1, state=1, plot_color="red")),
         ],
         "U14W_5K": [
-            dict(name="60m", together=True, resource="Läufe", kwargs=dict(length=5, state=1, plot_color="pink")),
+            dict(name="60m", together=True, resource="Läufe", kwargs=dict(length=3, state=1, plot_color="pink")),
             dict(name="Pause_1", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
             dict(name="Weit", together=False, resource="Weit", kwargs=dict(length=3, state=1, plot_color="pink")),
             dict(name="Pause_2", together=False, resource=None, kwargs=dict(length=1, state=-1, plot_color='pink')),
