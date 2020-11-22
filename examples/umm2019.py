@@ -10,10 +10,15 @@ import athletics_event
 parser = argparse.ArgumentParser(description='calculate event timetable')
 parser.add_argument('--print-scenario-and-exit', action="store_true",
                     help='print scenario and exit')
-default_time_limit = '10m'
-help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_time_limit)
+default_arguments = {
+    "time_limit": "10m",
+    "ratio_gap": 0.0,
+}
+help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
 parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
-parser.add_argument('--time-limit', default=default_time_limit, help=help_text)
+parser.add_argument('--time-limit', default=default_arguments["time_limit"], help=help_text)
+help_text = 'ratio gap, e.g. 0.3 (default: {})'.format(default_arguments["ratio_gap"])
+parser.add_argument('--ratio-gap', type=float, default=default_arguments["ratio_gap"], help=help_text)
 parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
 valid_wettkampf_days = ['saturday', 'sunday']
 parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
@@ -26,7 +31,6 @@ elif args.time_limit.endswith('h'):
     args.time_limit = float(args.time_limit[:-1]) * 3600
 else:
     args.time_limit = float(args.time_limit)
-#print('args: {}'.format(args))
 
 
 start_time = datetime.datetime.now()
@@ -57,6 +61,7 @@ matplotlib_logger = logging.getLogger("matplotlib")
 matplotlib_logger.setLevel(logging.INFO)
 
 
+logging.debug("arguments: {}".format(args))
 logging.debug('output folder: {!r}'.format(output_folder_name))
 
 
@@ -342,4 +347,4 @@ if args.print_scenario_and_exit:
     logging.info("scenario: {}".format(scenario_as_string))
     sys.exit()
 logging.debug("scenario: {}".format(scenario_as_string))
-event.solve(args.time_limit)
+event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap)
