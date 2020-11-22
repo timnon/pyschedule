@@ -341,5 +341,5 @@ with open(scenario_filename, 'w') as f:
 if args.print_scenario_and_exit:
     logging.info("scenario: {}".format(scenario_as_string))
     sys.exit()
-logging.info("scenario: {}".format(scenario_as_string))
+logging.debug("scenario: {}".format(scenario_as_string))
 event.solve(args.time_limit)
