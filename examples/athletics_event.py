@@ -190,7 +190,14 @@ class AthleticsEventScheduler(object):
 
     def solve(self, time_limit):
         logging.debug('solving problem...')
-        if not solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1):
+        status = solvers.mip.solve(self._scenario, time_limit=time_limit, msg=1)
+        cbc_logfile_name = "cbc.log"
+        if os.path.exists(cbc_logfile_name):
+            with open(cbc_logfile_name) as cbc_logfile:
+                logging.info(cbc_logfile.read())
+        else:
+            logging.info("no {!r} found".format(cbc_logfile_name))
+        if not status:
             sys.exit(1)
 
         solution_as_string = str(self._scenario.solution())
