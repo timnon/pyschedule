@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../src')
+sys.path.append('../../src')
 
 import argparse
 from collections import defaultdict
