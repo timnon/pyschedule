@@ -131,7 +131,7 @@ class AthleticsEventScheduler(object):
                 "last_disziplin": last_disziplin,
             }
 
-    _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K", "U16W_5K"]
+    _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K"]
 
     def _is_wettkampf_disziplinen_sequence_strict(self, wettkampf_name):
         return wettkampf_name in self._disziplinen_sequence_strict_data
