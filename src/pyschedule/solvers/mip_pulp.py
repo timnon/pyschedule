@@ -99,7 +99,7 @@ class MIP(object):
 			if ratio_gap is not None:
 				options.extend(['ratio', str(ratio_gap)])
 			if kind == 'CBC':
-				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options, keepFiles=1))
+				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
 			elif kind == 'COIN':
 				self.mip.solve(pl.COIN(msg=msg, options=options))
 		elif kind == 'GUROBI':
