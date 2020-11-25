@@ -1,6 +1,7 @@
 TODO
 ====
 
+- Use multi-threading.
 - Run with wettkampf start time unset...
 - Evaluate objective_value from existing solution.
 - Swap x and y axis with matplotlib.
