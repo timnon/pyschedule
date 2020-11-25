@@ -39,12 +39,13 @@ else:
 start_time = datetime.datetime.now()
 event_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
 output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), event_name)
-os.mkdir(output_folder_name)
-link_name = "latest"
-if os.path.exists(link_name):
-    os.remove(link_name)
-os.symlink(output_folder_name, link_name)
-os.chdir(output_folder_name)
+output_folder_path = os.path.join("results", output_folder_name)
+os.makedirs(output_folder_path, exist_ok=True)
+link_path = os.path.join("results", "latest")
+if os.path.exists(link_path):
+    os.remove(link_path)
+os.symlink(output_folder_name, link_path)
+os.chdir(output_folder_path)
 
 
 log_level = logging.INFO
