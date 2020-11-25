@@ -15,8 +15,8 @@ default_arguments = {
     "ratio_gap": 0.0,
     "random_seed": None,
 }
-help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
 parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
+help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
 parser.add_argument('--time-limit', default=default_arguments["time_limit"], help=help_text)
 help_text = 'ratio gap, e.g. 0.3 (default: {})'.format(default_arguments["ratio_gap"])
 parser.add_argument('--ratio-gap', type=float, default=default_arguments["ratio_gap"], help=help_text)
