@@ -77,6 +77,8 @@ class MIP(object):
 		ratio_gap = None
 		if 'ratio_gap' in kwarg:
 			ratio_gap = float(kwarg['ratio_gap'])
+		if 'threads' in kwarg:
+			threads = int(kwarg['threads'])
 		start_time = time.time()
 		# select solver for pl
 		if kind == 'CPLEX':
@@ -99,7 +101,7 @@ class MIP(object):
 			if ratio_gap is not None:
 				options.extend(['ratio', str(ratio_gap)])
 			if kind == 'CBC':
-				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options))
+				self.mip.solve(pl.PULP_CBC_CMD(msg=msg, options=options, threads=threads))
 			elif kind == 'COIN':
 				self.mip.solve(pl.COIN(msg=msg, options=options))
 		elif kind == 'GUROBI':

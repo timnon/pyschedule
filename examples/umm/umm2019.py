@@ -14,6 +14,7 @@ default_arguments = {
     "time_limit": "10m",
     "ratio_gap": 0.0,
     "random_seed": None,
+    "threads": None,
 }
 parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
 help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
@@ -22,6 +23,8 @@ help_text = 'ratio gap, e.g. 0.3 (default: {})'.format(default_arguments["ratio_
 parser.add_argument('--ratio-gap', type=float, default=default_arguments["ratio_gap"], help=help_text)
 help_text = 'random seed, e.g. 42 (default: {})'.format(default_arguments["random_seed"])
 parser.add_argument('--random-seed', type=int, default=default_arguments["random_seed"], help=help_text)
+help_text = 'threads, e.g. 4 (default: {})'.format(default_arguments["threads"])
+parser.add_argument('--threads', type=int, default=default_arguments["threads"], help=help_text)
 parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
 valid_wettkampf_days = ['saturday', 'sunday']
 parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
@@ -353,4 +356,4 @@ if args.print_scenario_and_exit:
     logging.info("scenario: {}".format(scenario_as_string))
     sys.exit()
 logging.debug("scenario: {}".format(scenario_as_string))
-event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed)
+event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed, threads=args.threads)
