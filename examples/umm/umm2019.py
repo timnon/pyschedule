@@ -256,6 +256,7 @@ wettkampf_start_times = {
 
 wettkampf_budget_data = {
     "saturday": {
+        # wettkampf: (start_time_unit, end_time_unit)
         "U12W_4K": (22, 49),
         "U16W_5K": (13, 42),
         "WOM_7K": (9, 35),
