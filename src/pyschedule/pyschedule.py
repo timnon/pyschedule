@@ -399,8 +399,8 @@ class Scenario(_SchedElement):
 		"""
 		Returns the value of the objective
 		"""
-		return sum([ T['_delay_cost']*(T.start_value+T.length) for T in self.tasks()
-					if '_delay_cost' in T])
+		return sum([ T['delay_cost']*(T.start_value+T.length) for T in self.tasks()
+					if 'delay_cost' in T])
 
 	def use_makespan_objective(self) :
 		"""
