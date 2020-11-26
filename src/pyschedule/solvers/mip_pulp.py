@@ -77,6 +77,7 @@ class MIP(object):
 		ratio_gap = None
 		if 'ratio_gap' in kwarg:
 			ratio_gap = float(kwarg['ratio_gap'])
+		threads = None
 		if 'threads' in kwarg:
 			threads = int(kwarg['threads'])
 		start_time = time.time()
