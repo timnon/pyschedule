@@ -357,3 +357,4 @@ if args.print_scenario_and_exit:
     sys.exit()
 logging.debug("scenario: {}".format(scenario_as_string))
 event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed, threads=args.threads)
+logging.debug("done")
