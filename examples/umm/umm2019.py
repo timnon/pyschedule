@@ -45,7 +45,7 @@ output_folder_name = "{}_{}".format(start_time.isoformat(timespec="seconds"), ev
 output_folder_path = os.path.join("results", output_folder_name)
 os.makedirs(output_folder_path, exist_ok=True)
 link_path = os.path.join("results", "latest")
-if os.path.exists(link_path):
+if os.path.lexists(link_path):
     os.remove(link_path)
 os.symlink(output_folder_name, link_path)
 os.chdir(output_folder_path)
