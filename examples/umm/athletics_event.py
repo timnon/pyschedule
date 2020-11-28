@@ -188,9 +188,9 @@ class AthleticsEventScheduler(object):
         for objective_term in self._objective_terms.values():
             self._scenario += objective_term["formula"]
 
-    def solve(self, time_limit, ratio_gap, random_seed, threads):
+    def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
         logging.debug('solving problem...')
-        status = solvers.mip.solve(self._scenario, time_limit=time_limit, ratio_gap=ratio_gap, random_seed=random_seed, threads=threads, msg=1)
+        status = solvers.mip.solve(self._scenario, time_limit=time_limit, ratio_gap=ratio_gap, random_seed=random_seed, threads=threads, msg=msg)
         cbc_logfile_name = "cbc.log"
         if os.path.exists(cbc_logfile_name):
             with open(cbc_logfile_name) as cbc_logfile:
