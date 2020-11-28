@@ -11,6 +11,10 @@ import os
 from pyschedule import Scenario, solvers, plotters, alt
 
 
+class NoSolutionError(RuntimeError):
+    pass
+
+
 class AnlagenDescriptor(object):
     def __init__(self, name, size=1):
         self._name = name
@@ -198,7 +202,7 @@ class AthleticsEventScheduler(object):
         else:
             logging.info("no {!r} found".format(cbc_logfile_name))
         if not status:
-            sys.exit(1)
+            raise NoSolutionError()
 
         solution_as_string = str(self._scenario.solution())
         solution_filename = '{}_solution.txt'.format(self._name)
