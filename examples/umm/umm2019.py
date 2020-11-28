@@ -341,8 +341,6 @@ event = athletics_event.AthleticsEventScheduler(
     wettkampf_budget_data=wettkampf_budget_data[args.day])
 event.create_anlagen(anlagen_descriptors[args.day])
 event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
-#event.create_disziplinen({k: v for k,v in disziplinen_data[args.day].items() if k in ["WOM_7K", "WOM_5K", "U14M_5K", "MAN_10K", "MAN_6K"]}, teilnehmer_data)
-#event.create_disziplinen({k: v for k,v in disziplinen_data[args.day].items() if k in ["U16W_5K", "WOM_7K", "U12M_4K", "U16M_6K", "MAN_10K"]}, teilnehmer_data)
 event.create_anlagen_pausen()
 if not args.dont_set_start_time:
     event.set_wettkampf_start_times(wettkampf_start_times[args.day])
