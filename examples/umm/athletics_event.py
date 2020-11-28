@@ -129,11 +129,15 @@ class AthleticsEventScheduler(object):
                             continue
                         self._scenario += disziplin < last_disziplin
                     self._sequence_not_strict_gruppen.append(gruppe)
-            objective_weight_factors = self._get_objective_weight_factors(wettkampf_name)
-            self._objective_terms[wettkampf_name] = {
-                "formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
-                "last_disziplin": last_disziplin,
-            }
+                objective_weight_factors = self._get_objective_weight_factors(wettkampf_name)
+                self._objective_terms[wettkampf_name] = {
+                    "formula": first_disziplin + last_disziplin,  # compact
+                    #"formula": first_disziplin * 10 + gruppen_disziplinen[1] * 1 + gruppen_disziplinen[2] * 1 + last_disziplin * 10,  # compact
+                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],  # not optimal (+1)
+                    #"formula": first_disziplin * 10 + last_disziplin * 10,  # not optimal (+4)
+                    #"formula": last_disziplin - first_disziplin,  # not optimal (+8)
+                    "last_disziplin": last_disziplin,
+                }
 
     _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K"]
 
