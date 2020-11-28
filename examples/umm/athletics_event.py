@@ -77,6 +77,8 @@ class AthleticsEventScheduler(object):
     def create_disziplinen(self, disziplinen_data, teilnehmer_data):
         logging.debug('creating disziplinen...')
         for wettkampf_name in disziplinen_data:
+            if wettkampf_name not in teilnehmer_data:
+                continue
             logging.debug("  wettkampf: {}".format(wettkampf_name))
             gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
             for gruppen_name in gruppen_names:
