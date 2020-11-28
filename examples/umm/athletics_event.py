@@ -30,7 +30,7 @@ class AnlagenDescriptor(object):
 
 
 class AthleticsEventScheduler(object):
-    def __init__(self, name, duration_in_units, wettkampf_budget_data):
+    def __init__(self, name, duration_in_units, wettkampf_budget_data=None):
         self._name = name
         self._duration_in_units = duration_in_units
         self._wettkampf_budget_data = wettkampf_budget_data
