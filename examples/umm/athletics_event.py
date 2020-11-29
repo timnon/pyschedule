@@ -49,6 +49,14 @@ class AthleticsEventScheduler(object):
     def scenario(self):
         return self._scenario
 
+    def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times):
+        self.create_anlagen(anlagen_descriptors)
+        self.create_disziplinen(disziplinen_data, teilnehmer_data)
+        self.create_anlagen_pausen()
+        self.set_wettkampf_start_times(wettkampf_start_times)
+        self.ensure_pausen_for_gruppen_and_anlagen()
+        self.set_objective()
+
     def create_anlagen(self, descriptors):
         logging.debug('creating anlagen...')
         for descriptor in descriptors:
@@ -75,6 +83,8 @@ class AthleticsEventScheduler(object):
         return resources
 
     def create_disziplinen(self, disziplinen_data, teilnehmer_data):
+        self._disziplinen_data = disziplinen_data
+        self._teilnehmer_data = teilnehmer_data
         logging.debug('creating disziplinen...')
         for wettkampf_name in disziplinen_data:
             if wettkampf_name not in teilnehmer_data:
@@ -218,6 +228,12 @@ class AthleticsEventScheduler(object):
         self._scenario.clear_objective()
         for objective_term in self._objective_terms.values():
             self._scenario += objective_term["formula"]
+
+    def getGroups(self, wettkampf_name):
+        return list(self._teilnehmer_data[wettkampf_name].keys())
+
+    def getDisziplinen(self, wettkampf_name):
+        return list(self._disziplinen_data[wettkampf_name])
 
     def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
         logging.debug('solving problem...')
