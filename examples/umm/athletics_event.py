@@ -134,6 +134,31 @@ class AthleticsEventScheduler(object):
                 objective_weight_factors = self._get_objective_weight_factors(wettkampf_name)
                 self._objective_terms[wettkampf_name] = {
                     "formula": first_disziplin * -1 + last_disziplin * 2, # U12M_4K=0, U12W_4K=0
+                    #"formula": last_disziplin * (+1),  # ?
+                    #"formula": last_disziplin * (+1000000),
+                    #"formula": first_disziplin + last_disziplin,
+                    #"formula": last_disziplin*2 - first_disziplin,
+                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
+                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],  # +1
+                    #"formula": first_disziplin + last_disziplin,  # new: +1, +1
+                    #"formula": first_disziplin * 1 + last_disziplin * 1, # new: +1, +1
+                    #"formula": first_disziplin + last_disziplin * 10,  # new: +25, +1
+                    #"formula": first_disziplin + last_disziplin * 100,  # new: +23, +1
+                    #"formula": first_disziplin + last_disziplin * 1000,  # +3, +8
+                    #"formula": first_disziplin + last_disziplin * 10000,  # +2, +1
+                    #"formula": first_disziplin + last_disziplin * 100000,  # new: +0, +2
+                    #"formula": first_disziplin + last_disziplin * 1000000,  # +17, +0
+                    #"formula": first_disziplin + last_disziplin * 10000000,  # +0, +3
+                    #"formula": first_disziplin + last_disziplin * 100000000,  # +6, +0
+                    #"formula": first_disziplin + last_disziplin * 1000000000,  # ?, +8
+                    #"formula": first_disziplin + last_disziplin * 10000000000,  # +35, +1
+                    #"formula": first_disziplin * 10 + gruppen_disziplinen[1] * 1 + gruppen_disziplinen[2] * 1 + last_disziplin * 10,  # +18
+                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],  # +1
+                    #"formula": first_disziplin * 10 + last_disziplin * 10,  # +4
+                    #"formula": first_disziplin * -50 + last_disziplin * 50,  # +4
+                    #"formula": first_disziplin * -1 + last_disziplin * 1, # new: +36, +3
+                    #"formula": first_disziplin * -1 + last_disziplin * 3,  # new: +12, +0
+                    #"formula": gruppen_disziplinen[0] + gruppen_disziplinen[1] + gruppen_disziplinen[2] + gruppen_disziplinen[3],
                     "last_disziplin": last_disziplin,
                 }
 
