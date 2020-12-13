@@ -179,26 +179,6 @@ wettkampf_start_times = {
     },
 }
 
-wettkampf_budget_data = {
-    "saturday": {
-        # wettkampf: (start_time_unit, end_time_unit)
-        "U12W_4K": (22, 49),
-        "U16W_5K": (13, 42),
-        "WOM_7K": (9, 35),
-        "U12M_4K": (0, 27),
-        "U16M_6K": (6, 45),
-        "MAN_10K": (20, 53),
-    },
-    "sunday": {
-        "U14W_5K": (18, 49),
-        "WOM_7K": (23, 41),
-        "WOM_5K": (10, 38),
-        "U14M_5K": (0, 26),
-        "MAN_10K": (14,53),
-        "MAN_6K": (4, 45),
-    },
-}
-
 teilnehmer_data = {
     "U12W_4K": {
         "Gr14": 13,
@@ -300,8 +280,7 @@ def main(args):
     event_duration_in_units = event_duration_in_minutes // minutes_per_unit
 
     event = athletics_event.AthleticsEventScheduler(
-        name=event_name, duration_in_units=event_duration_in_units,
-        wettkampf_budget_data=wettkampf_budget_data[args.day])
+        name=event_name, duration_in_units=event_duration_in_units)
     event.create_anlagen(anlagen_descriptors[args.day])
     event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
     event.create_anlagen_pausen()

@@ -10,6 +10,27 @@ logger.setLevel(logging.ERROR)
 msg_parameter_for_solver = 1  # 0 (silent) or 1 (verbose)
 
 
+wettkampf_budget_data = {
+    "saturday": {
+        # wettkampf: (start_time_unit, end_time_unit)
+        "U12W_4K": (22, 49),
+        "U16W_5K": (13, 42),
+        "WOM_7K": (9, 35),
+        "U12M_4K": (0, 27),
+        "U16M_6K": (6, 45),
+        "MAN_10K": (20, 53),
+    },
+    "sunday": {
+        "U14W_5K": (18, 49),
+        "WOM_7K": (23, 41),
+        "WOM_5K": (10, 38),
+        "U14M_5K": (0, 26),
+        "MAN_10K": (14,53),
+        "MAN_6K": (4, 45),
+    },
+}
+
+
 def _getFirstDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_budget_data):
     disziplin_name = disziplinen[0]["name"]
     disziplin_length = disziplinen[0]["kwargs"]["length"]
@@ -75,7 +96,7 @@ class Basics(unittest.TestCase):
         self.assertEqual(str(event.scenario.resources()), "[Läufe, Weit1, Weit2, Kugel1, Kugel2, Hoch1, Hoch2, Diskus]")
 
     def test_scenario(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=1, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=1)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -86,7 +107,6 @@ class Basics(unittest.TestCase):
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         scenario_as_string = str(event.scenario)
         expected_scenario_as_string = """
 SCENARIO: test / horizon: 1
@@ -152,7 +172,7 @@ Diskus['state'][:0] <= 1
         self.assertIn(expected_scenario_as_string, scenario_as_string)
 
     def test_solution_and_objective(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=40)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -163,7 +183,6 @@ Diskus['state'][:0] <= 1
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 25)
         objective_as_string = str(event.scenario.objective())
@@ -175,7 +194,7 @@ Diskus['state'][:0] <= 1
         self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Läufe, 11, 14)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_two_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=40)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -187,7 +206,6 @@ Diskus['state'][:0] <= 1
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 25)
         objective_as_string = str(event.scenario.objective())
@@ -201,7 +219,7 @@ Diskus['state'][:0] <= 1
         self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 11, 14)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_four_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=40)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -215,7 +233,6 @@ Diskus['state'][:0] <= 1
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 27)
         objective_as_string = str(event.scenario.objective())
@@ -233,7 +250,7 @@ Diskus['state'][:0] <= 1
         self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 12, 15)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_six_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=40)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -249,7 +266,6 @@ Diskus['state'][:0] <= 1
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 46)
         objective_as_string = str(event.scenario.objective())
@@ -271,7 +287,7 @@ Diskus['state'][:0] <= 1
         self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Läufe, 28, 31)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_seven_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=60, wettkampf_budget_data=self._wettkampf_budget_data)
+        event = AthleticsEventScheduler(name="test", duration_in_units=60)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -288,7 +304,6 @@ Diskus['state'][:0] <= 1
         event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.ensure_pausen_for_gruppen_and_anlagen()
-        event.set_objective()
         event.solve(time_limit=120, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 26)
         objective_as_string = str(event.scenario.objective())
@@ -316,17 +331,23 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
     _SATURDAY = "saturday"
     _SUNDAY = "sunday"
 
-    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, last_wettkampf_of_the_day=None, time_limit=120):
-        event = AthleticsEventScheduler(name="test", duration_in_units=60, wettkampf_budget_data=wettkampf_budget_data)
+    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, last_wettkampf_of_the_day=None, time_limit=120, objective_override_disziplinen_factors=None):
+        event = AthleticsEventScheduler(name="test", duration_in_units=60)
         teilnehmer_data = { wettkampf_name: umm2019.teilnehmer_data[wettkampf_name] for wettkampf_name in wettkampf_budget_data }
         event.prepare(
             anlagen_descriptors=umm2019.anlagen_descriptors[wettkampf_day],
             disziplinen_data=umm2019.disziplinen_data[wettkampf_day],
             teilnehmer_data=teilnehmer_data,
             wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day])
+        if objective_override_disziplinen_factors:
+            event.set_objective(objective_override_disziplinen_factors)
+        logging.debug("objective: {}".format(event.scenario.objective()))
+
         if last_wettkampf_of_the_day:
             event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
         event.solve(time_limit=time_limit, msg=msg_parameter_for_solver)
+        logging.debug("objective_value: {}".format(event.scenario.objective_value()))
+
         solution_as_string = str(event.scenario.solution())
         for wettkampf_name in wettkampf_budget_data:
             groups = event.getGroups(wettkampf_name)
@@ -376,7 +397,11 @@ class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
         wettkampf_budget_data = {
             "U12W_4K": (22, 42),
         }
-        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -1,
+            "U12W_4K_Gr14_to_Gr20_600m": 2,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K(self):
         wettkampf_budget_data = {
@@ -404,17 +429,185 @@ class MoreEvents(BaseEventWithWettkampfHelper):
         wettkampf_budget_data = {
             "U16M_6K": (6, 37),
             "WOM_7K": (9, 27),
-            "U16W_5K": (13, 52),  # much too late (should be 31)
-            "MAN_10K": (20, 57),  # much too late (should be 46)
+            "U16W_5K": (13, 42),  # much too late (should be 31)
+            "MAN_10K": (20, 46),  # much too late (should be 46)
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, last_wettkampf_of_the_day="MAN_10K")
 
-    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K(self):
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_1(self):
         wettkampf_budget_data = {
             "U12M_4K": (0, 16),
-            "U12W_4K": (22, 47),  # much too late (should be 42)
+            "U12W_4K": (22, 59),  # +17
         }
-        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -1,
+            "U12W_4K_Gr14_to_Gr20_600m": 1,
+            "U12M_4K_Gr30_to_Gr34_60m": -1,
+            "U12M_4K_Gr30_to_Gr34_600m": 1,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_2(self):
+        wettkampf_budget_data = {
+            "U12M_4K": (0, 16),
+            "U12W_4K": (22, 47),  # +5
+        }
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -1,
+            "U12W_4K_Gr14_to_Gr20_600m": 2,
+            "U12M_4K_Gr30_to_Gr34_60m": -1,
+            "U12M_4K_Gr30_to_Gr34_600m": 2,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+
+
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_3(self):
+        wettkampf_budget_data = {
+            "U12M_4K": (0, 16),
+            "U12W_4K": (22, 43),  # +1
+        }
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -11,
+            "U12W_4K_Gr14_Weit": 3,
+            "U12W_4K_Gr14_Kugel": 2,
+            "U12W_4K_Gr15_Weit": 3,
+            "U12W_4K_Gr15_Kugel": 2,
+            "U12W_4K_Gr16_Weit": 3,
+            "U12W_4K_Gr16_Kugel": 2,
+            "U12W_4K_Gr17_Weit": 3,
+            "U12W_4K_Gr17_Kugel": 2,
+            "U12W_4K_Gr18_Weit": 3,
+            "U12W_4K_Gr18_Kugel": 2,
+            "U12W_4K_Gr19_Weit": 3,
+            "U12W_4K_Gr19_Kugel": 2,
+            "U12W_4K_Gr20_Weit": 3,
+            "U12W_4K_Gr20_Kugel": 2,
+            "U12W_4K_Gr14_to_Gr20_600m": 6,
+            "U12M_4K_Gr30_to_Gr34_60m": -11,
+            "U12M_4K_Gr30_Weit": 3,
+            "U12M_4K_Gr30_Kugel": 2,
+            "U12M_4K_Gr31_Weit": 3,
+            "U12M_4K_Gr31_Kugel": 2,
+            "U12M_4K_Gr32_Weit": 3,
+            "U12M_4K_Gr32_Kugel": 2,
+            "U12M_4K_Gr33_Weit": 3,
+            "U12M_4K_Gr33_Kugel": 2,
+            "U12M_4K_Gr34_Weit": 3,
+            "U12M_4K_Gr34_Kugel": 2,
+            "U12M_4K_Gr30_to_Gr34_600m": 6,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_4(self):
+        wettkampf_budget_data = {
+            "U12M_4K": (0, 16),
+            "U12W_4K": (22, 42),
+        }
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -13,
+            "U12W_4K_Gr14_Weit": 6,
+            "U12W_4K_Gr14_Kugel": 3,
+            "U12W_4K_Gr15_Weit": 6,
+            "U12W_4K_Gr15_Kugel": 3,
+            "U12W_4K_Gr16_Weit": 6,
+            "U12W_4K_Gr16_Kugel": 3,
+            "U12W_4K_Gr17_Weit": 6,
+            "U12W_4K_Gr17_Kugel": 3,
+            "U12W_4K_Gr18_Weit": 6,
+            "U12W_4K_Gr18_Kugel": 3,
+            "U12W_4K_Gr19_Weit": 6,
+            "U12W_4K_Gr19_Kugel": 3,
+            "U12W_4K_Gr20_Weit": 6,
+            "U12W_4K_Gr20_Kugel": 3,
+            "U12W_4K_Gr14_to_Gr20_600m": 4,
+            "U12M_4K_Gr30_to_Gr34_60m": -11,
+            "U12M_4K_Gr30_Weit": 6,
+            "U12M_4K_Gr30_Kugel": 3,
+            "U12M_4K_Gr31_Weit": 6,
+            "U12M_4K_Gr31_Kugel": 3,
+            "U12M_4K_Gr32_Weit": 6,
+            "U12M_4K_Gr32_Kugel": 3,
+            "U12M_4K_Gr33_Weit": 6,
+            "U12M_4K_Gr33_Kugel": 3,
+            "U12M_4K_Gr34_Weit": 6,
+            "U12M_4K_Gr34_Kugel": 3,
+            "U12M_4K_Gr30_to_Gr34_600m": 2,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_5(self):
+        wettkampf_budget_data = {
+            "U12M_4K": (0, 16),
+            "U12W_4K": (22, 42),
+        }
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -11,
+            "U12W_4K_Gr14_Weit": 6,
+            "U12W_4K_Gr14_Kugel": 3,
+            "U12W_4K_Gr15_Weit": 6,
+            "U12W_4K_Gr15_Kugel": 3,
+            "U12W_4K_Gr16_Weit": 6,
+            "U12W_4K_Gr16_Kugel": 3,
+            "U12W_4K_Gr17_Weit": 6,
+            "U12W_4K_Gr17_Kugel": 3,
+            "U12W_4K_Gr18_Weit": 6,
+            "U12W_4K_Gr18_Kugel": 3,
+            "U12W_4K_Gr19_Weit": 6,
+            "U12W_4K_Gr19_Kugel": 3,
+            "U12W_4K_Gr20_Weit": 6,
+            "U12W_4K_Gr20_Kugel": 3,
+            "U12W_4K_Gr14_to_Gr20_600m": 2,
+            "U12M_4K_Gr30_to_Gr34_60m": -11,
+            "U12M_4K_Gr30_Weit": 6,
+            "U12M_4K_Gr30_Kugel": 3,
+            "U12M_4K_Gr31_Weit": 6,
+            "U12M_4K_Gr31_Kugel": 3,
+            "U12M_4K_Gr32_Weit": 6,
+            "U12M_4K_Gr32_Kugel": 3,
+            "U12M_4K_Gr33_Weit": 6,
+            "U12M_4K_Gr33_Kugel": 3,
+            "U12M_4K_Gr34_Weit": 6,
+            "U12M_4K_Gr34_Kugel": 3,
+            "U12M_4K_Gr30_to_Gr34_600m": 2,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+
+    def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_6(self):
+        wettkampf_budget_data = {
+            "U12M_4K": (0, 16),
+            "U12W_4K": (22, 42),
+        }
+        disziplinen_factors={
+            "U12W_4K_Gr14_to_Gr20_60m": -77,
+            "U12W_4K_Gr14_Weit": 1,
+            "U12W_4K_Gr14_Kugel": 1,
+            "U12W_4K_Gr15_Weit": 1,
+            "U12W_4K_Gr15_Kugel": 1,
+            "U12W_4K_Gr16_Weit": 1,
+            "U12W_4K_Gr16_Kugel": 1,
+            "U12W_4K_Gr17_Weit": 1,
+            "U12W_4K_Gr17_Kugel": 1,
+            "U12W_4K_Gr18_Weit": 1,
+            "U12W_4K_Gr18_Kugel": 1,
+            "U12W_4K_Gr19_Weit": 1,
+            "U12W_4K_Gr19_Kugel": 1,
+            "U12W_4K_Gr20_Weit": 1,
+            "U12W_4K_Gr20_Kugel": 1,
+            "U12W_4K_Gr14_to_Gr20_600m": 63,
+            "U12M_4K_Gr30_to_Gr34_60m": -60,
+            "U12M_4K_Gr30_Weit": 1,
+            "U12M_4K_Gr30_Kugel": 1,
+            "U12M_4K_Gr31_Weit": 1,
+            "U12M_4K_Gr31_Kugel": 1,
+            "U12M_4K_Gr32_Weit": 1,
+            "U12M_4K_Gr32_Kugel": 1,
+            "U12M_4K_Gr33_Weit": 1,
+            "U12M_4K_Gr33_Kugel": 1,
+            "U12M_4K_Gr34_Weit": 1,
+            "U12M_4K_Gr34_Kugel": 1,
+            "U12M_4K_Gr30_to_Gr34_600m": 50,
+        }
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
 
 
 if __name__ == '__main__':

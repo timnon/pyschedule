@@ -30,12 +30,11 @@ class AnlagenDescriptor(object):
 
 
 class AthleticsEventScheduler(object):
-    def __init__(self, name, duration_in_units, wettkampf_budget_data=None):
+    def __init__(self, name, duration_in_units):
         self._name = name
         self._duration_in_units = duration_in_units
-        self._wettkampf_budget_data = wettkampf_budget_data
         self._anlagen = {}
-        self._objective_terms = {}
+        self._last_disziplin = {}
         self._used_anlagen = defaultdict(int)
         self._disziplinen = {}
         self._hide_tasks = []
@@ -55,7 +54,6 @@ class AthleticsEventScheduler(object):
         self.create_anlagen_pausen()
         self.set_wettkampf_start_times(wettkampf_start_times)
         self.ensure_pausen_for_gruppen_and_anlagen()
-        self.set_objective()
 
     def create_anlagen(self, descriptors):
         logging.debug('creating anlagen...')
@@ -91,6 +89,7 @@ class AthleticsEventScheduler(object):
                 continue
             logging.debug("  wettkampf: {}".format(wettkampf_name))
             gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
+            wettkampf_disziplinen_factors = defaultdict(int)
             for gruppen_name in gruppen_names:
                 logging.debug("    gruppe: {}".format(gruppen_name))
                 gruppe = self._scenario.Resource(gruppen_name)
@@ -100,6 +99,7 @@ class AthleticsEventScheduler(object):
                     if item["together"]:
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
                     if disziplinen_name not in self._disziplinen.keys():
+                        item['kwargs']['together'] = item["together"]
                         disziplin = self._scenario.Task(disziplinen_name, **item['kwargs'])
                         self._disziplinen[disziplinen_name] = disziplin
                     else:
@@ -141,51 +141,23 @@ class AthleticsEventScheduler(object):
                             continue
                         self._scenario += disziplin < last_disziplin
                     self._sequence_not_strict_gruppen.append(gruppe)
-                objective_weight_factors = self._get_objective_weight_factors(wettkampf_name)
-                self._objective_terms[wettkampf_name] = {
-                    "formula": first_disziplin * -1 + last_disziplin * 2, # U12M_4K=0, U12W_4K=0
-                    #"formula": last_disziplin * (+1),  # ?
-                    #"formula": last_disziplin * (+1000000),
-                    #"formula": first_disziplin + last_disziplin,
-                    #"formula": last_disziplin*2 - first_disziplin,
-                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],
-                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],  # +1
-                    #"formula": first_disziplin + last_disziplin,  # new: +1, +1
-                    #"formula": first_disziplin * 1 + last_disziplin * 1, # new: +1, +1
-                    #"formula": first_disziplin + last_disziplin * 10,  # new: +25, +1
-                    #"formula": first_disziplin + last_disziplin * 100,  # new: +23, +1
-                    #"formula": first_disziplin + last_disziplin * 1000,  # +3, +8
-                    #"formula": first_disziplin + last_disziplin * 10000,  # +2, +1
-                    #"formula": first_disziplin + last_disziplin * 100000,  # new: +0, +2
-                    #"formula": first_disziplin + last_disziplin * 1000000,  # +17, +0
-                    #"formula": first_disziplin + last_disziplin * 10000000,  # +0, +3
-                    #"formula": first_disziplin + last_disziplin * 100000000,  # +6, +0
-                    #"formula": first_disziplin + last_disziplin * 1000000000,  # ?, +8
-                    #"formula": first_disziplin + last_disziplin * 10000000000,  # +35, +1
-                    #"formula": first_disziplin * 10 + gruppen_disziplinen[1] * 1 + gruppen_disziplinen[2] * 1 + last_disziplin * 10,  # +18
-                    #"formula": last_disziplin * objective_weight_factors[0] - first_disziplin * objective_weight_factors[1],  # +1
-                    #"formula": first_disziplin * 10 + last_disziplin * 10,  # +4
-                    #"formula": first_disziplin * -50 + last_disziplin * 50,  # +4
-                    #"formula": first_disziplin * -1 + last_disziplin * 1, # new: +36, +3
-                    #"formula": first_disziplin * -1 + last_disziplin * 3,  # new: +12, +0
-                    #"formula": gruppen_disziplinen[0] + gruppen_disziplinen[1] + gruppen_disziplinen[2] + gruppen_disziplinen[3],
-                    "last_disziplin": last_disziplin,
-                }
+
+                gruppen_disziplinen_without_pausen = gruppen_disziplinen[::2]
+                for disziplin in gruppen_disziplinen_without_pausen[1:]:
+                    wettkampf_disziplinen_factors[disziplin['name']] += 1
+                wettkampf_disziplinen_factors[disziplin['name']] += 1
+
+            for disziplin_name, factor in wettkampf_disziplinen_factors.items():
+                disziplin = self._disziplinen[disziplin_name]
+                self._scenario += disziplin * factor
+            factor_sum = sum([factor for factor in wettkampf_disziplinen_factors.values()])
+            self._scenario += first_disziplin * -factor_sum
+            self._last_disziplin[wettkampf_name] = last_disziplin
 
     _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K"]
 
     def _is_wettkampf_disziplinen_sequence_strict(self, wettkampf_name):
         return wettkampf_name in self._disziplinen_sequence_strict_data
-
-    def _get_objective_weight_factors(self, wettkampf_name):
-        sum_of_event_end_times = 0
-        for _, end_time in self._wettkampf_budget_data.values():
-            sum_of_event_end_times += end_time
-        event_end_time_factor = 500. / sum_of_event_end_times
-        event_start_time, event_end_time = self._wettkampf_budget_data[wettkampf_name]
-        event_duration = event_end_time - event_start_time
-        event_duration_factor = 100. / event_duration
-        return (round(event_end_time_factor + event_duration_factor), round(event_duration_factor))
 
     def create_anlagen_pausen(self):
         logging.debug('creating anlagen pausen...')
@@ -216,19 +188,18 @@ class AthleticsEventScheduler(object):
                 self._scenario += anlage['state'][:i] <= 1
                 self._scenario += anlage['state'][:i] >= 0
 
+    def set_objective(self, disziplinen_factors):
+        self._scenario.clear_objective()
+        for disziplin_name, factor in disziplinen_factors.items():
+            self._scenario += self._disziplinen[disziplin_name] * factor
+
     def ensure_last_wettkampf_of_the_day(self, last_wettkampf_of_the_day):
         logging.debug('ensuring last wettkampf of the day...')
-        last_disziplin_of_the_day = self._objective_terms[last_wettkampf_of_the_day]["last_disziplin"]
-        for wettkampf_name, objective_term in self._objective_terms.items():
+        last_disziplin_of_the_day = self._last_disziplin[last_wettkampf_of_the_day]
+        for wettkampf_name, last_disziplin in self._last_disziplin.items():
             if wettkampf_name != last_wettkampf_of_the_day:
-                self._scenario += objective_term["last_disziplin"] < last_disziplin_of_the_day
+                self._scenario += last_disziplin < last_disziplin_of_the_day
         
-    def set_objective(self):
-        logging.debug('setting objective...')
-        self._scenario.clear_objective()
-        for objective_term in self._objective_terms.values():
-            self._scenario += objective_term["formula"]
-
     def getGroups(self, wettkampf_name):
         return list(self._teilnehmer_data[wettkampf_name].keys())
 
