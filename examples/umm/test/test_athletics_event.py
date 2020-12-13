@@ -439,7 +439,7 @@ class MoreEvents(BaseEventWithWettkampfHelper):
             "U12M_4K": (0, 16),
             "U12W_4K": (22, 59),  # +17
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -1,
             "U12W_4K_Gr14_to_Gr20_600m": 1,
             "U12M_4K_Gr30_to_Gr34_60m": -1,
@@ -452,21 +452,21 @@ class MoreEvents(BaseEventWithWettkampfHelper):
             "U12M_4K": (0, 16),
             "U12W_4K": (22, 47),  # +5
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -1,
             "U12W_4K_Gr14_to_Gr20_600m": 2,
             "U12M_4K_Gr30_to_Gr34_60m": -1,
             "U12M_4K_Gr30_to_Gr34_600m": 2,
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
-
+        # Even increasing time_limit from 120 to 600 does not improve the solution!
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_3(self):
         wettkampf_budget_data = {
             "U12M_4K": (0, 16),
             "U12W_4K": (22, 43),  # +1
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -11,
             "U12W_4K_Gr14_Weit": 3,
             "U12W_4K_Gr14_Kugel": 2,
@@ -503,7 +503,7 @@ class MoreEvents(BaseEventWithWettkampfHelper):
             "U12M_4K": (0, 16),
             "U12W_4K": (22, 42),
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -13,
             "U12W_4K_Gr14_Weit": 6,
             "U12W_4K_Gr14_Kugel": 3,
@@ -538,9 +538,9 @@ class MoreEvents(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_5(self):
         wettkampf_budget_data = {
             "U12M_4K": (0, 16),
-            "U12W_4K": (22, 42),
+            "U12W_4K": (22, 54),  # +22
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -11,
             "U12W_4K_Gr14_Weit": 6,
             "U12W_4K_Gr14_Kugel": 3,
@@ -577,7 +577,7 @@ class MoreEvents(BaseEventWithWettkampfHelper):
             "U12M_4K": (0, 16),
             "U12W_4K": (22, 42),
         }
-        disziplinen_factors={
+        disziplinen_factors = {
             "U12W_4K_Gr14_to_Gr20_60m": -77,
             "U12W_4K_Gr14_Weit": 1,
             "U12W_4K_Gr14_Kugel": 1,
