@@ -370,7 +370,6 @@ class OneEventWithStrictSequence(BaseEventWithWettkampfHelper):
         wettkampf_budget_data = {
             "WOM_7K": (23, 38),
         }
-        wettkampf_day = self._SUNDAY
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SUNDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16M_6K(self):
