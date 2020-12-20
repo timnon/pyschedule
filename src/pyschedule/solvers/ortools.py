@@ -118,23 +118,18 @@ def solve(scenario,time_limit=None,copy_scenario=False,msg=0) :
 	for P in S.bounds_up_tight() :
 		ort_solver.Add( task_to_interval[P.task].EndsAt(P.bound) )
 
-	# capacity lower bounds
-	for C in S.capacity_low():
-		# ignore sliced capacity constraints
-		if C._start != None or C._end != None:
-			continue
-		R = C.resource
-		cap_tasks = [ (resource_task_to_interval[R,T],C.weight(T=T,t=0)) for T in S.tasks() ]
-		ort_solver.Add( ort_solver.Sum([ I.PerformedExpr()*w for I,w in cap_tasks ]) >= C.bound )
-
-	# capacity lower bounds
-	for C in S.capacity_low():
-		# ignore sliced capacity constraints
-		if C._start != None or C._end != None:
-			continue
-		R = C.resource
-		cap_tasks = [ (resource_task_to_interval[R,T],C.weight(T=T,t=0)) for T in S.tasks() ]
-		ort_solver.Add( ort_solver.Sum([ I.PerformedExpr()*w for I,w in cap_tasks ]) <= C.bound )
+	# capacity constraints
+	try:
+		for C in S.capacity():
+			# ignore sliced capacity constraints
+			if C._start != None or C._end != None:
+				continue
+			R = C.resource
+			cap_tasks = [ (resource_task_to_interval[R,T],C.weight(T=T,t=0)) for T in S.tasks() ]
+			ort_solver.Add( ort_solver.Sum([ I.PerformedExpr()*w for I,w in cap_tasks ]) >= C.bound )
+	except Exception as e:
+		print(e)
+		import pdb; pdb.set_trace()
 
 	# creates search phases.
 	vars_phase = ort_solver.Phase([ort_objective_var],

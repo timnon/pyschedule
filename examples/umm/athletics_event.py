@@ -207,8 +207,28 @@ class AthleticsEventScheduler(object):
         return list(self._disziplinen_data[wettkampf_name])
 
     def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
-        logging.debug('solving problem...')
+        logging.debug('solving problem with mip solver...')
         status = solvers.mip.solve(self._scenario, time_limit=time_limit, ratio_gap=ratio_gap, random_seed=random_seed, threads=threads, msg=msg)
+        cbc_logfile_name = "cbc.log"
+        if os.path.exists(cbc_logfile_name):
+            with open(cbc_logfile_name) as cbc_logfile:
+                logging.info(cbc_logfile.read())
+        else:
+            logging.info("no {!r} found".format(cbc_logfile_name))
+        if not status:
+            raise NoSolutionError()
+
+        solution_as_string = str(self._scenario.solution())
+        solution_filename = '{}_solution.txt'.format(self._name)
+        with open(solution_filename, 'w') as f:
+            f.write(solution_as_string)
+        logging.info(solution_as_string)
+        plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
+                                 fig_size=(100, 5), hide_tasks=self._hide_tasks)
+
+    def solve_with_ortools(self, time_limit, msg=1):
+        logging.debug('solving problem with ortools solver...')
+        status = solvers.ortools.solve(self._scenario, time_limit=time_limit, msg=msg)
         cbc_logfile_name = "cbc.log"
         if os.path.exists(cbc_logfile_name):
             with open(cbc_logfile_name) as cbc_logfile:
