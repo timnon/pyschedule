@@ -43,7 +43,7 @@ def _getFirstDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_bu
         disziplin_name,
         groups[0],
         disziplin_begin,
-        disziplin_end,
+        disziplin_end + 1,
     )
 
 
@@ -59,7 +59,7 @@ def _getLastDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_bud
         disziplin_name,
         groups[0],
         disziplin_begin,
-        disziplin_end,
+        disziplin_end + 1,
     )
 
 
@@ -345,6 +345,7 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
 
         if last_wettkampf_of_the_day:
             event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
+        logging.info("scenario: {}".format(event._scenario))
         event.solve(time_limit=time_limit, msg=msg_parameter_for_solver)
         logging.debug("objective_value: {}".format(event.scenario.objective_value()))
 
@@ -433,15 +434,11 @@ class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
         wettkampf_budget_data = {
             "U12W_4K": (22, 42),
         }
-        disziplinen_factors={
-            "U12W_4K_Gr14_to_Gr20_60m": -1,
-            "U12W_4K_Gr14_to_Gr20_600m": 2,
-        }
-        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, objective_override_disziplinen_factors=disziplinen_factors)
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K(self):
         wettkampf_budget_data = {
-            "U16W_5K": (13, 31),
+            "U16W_5K": (13, 29),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 

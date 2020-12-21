@@ -51,9 +51,7 @@ class AthleticsEventScheduler(object):
     def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times):
         self.create_anlagen(anlagen_descriptors)
         self.create_disziplinen(disziplinen_data, teilnehmer_data)
-        self.create_anlagen_pausen()
         self.set_wettkampf_start_times(wettkampf_start_times)
-        self.ensure_pausen_for_gruppen_and_anlagen()
 
     def create_anlagen(self, descriptors):
         logging.debug('creating anlagen...')
@@ -96,11 +94,19 @@ class AthleticsEventScheduler(object):
                 gruppen_disziplinen = []
                 for item in disziplinen_data[wettkampf_name]:
                     disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
+                    logging.debug("      disziplin: {}".format(disziplinen_name))
                     if item["together"]:
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
                     if disziplinen_name not in self._disziplinen.keys():
-                        item['kwargs']['together'] = item["together"]
-                        disziplin = self._scenario.Task(disziplinen_name, **item['kwargs'])
+                        kwargs = item["kwargs"].copy()
+                        kwargs['together'] = item["together"]
+                        if "pause" not in disziplinen_name.lower():
+                            kwargs["length"] += 1
+                        else:
+                            kwargs["length"] -= 1
+                            if kwargs["length"] <= 0:
+                                continue
+                        disziplin = self._scenario.Task(disziplinen_name, **kwargs)
                         self._disziplinen[disziplinen_name] = disziplin
                     else:
                         disziplin = self._disziplinen[disziplinen_name]
@@ -118,34 +124,46 @@ class AthleticsEventScheduler(object):
 
                     disziplin += gruppe
 
-                    if "Pause" in disziplinen_name:
+                    if "pause" in disziplinen_name.lower():
                         self._hide_tasks.append(disziplin)
 
                 first_disziplin = gruppen_disziplinen[0]
                 last_disziplin = gruppen_disziplinen[-1]
+                wettkampf_with_pausen = "pause" in gruppen_disziplinen[1]["name"].lower()
                 if self._is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
-                    # one after another: 1st, 2nd, 3rd,...
+                    # one after another: 1st, 1st-pause, 2nd, 2nd-pause, 3rd,...
                     current_disziplin = gruppen_disziplinen[0]
                     for next_disziplin in gruppen_disziplinen[1:]:
                         self._scenario += current_disziplin < next_disziplin
                         current_disziplin = next_disziplin
                 else:
                     # 1st and last set - rest free
-                    for disziplin in gruppen_disziplinen[1:-1]:
-                        if "Pause" in disziplin.name:
-                            continue
-                        self._scenario += first_disziplin < disziplin
-
-                    for disziplin in gruppen_disziplinen[1:-1]:
-                        if "Pause" in disziplin.name:
-                            continue
-                        self._scenario += disziplin < last_disziplin
+                    if wettkampf_with_pausen:
+                        # make disziplin-pause pairs
+                        for disziplin_index in range(len(gruppen_disziplinen[:-1:2])):
+                            self._scenario += gruppen_disziplinen[disziplin_index * 2] < gruppen_disziplinen[disziplin_index * 2 + 1]
+                        first_pause = gruppen_disziplinen[1]
+                        for disziplin in gruppen_disziplinen[2::2]:
+                            self._scenario += first_pause < disziplin
+                        for disziplin in gruppen_disziplinen[1::2]:
+                            self._scenario += disziplin < last_disziplin
+                    else:
+                        for disziplin in gruppen_disziplinen[1:]:
+                            self._scenario += first_disziplin < disziplin
+                        for disziplin in gruppen_disziplinen[:-1]:
+                            self._scenario += disziplin < last_disziplin
                     self._sequence_not_strict_gruppen.append(gruppe)
 
-                gruppen_disziplinen_without_pausen = gruppen_disziplinen[::2]
-                for disziplin in gruppen_disziplinen_without_pausen[1:]:
+                if wettkampf_with_pausen:
+                    gruppen_disziplinen_without_pausen = gruppen_disziplinen[::2]
+                    for disziplin in gruppen_disziplinen_without_pausen[1:]:
+                        wettkampf_disziplinen_factors[disziplin['name']] += 1
                     wettkampf_disziplinen_factors[disziplin['name']] += 1
-                wettkampf_disziplinen_factors[disziplin['name']] += 1
+                else:
+                    gruppen_disziplinen_without_pausen = gruppen_disziplinen
+                    for disziplin in gruppen_disziplinen_without_pausen[1:]:
+                        wettkampf_disziplinen_factors[disziplin['name']] += 1
+                    wettkampf_disziplinen_factors[disziplin['name']] += 1
 
             for disziplin_name, factor in wettkampf_disziplinen_factors.items():
                 disziplin = self._disziplinen[disziplin_name]
@@ -159,17 +177,6 @@ class AthleticsEventScheduler(object):
     def _is_wettkampf_disziplinen_sequence_strict(self, wettkampf_name):
         return wettkampf_name in self._disziplinen_sequence_strict_data
 
-    def create_anlagen_pausen(self):
-        logging.debug('creating anlagen pausen...')
-        for anlage, num_disziplinen in self._used_anlagen.items():
-            for candidate in self._anlagen.values():
-                if candidate.name.startswith(anlage):
-                    for i in range(num_disziplinen):
-                        task_name = "{}_Pause_{}".format(candidate, i + 1)
-                        task = self._scenario.Task(task_name, length=1, schedule_cost=-1, state=-1, plot_color='white')
-                        task += candidate
-                        self._hide_tasks.append(task)
-
     def set_wettkampf_start_times(self, wettkampf_start_times):
         logging.debug('setting wettkampf start times...')
         for disziplinen_name, start_times in wettkampf_start_times.items():
@@ -177,16 +184,6 @@ class AthleticsEventScheduler(object):
                 self._scenario += self._disziplinen[disziplinen_name] >= start_times
             except KeyError:
                 pass
-
-    def ensure_pausen_for_gruppen_and_anlagen(self):
-        logging.debug('ensuring pausen for groups and anlagen...')
-        for i in range(self._duration_in_units):
-            for gruppe in self._sequence_not_strict_gruppen:
-                self._scenario += gruppe['state'][:i] <= 1
-                self._scenario += gruppe['state'][:i] >= 0
-            for _, anlage in self._anlagen.items():
-                self._scenario += anlage['state'][:i] <= 1
-                self._scenario += anlage['state'][:i] >= 0
 
     def set_objective(self, disziplinen_factors):
         self._scenario.clear_objective()
