@@ -275,12 +275,8 @@ def main(args):
     logging.debug("arguments: {}".format(args))
     logging.debug('output folder: {!r}'.format(output_folder_name))
 
-    event_duration_in_minutes = 12 * 60  # 09:00..18:00 + 3h (margin)
-    minutes_per_unit = 10
-    event_duration_in_units = event_duration_in_minutes // minutes_per_unit
-
     event = athletics_event.AthleticsEventScheduler(
-        name=event_name, duration_in_units=event_duration_in_units)
+        name=event_name, duration_in_units=args.horizon)
     event.create_anlagen(anlagen_descriptors[args.day])
     event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
     if not args.dont_set_start_time:
@@ -311,6 +307,7 @@ if __name__ == "__main__":
         "ratio_gap": 0.0,
         "random_seed": None,
         "threads": None,
+        "horizon": 54,
     }
     parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
     help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
@@ -322,6 +319,8 @@ if __name__ == "__main__":
     help_text = 'threads, e.g. 4 (default: {})'.format(default_arguments["threads"])
     parser.add_argument('--threads', type=int, default=default_arguments["threads"], help=help_text)
     parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
+    help_text = 'horizon, (default: {})'.format(default_arguments["horizon"])
+    parser.add_argument('--horizon', type=int, default=default_arguments["horizon"], help=help_text)
     valid_wettkampf_days = ['saturday', 'sunday']
     parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
     args = parser.parse_args()
