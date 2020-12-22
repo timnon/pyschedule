@@ -106,10 +106,11 @@ class Basics(unittest.TestCase):
         event.create_disziplinen(umm2019.disziplinen_data[self._WETTKAMPF_DAY], teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         scenario_as_string = str(event.scenario)
+        logging.debug("scenario: {}".format(scenario_as_string))
         expected_scenario_as_string = """
 SCENARIO: test / horizon: 1
 
-OBJECTIVE: U12M_4K_Gr30_to_Gr30_60m*-1+U12M_4K_Gr30_to_Gr30_600m*2
+OBJECTIVE: U12M_4K_Gr30_to_Gr30_60m*-4+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr30_600m*2
 
 RESOURCES:
 Läufe
@@ -124,18 +125,9 @@ Gr30
 
 TASKS:
 U12M_4K_Gr30_to_Gr30_60m : Läufe,Gr30
-U12M_4K_Gr30_Pause_1 : Gr30
 U12M_4K_Gr30_Weit : Weit1|Weit2,Gr30
-U12M_4K_Gr30_Pause_2 : Gr30
 U12M_4K_Gr30_Kugel : Kugel1|Kugel2,Gr30
-U12M_4K_Gr30_Pause_3 : Gr30
 U12M_4K_Gr30_to_Gr30_600m : Läufe,Gr30
-Läufe_Pause_1 : Läufe
-Läufe_Pause_2 : Läufe
-Weit1_Pause_1 : Weit1
-Weit2_Pause_1 : Weit2
-Kugel1_Pause_1 : Kugel1
-Kugel2_Pause_1 : Kugel2
 
 JOINT RESOURCES:
 Weit1|Weit2 : U12M_4K_Gr30_Weit
@@ -144,28 +136,9 @@ Kugel1|Kugel2 : U12M_4K_Gr30_Kugel
 LAX PRECEDENCES:
 U12M_4K_Gr30_to_Gr30_60m < U12M_4K_Gr30_Weit
 U12M_4K_Gr30_to_Gr30_60m < U12M_4K_Gr30_Kugel
+U12M_4K_Gr30_to_Gr30_60m < U12M_4K_Gr30_to_Gr30_600m
 U12M_4K_Gr30_Weit < U12M_4K_Gr30_to_Gr30_600m
 U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
-
-CAPACITY BOUNDS:
-Gr30['state'][:0] <= 1
--1*Gr30['state'][:0] <= 0
-Läufe['state'][:0] <= 1
--1*Läufe['state'][:0] <= 0
-Weit1['state'][:0] <= 1
--1*Weit1['state'][:0] <= 0
-Weit2['state'][:0] <= 1
--1*Weit2['state'][:0] <= 0
-Kugel1['state'][:0] <= 1
--1*Kugel1['state'][:0] <= 0
-Kugel2['state'][:0] <= 1
--1*Kugel2['state'][:0] <= 0
-Hoch1['state'][:0] <= 1
--1*Hoch1['state'][:0] <= 0
-Hoch2['state'][:0] <= 1
--1*Hoch2['state'][:0] <= 0
-Diskus['state'][:0] <= 1
--1*Diskus['state'][:0] <= 0
 """
         self.assertIn(expected_scenario_as_string, scenario_as_string)
 
@@ -179,15 +152,16 @@ Diskus['state'][:0] <= 1
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
+        logging.info("scenario: {}".format(str(event._scenario)))
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 25)
+        self.assertEqual(event.scenario.objective_value(), 32)
         objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr30_60m*-1+U12M_4K_Gr30_to_Gr30_600m*2", objective_as_string)
+        self.assertEqual("U12M_4K_Gr30_to_Gr30_60m*-4+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr30_600m*2", objective_as_string)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Gr30, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Läufe, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Gr30, 11, 14)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Läufe, 11, 14)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Gr30, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Läufe, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Gr30, 27, 31)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Läufe, 27, 31)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_two_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -201,16 +175,16 @@ Diskus['state'][:0] <= 1
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 25)
+        self.assertEqual(event.scenario.objective_value(), 64)
         objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr31_60m*-1+U12M_4K_Gr30_to_Gr31_600m*2", objective_as_string)
+        self.assertEqual("U12M_4K_Gr30_to_Gr31_60m*-8+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr31_600m*4+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel", objective_as_string)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr30, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr31, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Läufe, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr30, 11, 14)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr31, 11, 14)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 11, 14)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr30, 6, 10)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr31, 6, 10)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Läufe, 6, 10)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr30, 17, 21)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr31, 17, 21)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 17, 21)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_four_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -226,20 +200,20 @@ Diskus['state'][:0] <= 1
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 27)
+        self.assertEqual(event.scenario.objective_value(), 140)
         objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr33_60m*-1+U12M_4K_Gr30_to_Gr33_600m*2", objective_as_string)
+        self.assertEqual("U12M_4K_Gr30_to_Gr33_60m*-16+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr33_600m*8+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel", objective_as_string)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr30, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr31, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr32, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr33, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Läufe, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr30, 12, 15)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr31, 12, 15)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr32, 12, 15)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr33, 12, 15)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 12, 15)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr30, 3, 7)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr31, 3, 7)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr32, 3, 7)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr33, 3, 7)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Läufe, 3, 7)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr30, 15, 19)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr31, 15, 19)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr32, 15, 19)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr33, 15, 19)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 15, 19)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_six_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -257,24 +231,24 @@ Diskus['state'][:0] <= 1
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 46)
+        self.assertEqual(event.scenario.objective_value(), 276)
         objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr35_60m*-1+U12M_4K_Gr30_to_Gr35_600m*2", objective_as_string)
+        self.assertEqual("U12M_4K_Gr30_to_Gr35_60m*-24+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr35_600m*12+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel+U12M_4K_Gr34_Weit+U12M_4K_Gr34_Kugel+U12M_4K_Gr35_Weit+U12M_4K_Gr35_Kugel", objective_as_string)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr30, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr31, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr32, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr33, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr34, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr35, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Läufe, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr30, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr31, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr32, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr33, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr34, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr35, 28, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Läufe, 28, 31)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr30, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr31, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr32, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr33, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr34, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr35, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Läufe, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr30, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr31, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr32, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr33, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr34, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr35, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Läufe, 36, 40)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_seven_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=60)
@@ -293,26 +267,26 @@ Diskus['state'][:0] <= 1
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=120, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 26)
+        self.assertEqual(event.scenario.objective_value(), 392)
         objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr36_60m*-1+U12M_4K_Gr30_to_Gr36_600m*2", objective_as_string)
+        self.assertEqual("U12M_4K_Gr30_to_Gr36_60m*-28+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr36_600m*14+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel+U12M_4K_Gr34_Weit+U12M_4K_Gr34_Kugel+U12M_4K_Gr35_Weit+U12M_4K_Gr35_Kugel+U12M_4K_Gr36_Weit+U12M_4K_Gr36_Kugel", objective_as_string)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr30, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr31, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr32, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr33, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr34, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr35, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr36, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Läufe, 0, 3)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr30, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr31, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr32, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr33, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr34, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr35, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr36, 20, 23)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Läufe, 20, 23)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr30, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr31, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr32, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr33, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr34, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr35, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr36, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Läufe, 21, 25)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr30, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr31, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr32, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr33, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr34, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr35, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr36, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Läufe, 41, 45)", solution_as_string)
 
 
 class BaseEventWithWettkampfHelper(unittest.TestCase):
