@@ -104,9 +104,7 @@ class Basics(unittest.TestCase):
             },
         }
         event.create_disziplinen(umm2019.disziplinen_data[self._WETTKAMPF_DAY], teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         scenario_as_string = str(event.scenario)
         expected_scenario_as_string = """
 SCENARIO: test / horizon: 1
@@ -180,9 +178,7 @@ Diskus['state'][:0] <= 1
             },
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 25)
         objective_as_string = str(event.scenario.objective())
@@ -203,9 +199,7 @@ Diskus['state'][:0] <= 1
             },
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 25)
         objective_as_string = str(event.scenario.objective())
@@ -230,9 +224,7 @@ Diskus['state'][:0] <= 1
             },
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 27)
         objective_as_string = str(event.scenario.objective())
@@ -263,9 +255,7 @@ Diskus['state'][:0] <= 1
             },
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 46)
         objective_as_string = str(event.scenario.objective())
@@ -301,9 +291,7 @@ Diskus['state'][:0] <= 1
             },
         }
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
-        event.create_anlagen_pausen()
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.ensure_pausen_for_gruppen_and_anlagen()
         event.solve(time_limit=120, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 26)
         objective_as_string = str(event.scenario.objective())
