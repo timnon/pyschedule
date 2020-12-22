@@ -110,7 +110,7 @@ class Basics(unittest.TestCase):
         expected_scenario_as_string = """
 SCENARIO: test / horizon: 1
 
-OBJECTIVE: U12M_4K_Gr30_to_Gr30_60m*-4+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr30_600m*2
+OBJECTIVE: U12M_4K_Gr30_to_Gr30_60m*-3+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr30_600m*2
 
 RESOURCES:
 Läufe
@@ -154,14 +154,12 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         logging.info("scenario: {}".format(str(event._scenario)))
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 32)
-        objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr30_60m*-4+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr30_600m*2", objective_as_string)
+        self.assertEqual(event.scenario.objective_value(), 36)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Gr30, 16, 20)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Läufe, 16, 20)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Gr30, 27, 31)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Läufe, 27, 31)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Gr30, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_60m, Läufe, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Gr30, 11, 15)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr30_600m, Läufe, 11, 15)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_two_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -175,16 +173,14 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 64)
-        objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr31_60m*-8+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr31_600m*4+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel", objective_as_string)
+        self.assertEqual(event.scenario.objective_value(), 68)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr30, 6, 10)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr31, 6, 10)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Läufe, 6, 10)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr30, 17, 21)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr31, 17, 21)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 17, 21)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr30, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr31, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Läufe, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr30, 11, 15)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Gr31, 11, 15)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 11, 15)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_four_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -200,20 +196,18 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 140)
-        objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr33_60m*-16+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr33_600m*8+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel", objective_as_string)
+        self.assertEqual(event.scenario.objective_value(), 144)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr30, 3, 7)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr31, 3, 7)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr32, 3, 7)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr33, 3, 7)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Läufe, 3, 7)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr30, 15, 19)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr31, 15, 19)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr32, 15, 19)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr33, 15, 19)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 15, 19)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr30, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr31, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr32, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr33, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Läufe, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr30, 12, 16)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr31, 12, 16)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr32, 12, 16)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Gr33, 12, 16)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 12, 16)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_six_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=40)
@@ -231,24 +225,22 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 276)
-        objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr35_60m*-24+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr35_600m*12+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel+U12M_4K_Gr34_Weit+U12M_4K_Gr34_Kugel+U12M_4K_Gr35_Weit+U12M_4K_Gr35_Kugel", objective_as_string)
+        self.assertEqual(event.scenario.objective_value(), 280)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr30, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr31, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr32, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr33, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr34, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr35, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Läufe, 20, 24)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr30, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr31, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr32, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr33, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr34, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr35, 36, 40)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Läufe, 36, 40)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr30, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr31, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr32, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr33, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr34, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr35, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Läufe, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr30, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr31, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr32, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr33, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr34, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Gr35, 16, 20)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr35_600m, Läufe, 16, 20)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_seven_groups(self):
         event = AthleticsEventScheduler(name="test", duration_in_units=60)
@@ -267,26 +259,24 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
         event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=120, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 392)
-        objective_as_string = str(event.scenario.objective())
-        self.assertEqual("U12M_4K_Gr30_to_Gr36_60m*-28+U12M_4K_Gr30_Weit+U12M_4K_Gr30_Kugel+U12M_4K_Gr30_to_Gr36_600m*14+U12M_4K_Gr31_Weit+U12M_4K_Gr31_Kugel+U12M_4K_Gr32_Weit+U12M_4K_Gr32_Kugel+U12M_4K_Gr33_Weit+U12M_4K_Gr33_Kugel+U12M_4K_Gr34_Weit+U12M_4K_Gr34_Kugel+U12M_4K_Gr35_Weit+U12M_4K_Gr35_Kugel+U12M_4K_Gr36_Weit+U12M_4K_Gr36_Kugel", objective_as_string)
+        self.assertEqual(event.scenario.objective_value(), 396)
         solution_as_string = str(event.scenario.solution())
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr30, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr31, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr32, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr33, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr34, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr35, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr36, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Läufe, 21, 25)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr30, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr31, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr32, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr33, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr34, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr35, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr36, 41, 45)", solution_as_string)
-        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Läufe, 41, 45)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr30, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr31, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr32, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr33, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr34, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr35, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr36, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Läufe, 0, 4)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr30, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr31, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr32, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr33, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr34, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr35, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Gr36, 20, 24)", solution_as_string)
+        self.assertIn("(U12M_4K_Gr30_to_Gr36_600m, Läufe, 20, 24)", solution_as_string)
 
 
 class BaseEventWithWettkampfHelper(unittest.TestCase):
@@ -354,31 +344,31 @@ class OrtoolsBaseEventWithWettkampfHelper(BaseEventWithWettkampfHelper):
 class OneEventWithStrictSequence(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_saturday(self):
         wettkampf_budget_data = {
-           "WOM_7K" : (32, 50),
+           "WOM_7K" : (12, 30),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_sunday(self):
         wettkampf_budget_data = {
-            "WOM_7K": (24, 39),
+            "WOM_7K": (12, 27),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SUNDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16M_6K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (20, 51),
+            "U16M_6K": (0, 31),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_MAN_10K_saturday(self):
         wettkampf_budget_data = {
-            "MAN_10K": (33, 59),
+            "MAN_10K": (12, 38),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_MAN_10K_sunday(self):
         wettkampf_budget_data = {
-            "MAN_10K": (14, 46),
+            "MAN_10K": (12, 44),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SUNDAY)
 
@@ -394,19 +384,19 @@ class OrtoolsOneEventWithStrictSequence(OrtoolsBaseEventWithWettkampfHelper):
 class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K(self):
         wettkampf_budget_data = {
-            "U12W_4K": (21, 41),
+            "U12W_4K": (0, 20),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K(self):
         wettkampf_budget_data = {
-            "U16W_5K": (3, 19),
+            "U16W_5K": (0, 16),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12M_4K(self):
         wettkampf_budget_data = {
-            "U12M_4K": (28, 44),
+            "U12M_4K": (0, 16),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
@@ -414,18 +404,18 @@ class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
 class MoreEvents(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_and_U16M_6K_and_MAN_10K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (9, 40),
-            "WOM_7K": (12, 30),
-            "MAN_10K": (33, 59),
+            "U16M_6K": (0, 31),
+            "WOM_7K": (16, 34),
+            "MAN_10K": (12, 38),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K_and_WOM_7K_and_U16M_6K_and_MAN_10K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (25, 56),
-            "WOM_7K": (15, 33),
-            "U16W_5K": (3, 19),
-            "MAN_10K": (12, 59),
+            "U16M_6K": (5, 36),
+            "WOM_7K": (18, 39),
+            "U16W_5K": (0, 22),
+            "MAN_10K": (16, 42),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, last_wettkampf_of_the_day="MAN_10K")
 

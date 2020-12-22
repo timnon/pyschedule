@@ -186,7 +186,7 @@ class AthleticsEventScheduler(object):
             disziplin = self._disziplinen[disziplin_name]
             self._scenario += disziplin * factor
         factor_sum = sum([factor for factor in wettkampf_disziplinen_factors.values()])
-        self._scenario += first_disziplin * -factor_sum
+        self._scenario += first_disziplin * -(factor_sum - 1)
 
     def set_objective(self, disziplinen_factors):
         self._scenario.clear_objective()
