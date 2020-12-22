@@ -1,3 +1,9 @@
+Run athletics-event-scheduler:
+$ python umm2019.py saturday --time-limit=30 --horizon=60 -v
+
+Run tests:
+$ python -m nose test/test_athletics_event.py
+
 Stuff to read:
 - https://github.com/timnon/pyschedule
 - https://developers.google.com/optimization/cp
