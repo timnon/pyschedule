@@ -177,7 +177,7 @@ class AthleticsEventScheduler(object):
         logging.debug('setting wettkampf start times...')
         for disziplinen_name, start_times in wettkampf_start_times.items():
             try:
-                self._scenario += self._disziplinen[disziplinen_name] >= start_times
+                self._scenario += self._disziplinen[disziplinen_name] > start_times
             except KeyError:
                 pass
 

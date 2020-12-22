@@ -162,20 +162,12 @@ last_wettkampf_of_the_day = "MAN_10K"
 
 wettkampf_start_times = {
     "saturday": {
-        "U12M_4K_Gr30_to_Gr34_60m": 0,
-        "U16M_6K_Gr24_to_Gr25_100mHü": 6,
-        "WOM_7K_Gr1_to_Gr2_100mHü": 9,
-        "U16W_5K_Gr3_to_Gr6_80m": 13,
-        "MAN_10K_Gr23_to_Gr23_100m": 20,
-        "U12W_4K_Gr14_to_Gr20_60m": 22,
+        "WOM_7K_Gr1_to_Gr2_100mHü": 12,
+        "MAN_10K_Gr23_to_Gr23_100m": 12,
     },
     "sunday": {
-        "U14M_5K_Gr26_to_Gr29_60m": 0,
-        "MAN_6K_Gr35_to_Gr37_100m": 4,
-        "WOM_5K_Gr21_to_Gr22_100m": 10,
-        "MAN_10K_Gr23_to_Gr23_110mHü": 14,
-        "U14W_5K_Gr7_to_Gr13_60m": 18,
-        "WOM_7K_Gr1_to_Gr2_Weit": 23,
+        "MAN_10K_Gr23_to_Gr23_110mHü": 12,
+        "WOM_7K_Gr1_to_Gr2_Weit": 12,
     },
 }
 
