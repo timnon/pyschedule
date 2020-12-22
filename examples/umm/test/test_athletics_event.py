@@ -354,25 +354,25 @@ class OrtoolsBaseEventWithWettkampfHelper(BaseEventWithWettkampfHelper):
 class OneEventWithStrictSequence(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_saturday(self):
         wettkampf_budget_data = {
-           "WOM_7K" : (9, 27),
+           "WOM_7K" : (32, 50),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_sunday(self):
         wettkampf_budget_data = {
-            "WOM_7K": (23, 38),
+            "WOM_7K": (24, 39),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SUNDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16M_6K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (6, 37),
+            "U16M_6K": (20, 51),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_MAN_10K_saturday(self):
         wettkampf_budget_data = {
-            "MAN_10K": (20, 46),
+            "MAN_10K": (33, 59),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
@@ -394,19 +394,19 @@ class OrtoolsOneEventWithStrictSequence(OrtoolsBaseEventWithWettkampfHelper):
 class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K(self):
         wettkampf_budget_data = {
-            "U12W_4K": (22, 42),
+            "U12W_4K": (21, 41),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K(self):
         wettkampf_budget_data = {
-            "U16W_5K": (13, 29),
+            "U16W_5K": (3, 19),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12M_4K(self):
         wettkampf_budget_data = {
-            "U12M_4K": (0, 16),
+            "U12M_4K": (28, 44),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
@@ -414,21 +414,23 @@ class OneEventWithRandomSequence(BaseEventWithWettkampfHelper):
 class MoreEvents(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_WOM_7K_and_U16M_6K_and_MAN_10K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (6, 37),
-            "WOM_7K": (9, 27),
-            "MAN_10K": (20, 46),
+            "U16M_6K": (9, 40),
+            "WOM_7K": (12, 30),
+            "MAN_10K": (33, 59),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K_and_WOM_7K_and_U16M_6K_and_MAN_10K(self):
         wettkampf_budget_data = {
-            "U16M_6K": (6, 37),
-            "WOM_7K": (9, 27),
-            "U16W_5K": (13, 42),  # much too late (should be 31)
-            "MAN_10K": (20, 46),  # much too late (should be 46)
+            "U16M_6K": (25, 56),
+            "WOM_7K": (15, 33),
+            "U16W_5K": (3, 19),
+            "MAN_10K": (12, 59),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, last_wettkampf_of_the_day="MAN_10K")
 
+
+class MoreEventsFiddleWithDisziplinenFactors(BaseEventWithWettkampfHelper):
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12W_4K_and_U12M_4K_1(self):
         wettkampf_budget_data = {
             "U12M_4K": (0, 16),
