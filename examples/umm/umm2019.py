@@ -297,7 +297,7 @@ def main(args):
     try:
         event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed, threads=args.threads)
     except athletics_event.NoSolutionError as e:
-        logging.error(e.msg)
+        logging.error("Exception caught: {}".format(e.__class__.__name__))
     logging.debug("done")
 
 
