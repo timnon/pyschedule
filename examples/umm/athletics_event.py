@@ -154,16 +154,12 @@ class AthleticsEventScheduler(object):
                             self._scenario += disziplin < last_disziplin
                     self._sequence_not_strict_gruppen.append(gruppe)
 
+                gruppen_disziplinen_without_pausen = gruppen_disziplinen
                 if wettkampf_with_pausen:
                     gruppen_disziplinen_without_pausen = gruppen_disziplinen[::2]
-                    for disziplin in gruppen_disziplinen_without_pausen[1:]:
-                        wettkampf_disziplinen_factors[disziplin['name']] += 1
+                for disziplin in gruppen_disziplinen_without_pausen[1:]:
                     wettkampf_disziplinen_factors[disziplin['name']] += 1
-                else:
-                    gruppen_disziplinen_without_pausen = gruppen_disziplinen
-                    for disziplin in gruppen_disziplinen_without_pausen[1:]:
-                        wettkampf_disziplinen_factors[disziplin['name']] += 1
-                    wettkampf_disziplinen_factors[disziplin['name']] += 1
+                wettkampf_disziplinen_factors[disziplin['name']] += 1
 
             self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
