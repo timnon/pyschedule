@@ -161,7 +161,7 @@ class AthleticsEventScheduler(object):
                     wettkampf_disziplinen_factors[disziplin['name']] += 1
                 wettkampf_disziplinen_factors[disziplin['name']] += 1
 
-            self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin)
+            self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
     _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K"]
@@ -177,7 +177,7 @@ class AthleticsEventScheduler(object):
             except KeyError:
                 pass
 
-    def _set_default_objective(self, wettkampf_disziplinen_factors, first_disziplin):
+    def _set_default_objective(self, wettkampf_disziplinen_factors, first_disziplin, last_disziplin):
         for disziplin_name, factor in wettkampf_disziplinen_factors.items():
             disziplin = self._disziplinen[disziplin_name]
             self._scenario += disziplin * factor
