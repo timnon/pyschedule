@@ -78,12 +78,12 @@ class AthleticsEventScheduler(object):
                 resources.append(anlage)
         return resources
 
-    def create_disziplinen(self, disziplinen_data, teilnehmer_data, wettkampf_with_strict_sequence):
-        self._disziplinen_data = disziplinen_data
+    def create_disziplinen(self, wettkampf_data, teilnehmer_data, wettkampf_with_strict_sequence):
+        self._wettkampf_data = wettkampf_data
         self._teilnehmer_data = teilnehmer_data
         self._wettkampf_with_strict_sequence = wettkampf_with_strict_sequence
         logging.debug('creating disziplinen...')
-        for wettkampf_name in disziplinen_data:
+        for wettkampf_name in wettkampf_data:
             if wettkampf_name not in teilnehmer_data:
                 continue
             logging.debug("  wettkampf: {}".format(wettkampf_name))
@@ -93,7 +93,7 @@ class AthleticsEventScheduler(object):
                 logging.debug("    gruppe: {}".format(gruppen_name))
                 gruppe = self._scenario.Resource(gruppen_name)
                 gruppen_disziplinen = []
-                for item in disziplinen_data[wettkampf_name]:
+                for item in wettkampf_data[wettkampf_name]["disziplinen"]:
                     disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
                     logging.debug("      disziplin: {}".format(disziplinen_name))
                     if item["together"]:
@@ -199,7 +199,7 @@ class AthleticsEventScheduler(object):
         return list(self._teilnehmer_data[wettkampf_name].keys())
 
     def getDisziplinen(self, wettkampf_name):
-        return list(self._disziplinen_data[wettkampf_name])
+        return list(self._wettkampf_data[wettkampf_name]["disziplinen"])
 
     def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
         logging.debug('solving problem with mip solver...')

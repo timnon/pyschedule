@@ -215,7 +215,7 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
         teilnehmer_data = { wettkampf_name: umm2019.teilnehmer_data[wettkampf_name] for wettkampf_name in wettkampf_budget_data }
         event.prepare(
             anlagen_descriptors=umm2019.anlagen_descriptors[wettkampf_day],
-            disziplinen_data=umm2019.disziplinen_data[wettkampf_day],
+            disziplinen_data=umm2019.wettkampf_data[wettkampf_day],
             teilnehmer_data=teilnehmer_data,
             wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day],
             wettkampf_with_strict_sequence=umm2019.wettkampf_with_strict_sequence)
