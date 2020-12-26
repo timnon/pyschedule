@@ -158,6 +158,8 @@ disziplinen_data = {
     }
 }
 
+wettkampf_with_strict_sequence = ["MAN_10K", "WOM_7K", "U16M_6K"]
+
 last_wettkampf_of_the_day = "MAN_10K"
 
 wettkampf_start_times = {
@@ -270,7 +272,7 @@ def main(args):
     event = athletics_event.AthleticsEventScheduler(
         name=event_name, duration_in_units=args.horizon)
     event.create_anlagen(anlagen_descriptors[args.day])
-    event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
+    event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data, wettkampf_with_strict_sequence)
     if not args.dont_set_start_time:
         event.set_wettkampf_start_times(wettkampf_start_times[args.day])
     event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)

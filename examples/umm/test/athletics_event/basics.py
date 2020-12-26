@@ -50,7 +50,7 @@ class Basics(unittest.TestCase):
                 "Gr30": 12,
             },
         }
-        event.create_disziplinen(umm2019.disziplinen_data[self._WETTKAMPF_DAY], teilnehmer_data)
+        event.create_disziplinen(umm2019.disziplinen_data[self._WETTKAMPF_DAY], teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         scenario_as_string = str(event.scenario)
         logging.debug("scenario: {}".format(scenario_as_string))
@@ -97,7 +97,7 @@ U12M_4K_Gr30_Kugel < U12M_4K_Gr30_to_Gr30_600m
                 "Gr30": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         logging.info("scenario: {}".format(str(event._scenario)))
         event.solve(time_limit=60, msg=msg_parameter_for_solver)

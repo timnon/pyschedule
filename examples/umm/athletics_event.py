@@ -48,9 +48,9 @@ class AthleticsEventScheduler(object):
     def scenario(self):
         return self._scenario
 
-    def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times):
+    def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times, wettkampf_with_strict_sequence):
         self.create_anlagen(anlagen_descriptors)
-        self.create_disziplinen(disziplinen_data, teilnehmer_data)
+        self.create_disziplinen(disziplinen_data, teilnehmer_data, wettkampf_with_strict_sequence)
         self.set_wettkampf_start_times(wettkampf_start_times)
 
     def create_anlagen(self, descriptors):
@@ -78,9 +78,10 @@ class AthleticsEventScheduler(object):
                 resources.append(anlage)
         return resources
 
-    def create_disziplinen(self, disziplinen_data, teilnehmer_data):
+    def create_disziplinen(self, disziplinen_data, teilnehmer_data, wettkampf_with_strict_sequence):
         self._disziplinen_data = disziplinen_data
         self._teilnehmer_data = teilnehmer_data
+        self._wettkampf_with_strict_sequence = wettkampf_with_strict_sequence
         logging.debug('creating disziplinen...')
         for wettkampf_name in disziplinen_data:
             if wettkampf_name not in teilnehmer_data:
@@ -130,7 +131,7 @@ class AthleticsEventScheduler(object):
                 first_disziplin = gruppen_disziplinen[0]
                 last_disziplin = gruppen_disziplinen[-1]
                 wettkampf_with_pausen = "pause" in gruppen_disziplinen[1]["name"].lower()
-                if self._is_wettkampf_disziplinen_sequence_strict(wettkampf_name):
+                if self._is_wettkampf_with_strict_sequence(wettkampf_name):
                     # one after another: 1st, 1st-pause, 2nd, 2nd-pause, 3rd,...
                     current_disziplin = gruppen_disziplinen[0]
                     for next_disziplin in gruppen_disziplinen[1:]:
@@ -164,10 +165,8 @@ class AthleticsEventScheduler(object):
             self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
-    _disziplinen_sequence_strict_data = ["MAN_10K", "WOM_7K", "U16M_6K"]
-
-    def _is_wettkampf_disziplinen_sequence_strict(self, wettkampf_name):
-        return wettkampf_name in self._disziplinen_sequence_strict_data
+    def _is_wettkampf_with_strict_sequence(self, wettkampf_name):
+        return wettkampf_name in self._wettkampf_with_strict_sequence
 
     def set_wettkampf_start_times(self, wettkampf_start_times):
         logging.debug('setting wettkampf start times...')

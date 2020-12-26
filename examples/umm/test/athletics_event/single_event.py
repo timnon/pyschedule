@@ -97,7 +97,7 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr31": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 68)
@@ -120,7 +120,7 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr33": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 144)
@@ -149,7 +149,7 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr35": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=60, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 280)
@@ -183,7 +183,7 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr36": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
         event.solve(time_limit=120, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 396)
@@ -217,7 +217,8 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
             anlagen_descriptors=umm2019.anlagen_descriptors[wettkampf_day],
             disziplinen_data=umm2019.disziplinen_data[wettkampf_day],
             teilnehmer_data=teilnehmer_data,
-            wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day])
+            wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day],
+            wettkampf_with_strict_sequence=umm2019.wettkampf_with_strict_sequence)
         if objective_override_disziplinen_factors:
             event.set_objective(objective_override_disziplinen_factors)
         logging.debug("objective: {}".format(event.scenario.objective()))
