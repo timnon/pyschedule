@@ -273,7 +273,7 @@ def main(args):
     event.create_disziplinen(disziplinen_data[args.day], teilnehmer_data)
     if not args.dont_set_start_time:
         event.set_wettkampf_start_times(wettkampf_start_times[args.day])
-    event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day, args.last_wettkampf_of_the_day_weight)
+    event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
     scenario_as_string = str(event.scenario)
     scenario_filename = '{}_scenario.txt'.format(event_name)
     with open(scenario_filename, 'w') as f:
@@ -300,7 +300,6 @@ if __name__ == "__main__":
         "random_seed": None,
         "threads": None,
         "horizon": 54,
-        "last_wettkampf_of_the_day_weight": 2,
     }
     parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
     help_text = 'time limit, e.g. 30s, 10m, 1h (default: {})'.format(default_arguments["time_limit"])
@@ -314,8 +313,6 @@ if __name__ == "__main__":
     parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
     help_text = 'horizon, (default: {})'.format(default_arguments["horizon"])
     parser.add_argument('--horizon', type=int, default=default_arguments["horizon"], help=help_text)
-    help_text = 'last wettkampf of the day weight, (default: {})'.format(default_arguments["last_wettkampf_of_the_day_weight"])
-    parser.add_argument('--last-wettkampf-of-the-day-weight', type=int, default=default_arguments["last_wettkampf_of_the_day_weight"], help=help_text)
     valid_wettkampf_days = ['saturday', 'sunday']
     parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
     args = parser.parse_args()

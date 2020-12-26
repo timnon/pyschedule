@@ -189,13 +189,12 @@ class AthleticsEventScheduler(object):
         for disziplin_name, factor in disziplinen_factors.items():
             self._scenario += self._disziplinen[disziplin_name] * factor
 
-    def ensure_last_wettkampf_of_the_day(self, wettkampf, weight=2):
+    def ensure_last_wettkampf_of_the_day(self, wettkampf):
         logging.debug('ensuring last wettkampf of the day...')
         last_disziplin_of_the_day = self._last_disziplin[wettkampf]
         for wettkampf_name, last_disziplin in self._last_disziplin.items():
             if wettkampf_name != wettkampf:
                 self._scenario += last_disziplin < last_disziplin_of_the_day
-        self._scenario += last_disziplin_of_the_day * weight
         
     def getGroups(self, wettkampf_name):
         return list(self._teilnehmer_data[wettkampf_name].keys())
