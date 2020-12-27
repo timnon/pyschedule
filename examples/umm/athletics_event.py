@@ -96,7 +96,8 @@ class AthleticsEventScheduler(object):
                 gruppen_disziplinen = []
                 for item in wettkampf_data[wettkampf_name]["disziplinen"]:
                     disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
-                    if item["together"]:
+                    together = item.get("together", False)
+                    if together:
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
                     logging.debug("      disziplin: {}".format(disziplinen_name))
                     if disziplinen_name not in self._disziplinen.keys():
@@ -118,13 +119,10 @@ class AthleticsEventScheduler(object):
                         disziplin = self._disziplinen[disziplinen_name]
                     gruppen_disziplinen.append(disziplin)
 
-                    if item["resource"]:
-                        resource_base_name = item["resource"]
-                        resource_names = item["resource"].split("&")
-                        if resource_names[0][-1].isdigit():
-                            resource_base_name = resource_names[0][:-1]
-                        if not item["together"] or gruppen_name == gruppen_names[0]:
-                            for resource_name in resource_names:
+                    resource = item.get("resource", None)
+                    if resource:
+                        if not together or gruppen_name == gruppen_names[0]:
+                            for resource_name in resource.split("&"):
                                 disziplin += self.any_anlage(resource_name)
 
                     disziplin += gruppe
