@@ -100,7 +100,6 @@ class AthleticsEventScheduler(object):
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
                     if disziplinen_name not in self._disziplinen.keys():
                         kwargs = item["kwargs"].copy()
-                        kwargs['together'] = item["together"]
                         if "pause" not in disziplinen_name.lower():
                             kwargs["length"] += 1
                         else:
