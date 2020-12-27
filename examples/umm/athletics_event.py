@@ -106,6 +106,7 @@ class AthleticsEventScheduler(object):
                             kwargs["length"] -= 1
                             if kwargs["length"] <= 0:
                                 continue
+                        kwargs["plot_color"] = wettkampf_data[wettkampf_name]["plot_color"]
                         disziplin = self._scenario.Task(disziplinen_name, **kwargs)
                         self._disziplinen[disziplinen_name] = disziplin
                     else:
