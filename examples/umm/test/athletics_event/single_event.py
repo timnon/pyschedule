@@ -33,7 +33,7 @@ wettkampf_budget_data = {
 
 def _getFirstDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_budget_data):
     disziplin_name = disziplinen[0]["name"]
-    disziplin_length = disziplinen[0]["kwargs"]["length"]
+    disziplin_length = disziplinen[0]["length"]
     disziplin_begin = wettkampf_budget_data[wettkampf_name][0]
     disziplin_end = disziplin_begin + disziplin_length
     return "({}_{}_to_{}_{}, {}, {}, {})".format(
@@ -49,7 +49,7 @@ def _getFirstDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_bu
 
 def _getLastDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_budget_data):
     disziplin_name = disziplinen[-1]["name"]
-    disziplin_length = disziplinen[-1]["kwargs"]["length"]
+    disziplin_length = disziplinen[-1]["length"]
     disziplin_begin = wettkampf_budget_data[wettkampf_name][1]
     disziplin_end = disziplin_begin + disziplin_length
     return "({}_{}_to_{}_{}, {}, {}, {})".format(
@@ -77,15 +77,18 @@ class TwoAndMoreGroups(unittest.TestCase):
         "U12M_4K": (0, 16),
     }
     _disziplinen_data = {
-        "U12M_4K": [
-            dict(name="60m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="yellow")),
-            dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-            dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="yellow")),
-            dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-            dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="yellow")),
-            dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-            dict(name="600m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="yellow")),
-        ],
+        "U12M_4K": {
+            "disziplinen": [
+                dict(name="60m", together=True, resource="Läufe", length=3),
+                dict(name="Pause_1", together=False, resource=None, length=1),
+                dict(name="Weit", together=False, resource="Weit", length=3),
+                dict(name="Pause_2", together=False, resource=None, length=1),
+                dict(name="Kugel", together=False, resource="Kugel", length=2),
+                dict(name="Pause_3", together=False, resource=None, length=1),
+                dict(name="600m", together=True, resource="Läufe", length=3),
+            ],
+            "plot_color": "yellow",
+        },
     }
 
     def test_solution_and_objective_in_event_with_two_groups(self):

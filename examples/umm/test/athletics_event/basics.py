@@ -25,13 +25,13 @@ class Basics(unittest.TestCase):
     _disziplinen_data = {
         "U12M_4K": {
             "disziplinen": [
-                dict(name="60m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="yellow")),
-                dict(name="Pause_1", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-                dict(name="Weit", together=False, resource="Weit", sequence_free=True, kwargs=dict(length=3, state=1, plot_color="yellow")),
-                dict(name="Pause_2", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-                dict(name="Kugel", together=False, resource="Kugel", sequence_free=True, kwargs=dict(length=2, state=1, plot_color="yellow")),
-                dict(name="Pause_3", together=False, resource=None, sequence_free=False, kwargs=dict(length=1, state=-1, plot_color='white')),
-                dict(name="600m", together=True, resource="Läufe", sequence_free=False, kwargs=dict(length=3, state=1, plot_color="yellow")),
+                dict(name="60m", together=True, resource="Läufe", length=3),
+                dict(name="Pause_1", together=False, resource=None, length=1),
+                dict(name="Weit", together=False, resource="Weit", length=3),
+                dict(name="Pause_2", together=False, resource=None, length=1),
+                dict(name="Kugel", together=False, resource="Kugel", length=2),
+                dict(name="Pause_3", together=False, resource=None, length=1),
+                dict(name="600m", together=True, resource="Läufe", length=3),
             ],
             "plot_color": "yellow",
         },
