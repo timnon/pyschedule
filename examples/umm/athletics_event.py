@@ -35,7 +35,6 @@ class AthleticsEventScheduler(object):
         self._duration_in_units = duration_in_units
         self._anlagen = {}
         self._last_disziplin = {}
-        self._used_anlagen = defaultdict(int)
         self._disziplinen = {}
         self._last_wettkampf_of_the_day = None
         self._hide_tasks = []
@@ -124,7 +123,6 @@ class AthleticsEventScheduler(object):
                         resource_names = item["resource"].split("&")
                         if resource_names[0][-1].isdigit():
                             resource_base_name = resource_names[0][:-1]
-                        self._used_anlagen[resource_base_name] += 1
                         if not item["together"] or gruppen_name == gruppen_names[0]:
                             for resource_name in resource_names:
                                 disziplin += self.any_anlage(resource_name)
