@@ -213,21 +213,19 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
     _SATURDAY = "saturday"
     _SUNDAY = "sunday"
 
-    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, last_wettkampf_of_the_day=None, time_limit=120, objective_override_disziplinen_factors=None):
+    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, time_limit=120, objective_override_disziplinen_factors=None):
         event = AthleticsEventScheduler(name="test", duration_in_units=60)
         teilnehmer_data = { wettkampf_name: umm2019.teilnehmer_data[wettkampf_name] for wettkampf_name in wettkampf_budget_data }
         event.prepare(
             anlagen_descriptors=umm2019.anlagen_descriptors[wettkampf_day],
             disziplinen_data=umm2019.wettkampf_data[wettkampf_day],
             teilnehmer_data=teilnehmer_data,
-            wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day],
-            wettkampf_with_strict_sequence=umm2019.wettkampf_with_strict_sequence)
+            wettkampf_start_times=umm2019.wettkampf_start_times[wettkampf_day])
         if objective_override_disziplinen_factors:
             event.set_objective(objective_override_disziplinen_factors)
         logging.debug("objective: {}".format(event.scenario.objective()))
 
-        if last_wettkampf_of_the_day:
-            event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
+        event.ensure_last_wettkampf_of_the_day()
         logging.info("scenario: {}".format(event._scenario))
         event.solve(time_limit=time_limit, msg=msg_parameter_for_solver)
         logging.debug("objective_value: {}".format(event.scenario.objective_value()))

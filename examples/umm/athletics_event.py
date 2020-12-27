@@ -37,8 +37,8 @@ class AthleticsEventScheduler(object):
         self._last_disziplin = {}
         self._used_anlagen = defaultdict(int)
         self._disziplinen = {}
+        self._last_wettkampf_of_the_day = None
         self._hide_tasks = []
-        self._sequence_not_strict_gruppen = []
         self.create_scenario()
 
     def create_scenario(self):
@@ -48,9 +48,9 @@ class AthleticsEventScheduler(object):
     def scenario(self):
         return self._scenario
 
-    def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times, wettkampf_with_strict_sequence):
+    def prepare(self, anlagen_descriptors, disziplinen_data, teilnehmer_data, wettkampf_start_times):
         self.create_anlagen(anlagen_descriptors)
-        self.create_disziplinen(disziplinen_data, teilnehmer_data, wettkampf_with_strict_sequence)
+        self.create_disziplinen(disziplinen_data, teilnehmer_data)
         self.set_wettkampf_start_times(wettkampf_start_times)
 
     def create_anlagen(self, descriptors):
@@ -78,15 +78,17 @@ class AthleticsEventScheduler(object):
                 resources.append(anlage)
         return resources
 
-    def create_disziplinen(self, wettkampf_data, teilnehmer_data, wettkampf_with_strict_sequence):
+    def create_disziplinen(self, wettkampf_data, teilnehmer_data):
         self._wettkampf_data = wettkampf_data
         self._teilnehmer_data = teilnehmer_data
-        self._wettkampf_with_strict_sequence = wettkampf_with_strict_sequence
         logging.debug('creating disziplinen...')
         for wettkampf_name in wettkampf_data:
             if wettkampf_name not in teilnehmer_data:
                 continue
             logging.debug("  wettkampf: {}".format(wettkampf_name))
+            is_wettkampf_with_strict_sequence = wettkampf_data[wettkampf_name].get("is_wettkampf_with_strict_sequence", False)
+            if wettkampf_data[wettkampf_name].get("is_last_wettkampf_of_the_day", False):
+                self._last_wettkampf_of_the_day = wettkampf_name
             gruppen_names = list(teilnehmer_data[wettkampf_name].keys())
             wettkampf_disziplinen_factors = defaultdict(int)
             for gruppen_name in gruppen_names:
@@ -135,7 +137,7 @@ class AthleticsEventScheduler(object):
                 first_disziplin = gruppen_disziplinen[0]
                 last_disziplin = gruppen_disziplinen[-1]
                 wettkampf_with_pausen = "pause" in gruppen_disziplinen[1]["name"].lower()
-                if self._is_wettkampf_with_strict_sequence(wettkampf_name):
+                if is_wettkampf_with_strict_sequence:
                     # one after another: 1st, 1st-pause, 2nd, 2nd-pause, 3rd,...
                     current_disziplin = gruppen_disziplinen[0]
                     for next_disziplin in gruppen_disziplinen[1:]:
@@ -157,7 +159,6 @@ class AthleticsEventScheduler(object):
                             self._scenario += first_disziplin < disziplin
                         for disziplin in gruppen_disziplinen[:-1]:
                             self._scenario += disziplin < last_disziplin
-                    self._sequence_not_strict_gruppen.append(gruppe)
 
                 gruppen_disziplinen_without_pausen = gruppen_disziplinen
                 if wettkampf_with_pausen:
@@ -168,9 +169,6 @@ class AthleticsEventScheduler(object):
 
             self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
-
-    def _is_wettkampf_with_strict_sequence(self, wettkampf_name):
-        return wettkampf_name in self._wettkampf_with_strict_sequence
 
     def set_wettkampf_start_times(self, wettkampf_start_times):
         logging.debug('setting wettkampf start times...')
@@ -192,13 +190,15 @@ class AthleticsEventScheduler(object):
         for disziplin_name, factor in disziplinen_factors.items():
             self._scenario += self._disziplinen[disziplin_name] * factor
 
-    def ensure_last_wettkampf_of_the_day(self, wettkampf):
+    def ensure_last_wettkampf_of_the_day(self):
+        if self._last_wettkampf_of_the_day is None:
+            return
         logging.debug('ensuring last wettkampf of the day...')
-        last_disziplin_of_the_day = self._last_disziplin[wettkampf]
+        last_disziplin_of_the_day = self._last_disziplin[self._last_wettkampf_of_the_day]
         for wettkampf_name, last_disziplin in self._last_disziplin.items():
-            if wettkampf_name != wettkampf:
+            if wettkampf_name != self._last_wettkampf_of_the_day:
                 self._scenario += last_disziplin < last_disziplin_of_the_day
-        
+
     def getGroups(self, wettkampf_name):
         return list(self._teilnehmer_data[wettkampf_name].keys())
 

@@ -63,6 +63,7 @@ wettkampf_data = {
                 dict(name="Pause_3", together=False, resource=None, length=3),
                 dict(name="200m", together=True, resource="Läufe", length=2),
             ],
+            "is_wettkampf_with_strict_sequence": True,
             "plot_color": "lightgreen",
         },
         "U12M_4K": {
@@ -91,6 +92,7 @@ wettkampf_data = {
                 dict(name="Pause_5", together=False, resource=None, length=3),
                 dict(name="1000m", together=True, resource="Läufe", length=2),
             ],
+            "is_wettkampf_with_strict_sequence": True,
             "plot_color": "lightblue",
         },
         "MAN_10K": {
@@ -105,6 +107,8 @@ wettkampf_data = {
                 dict(name="Pause_4", together=False, resource=None, length=4),
                 dict(name="400m", together=True, resource="Läufe", length=2),
             ],
+            "is_wettkampf_with_strict_sequence": True,
+            "is_last_wettkampf_of_the_day": True,
             "plot_color": "red",
         },
     },
@@ -165,7 +169,10 @@ wettkampf_data = {
                 dict(name="Pause_4", together=False, resource=None, length=3),
                 dict(name="1500m", together=True, resource="Läufe", length=1),
             ],
+            "is_wettkampf_with_strict_sequence": True,
+            "is_last_wettkampf_of_the_day": True,
             "plot_color": "red",
+
         },
         "U14W_5K": {
             "disziplinen": [
@@ -189,14 +196,11 @@ wettkampf_data = {
                 dict(name="Pause_2", together=False, resource=None, length=3),
                 dict(name="800m", together=True, resource="Läufe", length=2),
             ],
+            "is_wettkampf_with_strict_sequence": True,
             "plot_color": "lightgreen",
         },
     }
 }
-
-wettkampf_with_strict_sequence = ["MAN_10K", "WOM_7K", "U16M_6K"]
-
-last_wettkampf_of_the_day = "MAN_10K"
 
 wettkampf_start_times = {
     "saturday": {
@@ -308,10 +312,10 @@ def main(args):
     event = athletics_event.AthleticsEventScheduler(
         name=event_name, duration_in_units=args.horizon)
     event.create_anlagen(anlagen_descriptors[args.day])
-    event.create_disziplinen(wettkampf_data[args.day], teilnehmer_data, wettkampf_with_strict_sequence)
+    event.create_disziplinen(wettkampf_data[args.day], teilnehmer_data)
     if not args.dont_set_start_time:
         event.set_wettkampf_start_times(wettkampf_start_times[args.day])
-    event.ensure_last_wettkampf_of_the_day(last_wettkampf_of_the_day)
+    event.ensure_last_wettkampf_of_the_day()
     scenario_as_string = str(event.scenario)
     scenario_filename = '{}_scenario.txt'.format(event_name)
     with open(scenario_filename, 'w') as f:

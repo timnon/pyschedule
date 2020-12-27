@@ -17,4 +17,4 @@ class MoreEvents(BaseEventWithWettkampfHelper):
             "U16W_5K": (0, 22),
             "MAN_10K": (16, 42),
         }
-        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY, last_wettkampf_of_the_day="MAN_10K")
+        self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
