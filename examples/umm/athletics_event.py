@@ -99,15 +99,19 @@ class AthleticsEventScheduler(object):
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
                     logging.debug("      disziplin: {}".format(disziplinen_name))
                     if disziplinen_name not in self._disziplinen.keys():
-                        kwargs = item["kwargs"].copy()
+                        disziplinen_length = item["length"]
                         if "pause" not in disziplinen_name.lower():
-                            kwargs["length"] += 1
+                            disziplinen_length += 1
                         else:
-                            kwargs["length"] -= 1
-                            if kwargs["length"] <= 0:
+                            disziplinen_length -= 1
+                            if disziplinen_length <= 0:
                                 continue
-                        kwargs["plot_color"] = wettkampf_data[wettkampf_name]["plot_color"]
-                        disziplin = self._scenario.Task(disziplinen_name, **kwargs)
+                        kwargs = {
+                            "name": disziplinen_name,
+                            "length": disziplinen_length,
+                            "plot_color": wettkampf_data[wettkampf_name]["plot_color"],
+                        }
+                        disziplin = self._scenario.Task(**kwargs)
                         self._disziplinen[disziplinen_name] = disziplin
                     else:
                         disziplin = self._disziplinen[disziplinen_name]
