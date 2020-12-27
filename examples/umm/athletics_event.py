@@ -95,9 +95,9 @@ class AthleticsEventScheduler(object):
                 gruppen_disziplinen = []
                 for item in wettkampf_data[wettkampf_name]["disziplinen"]:
                     disziplinen_name = "{}_{}_{}".format(wettkampf_name, gruppen_name, item["name"])
-                    logging.debug("      disziplin: {}".format(disziplinen_name))
                     if item["together"]:
                         disziplinen_name = "{}_{}_to_{}_{}".format(wettkampf_name, gruppen_names[0], gruppen_names[-1], item["name"])
+                    logging.debug("      disziplin: {}".format(disziplinen_name))
                     if disziplinen_name not in self._disziplinen.keys():
                         kwargs = item["kwargs"].copy()
                         if "pause" not in disziplinen_name.lower():
