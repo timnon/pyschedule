@@ -63,7 +63,6 @@ def _getLastDisziplinAsString(wettkampf_name, groups, disziplinen, wettkampf_bud
     )
 
 
-@unittest.skip("too lengthy")
 class TwoAndMoreGroups(unittest.TestCase):
     _WETTKAMPF_DAY = "saturday"
     _anlagen_descriptors = [
@@ -92,7 +91,7 @@ class TwoAndMoreGroups(unittest.TestCase):
     }
 
     def test_solution_and_objective_in_event_with_two_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40)
+        event = AthleticsEventScheduler(name="test", duration_in_units=60)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -100,9 +99,9 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr31": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.solve(time_limit=60, msg=msg_parameter_for_solver)
+        event.solve(time_limit=10, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 68)
         solution_as_string = str(event.scenario.solution())
         self.assertIn("(U12M_4K_Gr30_to_Gr31_60m, Gr30, 0, 4)", solution_as_string)
@@ -113,7 +112,7 @@ class TwoAndMoreGroups(unittest.TestCase):
         self.assertIn("(U12M_4K_Gr30_to_Gr31_600m, Läufe, 11, 15)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_four_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40)
+        event = AthleticsEventScheduler(name="test", duration_in_units=60)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -123,9 +122,9 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr33": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.solve(time_limit=60, msg=msg_parameter_for_solver)
+        event.solve(time_limit=10, ratio_gap=1, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 144)
         solution_as_string = str(event.scenario.solution())
         self.assertIn("(U12M_4K_Gr30_to_Gr33_60m, Gr30, 0, 4)", solution_as_string)
@@ -140,7 +139,7 @@ class TwoAndMoreGroups(unittest.TestCase):
         self.assertIn("(U12M_4K_Gr30_to_Gr33_600m, Läufe, 12, 16)", solution_as_string)
 
     def test_solution_and_objective_in_event_with_six_groups(self):
-        event = AthleticsEventScheduler(name="test", duration_in_units=40)
+        event = AthleticsEventScheduler(name="test", duration_in_units=60)
         event.create_anlagen(self._anlagen_descriptors)
         teilnehmer_data = {
             "U12M_4K": {
@@ -152,9 +151,9 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr35": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.solve(time_limit=60, msg=msg_parameter_for_solver)
+        event.solve(time_limit=10, ratio_gap=1, msg=msg_parameter_for_solver)
         self.assertEqual(event.scenario.objective_value(), 280)
         solution_as_string = str(event.scenario.solution())
         self.assertIn("(U12M_4K_Gr30_to_Gr35_60m, Gr30, 0, 4)", solution_as_string)
@@ -186,10 +185,10 @@ class TwoAndMoreGroups(unittest.TestCase):
                 "Gr36": 12,
             },
         }
-        event.create_disziplinen(self._disziplinen_data, teilnehmer_data, umm2019.wettkampf_with_strict_sequence)
+        event.create_disziplinen(self._disziplinen_data, teilnehmer_data)
         event.set_wettkampf_start_times(umm2019.wettkampf_start_times[self._WETTKAMPF_DAY])
-        event.solve(time_limit=120, msg=msg_parameter_for_solver)
-        self.assertEqual(event.scenario.objective_value(), 396)
+        event.solve(time_limit=10, ratio_gap=1, msg=msg_parameter_for_solver)
+        self.assertEqual(event.scenario.objective_value(), 403)
         solution_as_string = str(event.scenario.solution())
         self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr30, 0, 4)", solution_as_string)
         self.assertIn("(U12M_4K_Gr30_to_Gr36_60m, Gr31, 0, 4)", solution_as_string)
@@ -213,7 +212,7 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
     _SATURDAY = "saturday"
     _SUNDAY = "sunday"
 
-    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, time_limit=120, objective_override_disziplinen_factors=None):
+    def wettkampf_helper(self, wettkampf_budget_data, wettkampf_day, time_limit=10, objective_override_disziplinen_factors=None):
         event = AthleticsEventScheduler(name="test", duration_in_units=60)
         teilnehmer_data = { wettkampf_name: umm2019.teilnehmer_data[wettkampf_name] for wettkampf_name in wettkampf_budget_data }
         event.prepare(
@@ -227,7 +226,7 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
 
         event.ensure_last_wettkampf_of_the_day()
         logging.info("scenario: {}".format(event._scenario))
-        event.solve(time_limit=time_limit, msg=msg_parameter_for_solver)
+        event.solve(time_limit=time_limit, ratio_gap=1, msg=msg_parameter_for_solver)
 
         solution_as_string = str(event.scenario.solution())
         for wettkampf_name in wettkampf_budget_data:
@@ -279,14 +278,12 @@ class SingleEventWithRandomSequence(BaseEventWithWettkampfHelper):
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
-    @unittest.skip("too lengthy")
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U16W_5K(self):
         wettkampf_budget_data = {
-            "U16W_5K": (0, 16),
+            "U16W_5K": (7, 23),
         }
         self.wettkampf_helper(wettkampf_budget_data=wettkampf_budget_data, wettkampf_day=self._SATURDAY)
 
-    @unittest.skip("too lengthy")
     def test_scheduling_of_first_and_last_disziplin_for_wettkampf_U12M_4K(self):
         wettkampf_budget_data = {
             "U12M_4K": (0, 16),
