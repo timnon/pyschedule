@@ -36,6 +36,7 @@ class AthleticsEventScheduler(object):
         self._anlagen = {}
         self._last_disziplin = {}
         self._disziplinen = {}
+        self._wettkampf_first_last_disziplinen = {}
         self._last_wettkampf_of_the_day = None
         self._hide_tasks = []
         self.create_scenario()
@@ -163,6 +164,7 @@ class AthleticsEventScheduler(object):
                     wettkampf_disziplinen_factors[disziplin['name']] += 1
                 wettkampf_disziplinen_factors[disziplin['name']] += 1
 
+            self._wettkampf_first_last_disziplinen[wettkampf_name] = (first_disziplin, last_disziplin)
             self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
@@ -201,6 +203,18 @@ class AthleticsEventScheduler(object):
     def getDisziplinen(self, wettkampf_name):
         return list(self._wettkampf_data[wettkampf_name]["disziplinen"])
 
+    def get_wettkampf_duration_summary(self):
+        heading = "Wettkampf-Duration-Summary:"
+        lines = []
+        for wettkampf_name, (first_disziplin, last_disziplin) in self._wettkampf_first_last_disziplinen.items():
+            lines.append("  {}: {}..{} ({})".format(
+                wettkampf_name,
+                first_disziplin.start_value,
+                last_disziplin.start_value,
+                last_disziplin.start_value - first_disziplin.start_value,
+             ))
+        return "{}\n{}".format(heading, "\n".join(lines))
+
     def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
         logging.debug('solving problem with mip solver...')
         status = solvers.mip.solve(self._scenario, time_limit=time_limit, ratio_gap=ratio_gap, random_seed=random_seed, threads=threads, msg=msg)
@@ -220,6 +234,7 @@ class AthleticsEventScheduler(object):
         logging.info(solution_as_string)
         plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
                                  fig_size=(100, 5), hide_tasks=self._hide_tasks)
+        logging.info(self.get_wettkampf_duration_summary())
 
     def solve_with_ortools(self, time_limit, msg=1):
         logging.debug('solving problem with ortools solver...')
