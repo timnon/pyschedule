@@ -168,6 +168,13 @@ class AthleticsEventScheduler(object):
             self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
+    def _set_default_objective(self, wettkampf_disziplinen_factors, first_disziplin, last_disziplin):
+        for disziplin_name, factor in wettkampf_disziplinen_factors.items():
+            disziplin = self._disziplinen[disziplin_name]
+            self._scenario += disziplin * factor
+        factor_sum = sum([factor for factor in wettkampf_disziplinen_factors.values()])
+        self._scenario += first_disziplin * -(factor_sum - 1)
+
     def set_wettkampf_start_times(self, wettkampf_start_times):
         logging.debug('setting wettkampf start times...')
         for disziplinen_name, start_times in wettkampf_start_times.items():
@@ -175,13 +182,6 @@ class AthleticsEventScheduler(object):
                 self._scenario += self._disziplinen[disziplinen_name] > start_times
             except KeyError:
                 pass
-
-    def _set_default_objective(self, wettkampf_disziplinen_factors, first_disziplin, last_disziplin):
-        for disziplin_name, factor in wettkampf_disziplinen_factors.items():
-            disziplin = self._disziplinen[disziplin_name]
-            self._scenario += disziplin * factor
-        factor_sum = sum([factor for factor in wettkampf_disziplinen_factors.values()])
-        self._scenario += first_disziplin * -(factor_sum - 1)
 
     def set_objective(self, disziplinen_factors):
         self._scenario.clear_objective()
