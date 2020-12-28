@@ -228,7 +228,6 @@ class BaseEventWithWettkampfHelper(unittest.TestCase):
         event.ensure_last_wettkampf_of_the_day()
         logging.info("scenario: {}".format(event._scenario))
         event.solve(time_limit=time_limit, msg=msg_parameter_for_solver)
-        logging.debug("objective_value: {}".format(event.scenario.objective_value()))
 
         solution_as_string = str(event.scenario.solution())
         for wettkampf_name in wettkampf_budget_data:
