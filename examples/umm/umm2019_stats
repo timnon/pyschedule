@@ -1,131 +1,846 @@
-# Solutions
-## Saturday
-# time limit: 1h
-# No solution!
-# time limit: 2h
-# No solution!
-# ...
-## Sunday:
+Saturday
+========
 
-time limit: 12h
-Objective value:                405.00000000
-Lower bound:                    347.000
-Gap:                            0.17
-Enumerated nodes:               23365
-Total iterations:               29320763
-Time (CPU seconds):             43005.15
-Time (Wallclock seconds):       43013.24
-
-time limit: 1h
-Result - Stopped on time limit
-
-Objective value:                432.00000000
-Lower bound:                    343.624
-Gap:                            0.26
-Enumerated nodes:               11114
-Total iterations:               2217033
-Time (CPU seconds):             3499.14
-Time (Wallclock seconds):       3501.61
+Reference: 54
+        U12W_4K: 22..49 (27)
+        U16W_5K: 13..42 (29)
+        WOM_7K: 9..35 (26)
+        U12M_4K: 0..27 (27)
+        U16M_6K: 6..45 (39)
+        MAN_10K: 20..53 (33)
 
 
+$ python umm2019.py saturday --horizon=56 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1742
+
+$ python umm2019.py saturday --horizon=55 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 29..49 (20)
+        U16W_5K: 4..34 (30)
+        WOM_7K: 15..38 (23)
+        U12M_4K: 0..20 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 13..53 (40)
+    objective_value: 1701
+
+$ python umm2019.py saturday --horizon=54 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..49 (25)
+        U16W_5K: 0..28 (28)
+        WOM_7K: 12..36 (24)
+        U12M_4K: 16..32 (16)
+        U16M_6K: 7..40 (33)
+        MAN_10K: 21..53 (32)
+    objective_value: 1721
+
+$ python umm2019.py saturday --horizon=53 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 18..50 (32)
+    objective_value: 1657
+
+$ python umm2019.py saturday --horizon=52 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..47 (24)
+        U16W_5K: 2..27 (25)
+        WOM_7K: 14..36 (22)
+        U12M_4K: 19..39 (20)
+        U16M_6K: 6..43 (37)
+        MAN_10K: 12..51 (39)
+    objective_value: 1784
+
+$ python umm2019.py saturday --horizon=51 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 4..36 (32)
+        U16W_5K: 0..20 (20)
+        WOM_7K: 14..33 (19)
+        U12M_4K: 29..46 (17)
+        U16M_6K: 11..43 (32)
+        MAN_10K: 18..50 (32)
+    objective_value: 1714
+
+$ python umm2019.py saturday --horizon=50 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1645
+
+$ python umm2019.py saturday --horizon=49 --time-limit=30m -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=48 --time-limit=30m -v
+    NoSolutionError
 
 
+$ python umm2019.py saturday --horizon=56 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1738
+
+$ python umm2019.py saturday --horizon=55 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 29..49 (20)
+        U16W_5K: 4..34 (30)
+        WOM_7K: 16..38 (22)
+        U12M_4K: 0..20 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 14..53 (39)
+    objective_value: 1689
+
+$ python umm2019.py saturday --horizon=54 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..49 (25)
+        U16W_5K: 0..28 (28)
+        WOM_7K: 12..36 (24)
+        U12M_4K: 16..32 (16)
+        U16M_6K: 7..40 (33)
+        MAN_10K: 21..53 (32)
+    objective_value: 1721
+
+$ python umm2019.py saturday --horizon=53 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 19..50 (31)
+    objective_value: 1651
+
+$ python umm2019.py saturday --horizon=52 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..47 (24)
+        U16W_5K: 2..27 (25)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 19..38 (19)
+        U16M_6K: 6..42 (36)
+        MAN_10K: 12..51 (39)
+    objective_value: 1750
+
+$ python umm2019.py saturday --horizon=51 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 4..36 (32)
+        U16W_5K: 0..20 (20)
+        WOM_7K: 14..33 (19)
+        U12M_4K: 29..46 (17)
+        U16M_6K: 11..43 (32)
+        MAN_10K: 18..50 (32)
+    objective_value: 1714
+
+$ python umm2019.py saturday --horizon=50 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1641
+
+$ python umm2019.py saturday --horizon=49 --time-limit=1h -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=48 --time-limit=1h -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=56 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1738
+
+$ python umm2019.py saturday --horizon=55 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 29..49 (20)
+        U16W_5K: 4..34 (30)
+        WOM_7K: 14..38 (24)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 12..53 (41)
+    objective_value: 1677
+
+$ python umm2019.py saturday --horizon=54 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 19..41 (22)
+        U16W_5K: 29..49 (20)
+        WOM_7K: 15..45 (30)
+        U12M_4K: 3..24 (21)
+        U16M_6K: 0..36 (36)
+        MAN_10K: 13..53 (40)
+    objective_value: 1705
+
+$ python umm2019.py saturday --horizon=53 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 19..50 (31)
+    objective_value: 1649
+
+$ python umm2019.py saturday --horizon=52 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..47 (21)
+        U16W_5K: 1..22 (21)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 18..38 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 12..51 (39)
+    objective_value: 1622
+
+$ python umm2019.py saturday --horizon=51 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..46 (22)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 20..42 (22)
+        U12M_4K: 10..28 (18)
+        U16M_6K: 1..32 (31)
+        MAN_10K: 18..50 (32)
+    objective_value: 1705
+
+$ python umm2019.py saturday --horizon=50 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1641
+
+$ python umm2019.py saturday --horizon=49 --time-limit=2h -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=48 --time-limit=2h -v
+    NoSolutionError
 
 
+$ python umm2019.py saturday --horizon=56 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1735
 
-Objective value:                848.00000000
-Lower bound:                    521.279
-Gap:                            0.63
-Enumerated nodes:               0
-Total iterations:               0
-Time (CPU seconds):             537.08
-Time (Wallclock seconds):       539.14
+$ python umm2019.py saturday --horizon=55 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 28..48 (20)
+        U16W_5K: 4..34 (30)
+        WOM_7K: 16..38 (22)
+        U12M_4K: 0..20 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 14..52 (38)
+    objective_value: 1664
 
-Objective value:                740.00000000
-Lower bound:                    584.142
-Gap:                            0.27
-Enumerated nodes:               242
-Total iterations:               123446
-Time (CPU seconds):             1123.87
-Time (Wallclock seconds):       1127.60
+$ python umm2019.py saturday --horizon=54 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 19..41 (22)
+        U16W_5K: 29..49 (20)
+        WOM_7K: 15..45 (30)
+        U12M_4K: 3..24 (21)
+        U16M_6K: 0..36 (36)
+        MAN_10K: 13..53 (40)
+    objective_value: 1703
 
-Objective value:                740.00000000
-Lower bound:                    584.142
-Gap:                            0.27
-Enumerated nodes:               887
-Total iterations:               464927
-Time (CPU seconds):             1720.82
-Time (Wallclock seconds):       1724.68
+$ python umm2019.py saturday --horizon=53 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 19..50 (31)
+    objective_value: 1648
 
-===============================================================================
-2020-11-20T22:30:48_umm2019_sunday: time_limit=1h
+$ python umm2019.py saturday --horizon=52 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..47 (21)
+        U16W_5K: 1..22 (21)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 18..38 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 12..51 (39)
+    objective_value: 1618
 
-Objective value:                720.00000000
-Lower bound:                    584.142
-Gap:                            0.23
-Enumerated nodes:               3750
-Total iterations:               1675469
-Time (CPU seconds):             3523.39
-Time (Wallclock seconds):       3530.80
+$ python umm2019.py saturday --horizon=51 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..46 (22)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 20..42 (22)
+        U12M_4K: 10..28 (18)
+        U16M_6K: 0..32 (32)
+        MAN_10K: 18..50 (32)
+    objective_value: 1698
 
-Option for printingOptions changed from normal to all
-Total time (CPU seconds):       3524.04   (Wallclock seconds):       3531.49
+$ python umm2019.py saturday --horizon=50 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1640
 
-INFO: execution time for solving mip (sec) = 3537.1492953300476
-INFO: objective = 720.0
-[(U14M_5K_Gr26_to_Gr29_60m, Gr26, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr27, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr28, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr29, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Läufe, 0, 3), (U14M_5K_Gr28_Pause_4, Gr28, 3, 4), (U14M_5K_Gr29_Pause_3, Gr29, 3, 4), (U14M_5K_Gr26_Pause_4, Gr26, 4, 5), (U14M_5K_Gr28_Weit, Gr28, 4, 7), (U14M_5K_Gr28_Weit, Weit1, 4, 7), (U14M_5K_Gr29_Hoch, Gr29, 4, 7), (U14M_5K_Gr29_Hoch, Hoch1, 4, 7), (U14M_5K_Gr26_Kugel, Gr26, 5, 7), (U14M_5K_Gr26_Kugel, Kugel2, 5, 7), (U14M_5K_Gr27_Pause_4, Gr27, 6, 7), (Hoch1_Pause_10, Hoch1, 7, 8), (U14M_5K_Gr26_Pause_1, Gr26, 7, 8), (U14M_5K_Gr27_Kugel, Gr27, 7, 9), (U14M_5K_Gr27_Kugel, Kugel1, 7, 9), (U14M_5K_Gr26_Weit, Gr26, 8, 11), (U14M_5K_Gr26_Weit, Weit2, 8, 11), (U14M_5K_Gr29_Pause_1, Gr29, 8, 9), (Weit1_Pause_1, Weit1, 8, 9), (U14M_5K_Gr28_Pause_2, Gr28, 9, 10), (Kugel1_Pause_11, Kugel1, 10, 11), (U14M_5K_Gr29_Weit, Gr29, 10, 13), (U14M_5K_Gr29_Weit, Weit1, 10, 13), (U14M_5K_Gr28_Kugel, Gr28, 11, 13), (U14M_5K_Gr28_Kugel, Kugel1, 11, 13), (Läufe_Pause_11, Läufe, 12, 13), (U14M_5K_Gr27_Pause_2, Gr27, 12, 13), (U14M_5K_Gr27_Hoch, Gr27, 13, 16), (U14M_5K_Gr27_Hoch, Hoch1, 13, 16), (U14M_5K_Gr28_Pause_1, Gr28, 13, 14), (U14M_5K_Gr29_Pause_2, Gr29, 13, 14), (Kugel1_Pause_5, Kugel1, 14, 15), (MAN_10K_Gr23_to_Gr23_110mHü, Gr23, 14, 17), (MAN_10K_Gr23_to_Gr23_110mHü, Läufe, 14, 17), (Weit1_Pause_2, Weit1, 14, 15), (U14M_5K_Gr29_Kugel, Gr29, 15, 17), (U14M_5K_Gr29_Kugel, Kugel1, 15, 17), (Weit2_Pause_1, Weit2, 15, 16), (U14M_5K_Gr26_Pause_2, Gr26, 16, 17), (U14M_5K_Gr27_Pause_3, Gr27, 16, 17), (Hoch1_Pause_4, Hoch1, 17, 18), (Läufe_Pause_13, Läufe, 17, 18), (MAN_10K_Gr23_Pause_1, Gr23, 17, 20), (U14M_5K_Gr26_Hoch, Gr26, 17, 20), (U14M_5K_Gr26_Hoch, Hoch2, 17, 20), (U14M_5K_Gr27_Weit, Gr27, 18, 21), (U14M_5K_Gr27_Weit, Weit2, 18, 21), (U14W_5K_Gr7_to_Gr13_60m, Gr10, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr11, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr12, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr13, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr7, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr8, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr9, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Läufe, 18, 23), (MAN_10K_Gr23_Diskus, Diskus, 20, 22), (MAN_10K_Gr23_Diskus, Gr23, 20, 22), (U14M_5K_Gr28_Hoch, Gr28, 20, 23), (U14M_5K_Gr28_Hoch, Hoch1, 20, 23), (MAN_10K_Gr23_Pause_2, Gr23, 22, 26), (U14M_5K_Gr26_Pause_3, Gr26, 22, 23), (Weit2_Pause_12, Weit2, 22, 23), (Hoch2_Pause_3, Hoch2, 23, 24), (Läufe_Pause_12, Läufe, 23, 24), (U14M_5K_Gr27_Pause_1, Gr27, 23, 24), (U14M_5K_Gr28_Pause_3, Gr28, 23, 24), (U14M_5K_Gr29_Pause_4, Gr29, 23, 24), (U14W_5K_Gr10_Pause_3, Gr10, 23, 24), (U14W_5K_Gr11_Pause_2, Gr11, 23, 24), (U14W_5K_Gr12_Pause_4, Gr12, 23, 24), (U14W_5K_Gr13_Pause_2, Gr13, 23, 24), (U14W_5K_Gr9_Pause_2, Gr9, 23, 24), (WOM_7K_Gr1_to_Gr2_Weit, Gr1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Gr2, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit2, 23, 26), (Kugel1_Pause_4, Kugel1, 24, 25), (U14M_5K_Gr26_to_Gr29_600m, Gr26, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr27, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr28, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr29, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Läufe, 24, 27), (U14W_5K_Gr11_Hoch, Gr11, 24, 27), (U14W_5K_Gr11_Hoch, Hoch2, 24, 27), (Hoch1_Pause_11, Hoch1, 26, 27), (MAN_10K_Gr23_Stab, Gr23, 26, 37), (MAN_10K_Gr23_Stab, Stab, 26, 37), (U14W_5K_Gr8_Pause_4, Gr8, 26, 27), (WOM_7K_Gr1_Pause_1, Gr1, 26, 29), (WOM_7K_Gr2_Pause_1, Gr2, 26, 29), (Weit1_Pause_12, Weit1, 26, 27), (Weit2_Pause_3, Weit2, 26, 27), (Hoch2_Pause_10, Hoch2, 27, 28), (Kugel2_Pause_3, Kugel2, 27, 28), (U14W_5K_Gr11_Pause_1, Gr11, 27, 28), (U14W_5K_Gr12_Weit, Gr12, 27, 30), (U14W_5K_Gr12_Weit, Weit2, 27, 30), (U14W_5K_Gr8_Kugel, Gr8, 27, 29), (U14W_5K_Gr8_Kugel, Kugel1, 27, 29), (U14W_5K_Gr9_Hoch, Gr9, 27, 30), (U14W_5K_Gr9_Hoch, Hoch1, 27, 30), (U14W_5K_Gr11_Kugel, Gr11, 28, 30), (U14W_5K_Gr11_Kugel, Kugel2, 28, 30), (U14W_5K_Gr13_Hoch, Gr13, 28, 31), (U14W_5K_Gr13_Hoch, Hoch2, 28, 31), (U14W_5K_Gr7_Pause_4, Gr7, 28, 29), (U14W_5K_Gr8_Pause_3, Gr8, 29, 30), (WOM_7K_Gr1_to_Gr2_Speer, Gr1, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Gr2, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Speer, 29, 35), (Hoch1_Pause_9, Hoch1, 30, 31), (Kugel2_Pause_10, Kugel2, 30, 31), (U14W_5K_Gr11_Pause_4, Gr11, 30, 31), (U14W_5K_Gr7_Weit, Gr7, 30, 33), (U14W_5K_Gr7_Weit, Weit1, 30, 33), (U14W_5K_Gr9_Pause_1, Gr9, 30, 31), (Hoch2_Pause_7, Hoch2, 31, 32), (U14W_5K_Gr8_Hoch, Gr8, 31, 34), (U14W_5K_Gr8_Hoch, Hoch1, 31, 34), (U14W_5K_Gr9_Kugel, Gr9, 31, 33), (U14W_5K_Gr9_Kugel, Kugel2, 31, 33), (U14W_5K_Gr10_Hoch, Gr10, 32, 35), (U14W_5K_Gr10_Hoch, Hoch2, 32, 35), (U14W_5K_Gr13_Pause_3, Gr13, 32, 33), (Kugel1_Pause_3, Kugel1, 33, 34), (Läufe_Pause_1, Läufe, 33, 34), (U14W_5K_Gr12_Pause_1, Gr12, 33, 34), (U14W_5K_Gr9_Pause_4, Gr9, 33, 34), (Weit1_Pause_13, Weit1, 33, 34), (Kugel2_Pause_5, Kugel2, 34, 35), (U14W_5K_Gr13_Weit, Gr13, 34, 37), (U14W_5K_Gr13_Weit, Weit1, 34, 37), (U14W_5K_Gr7_Pause_2, Gr7, 34, 35), (U14W_5K_Gr8_Pause_2, Gr8, 34, 35), (Speer_Pause_1, Speer, 35, 36), (U14W_5K_Gr12_Kugel, Gr12, 35, 37), (U14W_5K_Gr12_Kugel, Kugel1, 35, 37), (WOM_7K_Gr1_Pause_2, Gr1, 35, 38), (WOM_7K_Gr2_Pause_2, Gr2, 35, 38), (Diskus_Pause_1, Diskus, 36, 37), (Hoch1_Pause_7, Hoch1, 36, 37), (U14W_5K_Gr10_Pause_2, Gr10, 36, 37), (Weit2_Pause_11, Weit2, 36, 37), (Kugel1_Pause_2, Kugel1, 37, 38), (MAN_10K_Gr23_Pause_3, Gr23, 37, 43), (U14W_5K_Gr10_Kugel, Gr10, 37, 39), (U14W_5K_Gr10_Kugel, Kugel2, 37, 39), (U14W_5K_Gr12_Pause_3, Gr12, 37, 38), (U14W_5K_Gr13_Pause_1, Gr13, 37, 38), (Weit1_Pause_11, Weit1, 37, 38), (U14W_5K_Gr13_Kugel, Gr13, 38, 40), (U14W_5K_Gr13_Kugel, Kugel1, 38, 40), (U14W_5K_Gr8_Weit, Gr8, 38, 41), (U14W_5K_Gr8_Weit, Weit1, 38, 41), (WOM_7K_Gr1_to_Gr2_800m, Gr1, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Gr2, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Läufe, 38, 40), (Kugel2_Pause_11, Kugel2, 39, 40), (Hoch2_Pause_11, Hoch2, 40, 41), (U14W_5K_Gr10_Pause_4, Gr10, 40, 41), (U14W_5K_Gr11_Weit, Gr11, 40, 43), (U14W_5K_Gr11_Weit, Weit2, 40, 43), (U14W_5K_Gr13_Pause_4, Gr13, 40, 41), (Stab_Pause_1, Stab, 41, 42), (U14W_5K_Gr12_Hoch, Gr12, 41, 44), (U14W_5K_Gr12_Hoch, Hoch1, 41, 44), (U14W_5K_Gr7_Kugel, Gr7, 42, 44), (U14W_5K_Gr7_Kugel, Kugel2, 42, 44), (U14W_5K_Gr8_Pause_1, Gr8, 42, 43), (Weit1_Pause_9, Weit1, 42, 43), (MAN_10K_Gr23_Speer, Gr23, 43, 46), (MAN_10K_Gr23_Speer, Speer, 43, 46), (U14W_5K_Gr9_Weit, Gr9, 43, 46), (U14W_5K_Gr9_Weit, Weit1, 43, 46), (Weit2_Pause_13, Weit2, 43, 44), (U14W_5K_Gr7_Pause_1, Gr7, 44, 45), (U14W_5K_Gr11_Pause_3, Gr11, 45, 46), (U14W_5K_Gr7_Hoch, Gr7, 45, 48), (U14W_5K_Gr7_Hoch, Hoch2, 45, 48), (Kugel2_Pause_4, Kugel2, 46, 47), (Läufe_Pause_8, Läufe, 47, 48), (U14W_5K_Gr10_Weit, Gr10, 47, 50), (U14W_5K_Gr10_Weit, Weit2, 47, 50), (U14W_5K_Gr12_Pause_2, Gr12, 47, 48), (MAN_10K_Gr23_Pause_4, Gr23, 48, 51), (U14W_5K_Gr9_Pause_3, Gr9, 49, 50), (Speer_Pause_2, Speer, 50, 51), (U14W_5K_Gr7_Pause_3, Gr7, 50, 51), (U14W_5K_Gr10_Pause_1, Gr10, 51, 52), (U14W_5K_Gr7_to_Gr13_600m, Gr10, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr11, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr12, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr13, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr7, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr8, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr9, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Läufe, 54, 57), (Läufe_Pause_2, Läufe, 57, 58), (MAN_10K_Gr23_to_Gr23_1500m, Gr23, 58, 59), (MAN_10K_Gr23_to_Gr23_1500m, Läufe, 58, 59), (Hoch1_Pause_8, Hoch1, 61, 62), (Weit2_Pause_10, Weit2, 62, 63), (Läufe_Pause_6, Läufe, 63, 64), (Kugel1_Pause_10, Kugel1, 72, 73), (Weit1_Pause_5, Weit1, 86, 87), (Hoch2_Pause_1, Hoch2, 88, 89), (Hoch1_Pause_5, Hoch1, 89, 90), (Hoch2_Pause_2, Hoch2, 89, 90), (Kugel1_Pause_1, Kugel1, 89, 90), (Kugel2_Pause_1, Kugel2, 89, 90), (Läufe_Pause_3, Läufe, 89, 90), (Speer_Pause_3, Speer, 89, 90), (Weit1_Pause_10, Weit1, 89, 90), (Weit2_Pause_7, Weit2, 89, 90)]
+$ python umm2019.py saturday --horizon=49 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..44 (20)
+        U16W_5K: 0..18 (18)
+        WOM_7K: 12..30 (18)
+        U12M_4K: 8..33 (25)
+        U16M_6K: 5..38 (33)
+        MAN_10K: 16..48 (32)
+    objective_value: 1616
 
-===============================================================================
-2020-11-20T23:30:34_umm2019_sunday: time_limit=1h
+$ python umm2019.py saturday --horizon=48 --time-limit=4h -v
+    NoSolutionError
 
-Objective value:                720.00000000
-Lower bound:                    584.142
-Gap:                            0.23
-Enumerated nodes:               3771
-Total iterations:               1686844
-Time (CPU seconds):             3525.81
-Time (Wallclock seconds):       3533.19
 
-Option for printingOptions changed from normal to all
-Total time (CPU seconds):       3526.44   (Wallclock seconds):       3533.89
+$ python umm2019.py saturday --horizon=56 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1735
 
-INFO: execution time for solving mip (sec) = 3539.537765979767
-INFO: objective = 720.0
-[(U14M_5K_Gr26_to_Gr29_60m, Gr26, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr27, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr28, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr29, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Läufe, 0, 3), (U14M_5K_Gr28_Pause_4, Gr28, 3, 4), (U14M_5K_Gr29_Pause_3, Gr29, 3, 4), (U14M_5K_Gr26_Pause_4, Gr26, 4, 5), (U14M_5K_Gr28_Weit, Gr28, 4, 7), (U14M_5K_Gr28_Weit, Weit1, 4, 7), (U14M_5K_Gr29_Hoch, Gr29, 4, 7), (U14M_5K_Gr29_Hoch, Hoch1, 4, 7), (U14M_5K_Gr26_Kugel, Gr26, 5, 7), (U14M_5K_Gr26_Kugel, Kugel2, 5, 7), (U14M_5K_Gr27_Pause_4, Gr27, 6, 7), (Hoch1_Pause_10, Hoch1, 7, 8), (U14M_5K_Gr26_Pause_1, Gr26, 7, 8), (U14M_5K_Gr27_Kugel, Gr27, 7, 9), (U14M_5K_Gr27_Kugel, Kugel1, 7, 9), (U14M_5K_Gr26_Weit, Gr26, 8, 11), (U14M_5K_Gr26_Weit, Weit2, 8, 11), (U14M_5K_Gr29_Pause_1, Gr29, 8, 9), (Weit1_Pause_1, Weit1, 8, 9), (U14M_5K_Gr28_Pause_2, Gr28, 9, 10), (Kugel1_Pause_11, Kugel1, 10, 11), (U14M_5K_Gr29_Weit, Gr29, 10, 13), (U14M_5K_Gr29_Weit, Weit1, 10, 13), (U14M_5K_Gr28_Kugel, Gr28, 11, 13), (U14M_5K_Gr28_Kugel, Kugel1, 11, 13), (Läufe_Pause_11, Läufe, 12, 13), (U14M_5K_Gr27_Pause_2, Gr27, 12, 13), (U14M_5K_Gr27_Hoch, Gr27, 13, 16), (U14M_5K_Gr27_Hoch, Hoch1, 13, 16), (U14M_5K_Gr28_Pause_1, Gr28, 13, 14), (U14M_5K_Gr29_Pause_2, Gr29, 13, 14), (Kugel1_Pause_5, Kugel1, 14, 15), (MAN_10K_Gr23_to_Gr23_110mHü, Gr23, 14, 17), (MAN_10K_Gr23_to_Gr23_110mHü, Läufe, 14, 17), (Weit1_Pause_2, Weit1, 14, 15), (U14M_5K_Gr29_Kugel, Gr29, 15, 17), (U14M_5K_Gr29_Kugel, Kugel1, 15, 17), (Weit2_Pause_1, Weit2, 15, 16), (U14M_5K_Gr26_Pause_2, Gr26, 16, 17), (U14M_5K_Gr27_Pause_3, Gr27, 16, 17), (Hoch1_Pause_4, Hoch1, 17, 18), (Läufe_Pause_13, Läufe, 17, 18), (MAN_10K_Gr23_Pause_1, Gr23, 17, 20), (U14M_5K_Gr26_Hoch, Gr26, 17, 20), (U14M_5K_Gr26_Hoch, Hoch2, 17, 20), (U14M_5K_Gr27_Weit, Gr27, 18, 21), (U14M_5K_Gr27_Weit, Weit2, 18, 21), (U14W_5K_Gr7_to_Gr13_60m, Gr10, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr11, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr12, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr13, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr7, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr8, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr9, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Läufe, 18, 23), (MAN_10K_Gr23_Diskus, Diskus, 20, 22), (MAN_10K_Gr23_Diskus, Gr23, 20, 22), (U14M_5K_Gr28_Hoch, Gr28, 20, 23), (U14M_5K_Gr28_Hoch, Hoch1, 20, 23), (MAN_10K_Gr23_Pause_2, Gr23, 22, 26), (U14M_5K_Gr26_Pause_3, Gr26, 22, 23), (Weit2_Pause_12, Weit2, 22, 23), (Hoch2_Pause_3, Hoch2, 23, 24), (Läufe_Pause_12, Läufe, 23, 24), (U14M_5K_Gr27_Pause_1, Gr27, 23, 24), (U14M_5K_Gr28_Pause_3, Gr28, 23, 24), (U14M_5K_Gr29_Pause_4, Gr29, 23, 24), (U14W_5K_Gr10_Pause_3, Gr10, 23, 24), (U14W_5K_Gr11_Pause_2, Gr11, 23, 24), (U14W_5K_Gr12_Pause_4, Gr12, 23, 24), (U14W_5K_Gr13_Pause_2, Gr13, 23, 24), (U14W_5K_Gr9_Pause_2, Gr9, 23, 24), (WOM_7K_Gr1_to_Gr2_Weit, Gr1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Gr2, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit2, 23, 26), (Kugel1_Pause_4, Kugel1, 24, 25), (U14M_5K_Gr26_to_Gr29_600m, Gr26, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr27, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr28, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr29, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Läufe, 24, 27), (U14W_5K_Gr11_Hoch, Gr11, 24, 27), (U14W_5K_Gr11_Hoch, Hoch2, 24, 27), (Hoch1_Pause_11, Hoch1, 26, 27), (MAN_10K_Gr23_Stab, Gr23, 26, 37), (MAN_10K_Gr23_Stab, Stab, 26, 37), (U14W_5K_Gr8_Pause_4, Gr8, 26, 27), (WOM_7K_Gr1_Pause_1, Gr1, 26, 29), (WOM_7K_Gr2_Pause_1, Gr2, 26, 29), (Weit1_Pause_12, Weit1, 26, 27), (Weit2_Pause_3, Weit2, 26, 27), (Hoch2_Pause_10, Hoch2, 27, 28), (Kugel2_Pause_3, Kugel2, 27, 28), (U14W_5K_Gr11_Pause_1, Gr11, 27, 28), (U14W_5K_Gr12_Weit, Gr12, 27, 30), (U14W_5K_Gr12_Weit, Weit2, 27, 30), (U14W_5K_Gr8_Kugel, Gr8, 27, 29), (U14W_5K_Gr8_Kugel, Kugel1, 27, 29), (U14W_5K_Gr9_Hoch, Gr9, 27, 30), (U14W_5K_Gr9_Hoch, Hoch1, 27, 30), (U14W_5K_Gr11_Kugel, Gr11, 28, 30), (U14W_5K_Gr11_Kugel, Kugel2, 28, 30), (U14W_5K_Gr13_Hoch, Gr13, 28, 31), (U14W_5K_Gr13_Hoch, Hoch2, 28, 31), (U14W_5K_Gr7_Pause_4, Gr7, 28, 29), (U14W_5K_Gr8_Pause_3, Gr8, 29, 30), (WOM_7K_Gr1_to_Gr2_Speer, Gr1, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Gr2, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Speer, 29, 35), (Hoch1_Pause_9, Hoch1, 30, 31), (Kugel2_Pause_10, Kugel2, 30, 31), (U14W_5K_Gr11_Pause_4, Gr11, 30, 31), (U14W_5K_Gr7_Weit, Gr7, 30, 33), (U14W_5K_Gr7_Weit, Weit1, 30, 33), (U14W_5K_Gr9_Pause_1, Gr9, 30, 31), (Hoch2_Pause_7, Hoch2, 31, 32), (U14W_5K_Gr8_Hoch, Gr8, 31, 34), (U14W_5K_Gr8_Hoch, Hoch1, 31, 34), (U14W_5K_Gr9_Kugel, Gr9, 31, 33), (U14W_5K_Gr9_Kugel, Kugel2, 31, 33), (U14W_5K_Gr10_Hoch, Gr10, 32, 35), (U14W_5K_Gr10_Hoch, Hoch2, 32, 35), (U14W_5K_Gr13_Pause_3, Gr13, 32, 33), (Kugel1_Pause_3, Kugel1, 33, 34), (Läufe_Pause_1, Läufe, 33, 34), (U14W_5K_Gr12_Pause_1, Gr12, 33, 34), (U14W_5K_Gr9_Pause_4, Gr9, 33, 34), (Weit1_Pause_13, Weit1, 33, 34), (Kugel2_Pause_5, Kugel2, 34, 35), (U14W_5K_Gr13_Weit, Gr13, 34, 37), (U14W_5K_Gr13_Weit, Weit1, 34, 37), (U14W_5K_Gr7_Pause_2, Gr7, 34, 35), (U14W_5K_Gr8_Pause_2, Gr8, 34, 35), (Speer_Pause_1, Speer, 35, 36), (U14W_5K_Gr12_Kugel, Gr12, 35, 37), (U14W_5K_Gr12_Kugel, Kugel1, 35, 37), (WOM_7K_Gr1_Pause_2, Gr1, 35, 38), (WOM_7K_Gr2_Pause_2, Gr2, 35, 38), (Diskus_Pause_1, Diskus, 36, 37), (Hoch1_Pause_7, Hoch1, 36, 37), (U14W_5K_Gr10_Pause_2, Gr10, 36, 37), (Weit2_Pause_11, Weit2, 36, 37), (Kugel1_Pause_2, Kugel1, 37, 38), (MAN_10K_Gr23_Pause_3, Gr23, 37, 43), (U14W_5K_Gr10_Kugel, Gr10, 37, 39), (U14W_5K_Gr10_Kugel, Kugel2, 37, 39), (U14W_5K_Gr12_Pause_3, Gr12, 37, 38), (U14W_5K_Gr13_Pause_1, Gr13, 37, 38), (Weit1_Pause_11, Weit1, 37, 38), (U14W_5K_Gr13_Kugel, Gr13, 38, 40), (U14W_5K_Gr13_Kugel, Kugel1, 38, 40), (U14W_5K_Gr8_Weit, Gr8, 38, 41), (U14W_5K_Gr8_Weit, Weit1, 38, 41), (WOM_7K_Gr1_to_Gr2_800m, Gr1, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Gr2, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Läufe, 38, 40), (Kugel2_Pause_11, Kugel2, 39, 40), (Hoch2_Pause_11, Hoch2, 40, 41), (U14W_5K_Gr10_Pause_4, Gr10, 40, 41), (U14W_5K_Gr11_Weit, Gr11, 40, 43), (U14W_5K_Gr11_Weit, Weit2, 40, 43), (U14W_5K_Gr13_Pause_4, Gr13, 40, 41), (Stab_Pause_1, Stab, 41, 42), (U14W_5K_Gr12_Hoch, Gr12, 41, 44), (U14W_5K_Gr12_Hoch, Hoch1, 41, 44), (U14W_5K_Gr7_Kugel, Gr7, 42, 44), (U14W_5K_Gr7_Kugel, Kugel2, 42, 44), (U14W_5K_Gr8_Pause_1, Gr8, 42, 43), (Weit1_Pause_9, Weit1, 42, 43), (MAN_10K_Gr23_Speer, Gr23, 43, 46), (MAN_10K_Gr23_Speer, Speer, 43, 46), (U14W_5K_Gr9_Weit, Gr9, 43, 46), (U14W_5K_Gr9_Weit, Weit1, 43, 46), (Weit2_Pause_13, Weit2, 43, 44), (U14W_5K_Gr7_Pause_1, Gr7, 44, 45), (U14W_5K_Gr11_Pause_3, Gr11, 45, 46), (U14W_5K_Gr7_Hoch, Gr7, 45, 48), (U14W_5K_Gr7_Hoch, Hoch2, 45, 48), (Kugel2_Pause_4, Kugel2, 46, 47), (Läufe_Pause_8, Läufe, 47, 48), (U14W_5K_Gr10_Weit, Gr10, 47, 50), (U14W_5K_Gr10_Weit, Weit2, 47, 50), (U14W_5K_Gr12_Pause_2, Gr12, 47, 48), (MAN_10K_Gr23_Pause_4, Gr23, 48, 51), (U14W_5K_Gr9_Pause_3, Gr9, 49, 50), (Speer_Pause_2, Speer, 50, 51), (U14W_5K_Gr7_Pause_3, Gr7, 50, 51), (U14W_5K_Gr10_Pause_1, Gr10, 51, 52), (U14W_5K_Gr7_to_Gr13_600m, Gr10, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr11, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr12, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr13, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr7, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr8, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr9, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Läufe, 54, 57), (Läufe_Pause_2, Läufe, 57, 58), (MAN_10K_Gr23_to_Gr23_1500m, Gr23, 58, 59), (MAN_10K_Gr23_to_Gr23_1500m, Läufe, 58, 59), (Hoch1_Pause_8, Hoch1, 61, 62), (Weit2_Pause_10, Weit2, 62, 63), (Läufe_Pause_6, Läufe, 63, 64), (Kugel1_Pause_10, Kugel1, 72, 73), (Weit1_Pause_5, Weit1, 86, 87), (Hoch2_Pause_1, Hoch2, 88, 89), (Hoch1_Pause_5, Hoch1, 89, 90), (Hoch2_Pause_2, Hoch2, 89, 90), (Kugel1_Pause_1, Kugel1, 89, 90), (Kugel2_Pause_1, Kugel2, 89, 90), (Läufe_Pause_3, Läufe, 89, 90), (Speer_Pause_3, Speer, 89, 90), (Weit1_Pause_10, Weit1, 89, 90), (Weit2_Pause_7, Weit2, 89, 90)]
+$ python umm2019.py saturday --horizon=55 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 17..41 (24)
+        U16W_5K: 28..49 (21)
+        WOM_7K: 13..35 (22)
+        U12M_4K: 5..21 (16)
+        U16M_6K: 0..32 (32)
+        MAN_10K: 26..54 (28)
+    objective_value: 1579
 
-===============================================================================
-2020-11-21T00:30:22_umm2019_sunday: time_limit=2h
+$ python umm2019.py saturday --horizon=54 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 19..41 (22)
+        U16W_5K: 29..49 (20)
+        WOM_7K: 15..45 (30)
+        U12M_4K: 3..24 (21)
+        U16M_6K: 0..36 (36)
+        MAN_10K: 13..53 (40)
+    objective_value: 1701
 
-Objective value:                720.00000000
-Lower bound:                    584.142
-Gap:                            0.23
-Enumerated nodes:               11096
-Total iterations:               4036998
-Time (CPU seconds):             7125.12
-Time (Wallclock seconds):       7136.63
+$ python umm2019.py saturday --horizon=53 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 19..50 (31)
+    objective_value: 1648
 
-Option for printingOptions changed from normal to all
-Total time (CPU seconds):       7125.74   (Wallclock seconds):       7137.32
+$ python umm2019.py saturday --horizon=52 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..47 (21)
+        U16W_5K: 1..22 (21)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 18..38 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 12..51 (39)
+    objective_value: 1617
 
-INFO: execution time for solving mip (sec) = 7143.036689043045
-INFO: objective = 720.0
-[(U14M_5K_Gr26_to_Gr29_60m, Gr26, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr27, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr28, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr29, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Läufe, 0, 3), (U14M_5K_Gr28_Pause_4, Gr28, 3, 4), (U14M_5K_Gr29_Pause_3, Gr29, 3, 4), (U14M_5K_Gr26_Pause_4, Gr26, 4, 5), (U14M_5K_Gr28_Weit, Gr28, 4, 7), (U14M_5K_Gr28_Weit, Weit1, 4, 7), (U14M_5K_Gr29_Hoch, Gr29, 4, 7), (U14M_5K_Gr29_Hoch, Hoch1, 4, 7), (U14M_5K_Gr26_Kugel, Gr26, 5, 7), (U14M_5K_Gr26_Kugel, Kugel2, 5, 7), (U14M_5K_Gr27_Pause_4, Gr27, 6, 7), (Hoch1_Pause_10, Hoch1, 7, 8), (U14M_5K_Gr26_Pause_1, Gr26, 7, 8), (U14M_5K_Gr27_Kugel, Gr27, 7, 9), (U14M_5K_Gr27_Kugel, Kugel1, 7, 9), (U14M_5K_Gr26_Weit, Gr26, 8, 11), (U14M_5K_Gr26_Weit, Weit2, 8, 11), (U14M_5K_Gr29_Pause_1, Gr29, 8, 9), (Weit1_Pause_1, Weit1, 8, 9), (U14M_5K_Gr28_Pause_2, Gr28, 9, 10), (Kugel1_Pause_11, Kugel1, 10, 11), (U14M_5K_Gr29_Weit, Gr29, 10, 13), (U14M_5K_Gr29_Weit, Weit1, 10, 13), (U14M_5K_Gr28_Kugel, Gr28, 11, 13), (U14M_5K_Gr28_Kugel, Kugel1, 11, 13), (Läufe_Pause_11, Läufe, 12, 13), (U14M_5K_Gr27_Pause_2, Gr27, 12, 13), (U14M_5K_Gr27_Hoch, Gr27, 13, 16), (U14M_5K_Gr27_Hoch, Hoch1, 13, 16), (U14M_5K_Gr28_Pause_1, Gr28, 13, 14), (U14M_5K_Gr29_Pause_2, Gr29, 13, 14), (Kugel1_Pause_5, Kugel1, 14, 15), (MAN_10K_Gr23_to_Gr23_110mHü, Gr23, 14, 17), (MAN_10K_Gr23_to_Gr23_110mHü, Läufe, 14, 17), (Weit1_Pause_2, Weit1, 14, 15), (U14M_5K_Gr29_Kugel, Gr29, 15, 17), (U14M_5K_Gr29_Kugel, Kugel1, 15, 17), (Weit2_Pause_1, Weit2, 15, 16), (U14M_5K_Gr26_Pause_2, Gr26, 16, 17), (U14M_5K_Gr27_Pause_3, Gr27, 16, 17), (Hoch1_Pause_4, Hoch1, 17, 18), (Läufe_Pause_13, Läufe, 17, 18), (MAN_10K_Gr23_Pause_1, Gr23, 17, 20), (U14M_5K_Gr26_Hoch, Gr26, 17, 20), (U14M_5K_Gr26_Hoch, Hoch2, 17, 20), (U14M_5K_Gr27_Weit, Gr27, 18, 21), (U14M_5K_Gr27_Weit, Weit2, 18, 21), (U14W_5K_Gr7_to_Gr13_60m, Gr10, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr11, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr12, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr13, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr7, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr8, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr9, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Läufe, 18, 23), (MAN_10K_Gr23_Diskus, Diskus, 20, 22), (MAN_10K_Gr23_Diskus, Gr23, 20, 22), (U14M_5K_Gr28_Hoch, Gr28, 20, 23), (U14M_5K_Gr28_Hoch, Hoch1, 20, 23), (MAN_10K_Gr23_Pause_2, Gr23, 22, 26), (U14M_5K_Gr26_Pause_3, Gr26, 22, 23), (Weit2_Pause_12, Weit2, 22, 23), (Hoch2_Pause_3, Hoch2, 23, 24), (Läufe_Pause_12, Läufe, 23, 24), (U14M_5K_Gr27_Pause_1, Gr27, 23, 24), (U14M_5K_Gr28_Pause_3, Gr28, 23, 24), (U14M_5K_Gr29_Pause_4, Gr29, 23, 24), (U14W_5K_Gr10_Pause_3, Gr10, 23, 24), (U14W_5K_Gr11_Pause_2, Gr11, 23, 24), (U14W_5K_Gr12_Pause_4, Gr12, 23, 24), (U14W_5K_Gr13_Pause_2, Gr13, 23, 24), (U14W_5K_Gr9_Pause_2, Gr9, 23, 24), (WOM_7K_Gr1_to_Gr2_Weit, Gr1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Gr2, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit2, 23, 26), (Kugel1_Pause_4, Kugel1, 24, 25), (U14M_5K_Gr26_to_Gr29_600m, Gr26, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr27, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr28, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr29, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Läufe, 24, 27), (U14W_5K_Gr11_Hoch, Gr11, 24, 27), (U14W_5K_Gr11_Hoch, Hoch2, 24, 27), (Hoch1_Pause_11, Hoch1, 26, 27), (MAN_10K_Gr23_Stab, Gr23, 26, 37), (MAN_10K_Gr23_Stab, Stab, 26, 37), (U14W_5K_Gr8_Pause_4, Gr8, 26, 27), (WOM_7K_Gr1_Pause_1, Gr1, 26, 29), (WOM_7K_Gr2_Pause_1, Gr2, 26, 29), (Weit1_Pause_12, Weit1, 26, 27), (Weit2_Pause_3, Weit2, 26, 27), (Hoch2_Pause_10, Hoch2, 27, 28), (Kugel2_Pause_3, Kugel2, 27, 28), (U14W_5K_Gr11_Pause_1, Gr11, 27, 28), (U14W_5K_Gr12_Weit, Gr12, 27, 30), (U14W_5K_Gr12_Weit, Weit2, 27, 30), (U14W_5K_Gr8_Kugel, Gr8, 27, 29), (U14W_5K_Gr8_Kugel, Kugel1, 27, 29), (U14W_5K_Gr9_Hoch, Gr9, 27, 30), (U14W_5K_Gr9_Hoch, Hoch1, 27, 30), (U14W_5K_Gr11_Kugel, Gr11, 28, 30), (U14W_5K_Gr11_Kugel, Kugel2, 28, 30), (U14W_5K_Gr13_Hoch, Gr13, 28, 31), (U14W_5K_Gr13_Hoch, Hoch2, 28, 31), (U14W_5K_Gr7_Pause_4, Gr7, 28, 29), (U14W_5K_Gr8_Pause_3, Gr8, 29, 30), (WOM_7K_Gr1_to_Gr2_Speer, Gr1, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Gr2, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Speer, 29, 35), (Hoch1_Pause_9, Hoch1, 30, 31), (Kugel2_Pause_10, Kugel2, 30, 31), (U14W_5K_Gr11_Pause_4, Gr11, 30, 31), (U14W_5K_Gr7_Weit, Gr7, 30, 33), (U14W_5K_Gr7_Weit, Weit1, 30, 33), (U14W_5K_Gr9_Pause_1, Gr9, 30, 31), (Hoch2_Pause_7, Hoch2, 31, 32), (U14W_5K_Gr8_Hoch, Gr8, 31, 34), (U14W_5K_Gr8_Hoch, Hoch1, 31, 34), (U14W_5K_Gr9_Kugel, Gr9, 31, 33), (U14W_5K_Gr9_Kugel, Kugel2, 31, 33), (U14W_5K_Gr10_Hoch, Gr10, 32, 35), (U14W_5K_Gr10_Hoch, Hoch2, 32, 35), (U14W_5K_Gr13_Pause_3, Gr13, 32, 33), (Kugel1_Pause_3, Kugel1, 33, 34), (Läufe_Pause_1, Läufe, 33, 34), (U14W_5K_Gr12_Pause_1, Gr12, 33, 34), (U14W_5K_Gr9_Pause_4, Gr9, 33, 34), (Weit1_Pause_13, Weit1, 33, 34), (Kugel2_Pause_5, Kugel2, 34, 35), (U14W_5K_Gr13_Weit, Gr13, 34, 37), (U14W_5K_Gr13_Weit, Weit1, 34, 37), (U14W_5K_Gr7_Pause_2, Gr7, 34, 35), (U14W_5K_Gr8_Pause_2, Gr8, 34, 35), (Speer_Pause_1, Speer, 35, 36), (U14W_5K_Gr12_Kugel, Gr12, 35, 37), (U14W_5K_Gr12_Kugel, Kugel1, 35, 37), (WOM_7K_Gr1_Pause_2, Gr1, 35, 38), (WOM_7K_Gr2_Pause_2, Gr2, 35, 38), (Diskus_Pause_1, Diskus, 36, 37), (Hoch1_Pause_7, Hoch1, 36, 37), (U14W_5K_Gr10_Pause_2, Gr10, 36, 37), (Weit2_Pause_11, Weit2, 36, 37), (Kugel1_Pause_2, Kugel1, 37, 38), (MAN_10K_Gr23_Pause_3, Gr23, 37, 43), (U14W_5K_Gr10_Kugel, Gr10, 37, 39), (U14W_5K_Gr10_Kugel, Kugel2, 37, 39), (U14W_5K_Gr12_Pause_3, Gr12, 37, 38), (U14W_5K_Gr13_Pause_1, Gr13, 37, 38), (Weit1_Pause_11, Weit1, 37, 38), (U14W_5K_Gr13_Kugel, Gr13, 38, 40), (U14W_5K_Gr13_Kugel, Kugel1, 38, 40), (U14W_5K_Gr8_Weit, Gr8, 38, 41), (U14W_5K_Gr8_Weit, Weit1, 38, 41), (WOM_7K_Gr1_to_Gr2_800m, Gr1, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Gr2, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Läufe, 38, 40), (Kugel2_Pause_11, Kugel2, 39, 40), (Hoch2_Pause_11, Hoch2, 40, 41), (U14W_5K_Gr10_Pause_4, Gr10, 40, 41), (U14W_5K_Gr11_Weit, Gr11, 40, 43), (U14W_5K_Gr11_Weit, Weit2, 40, 43), (U14W_5K_Gr13_Pause_4, Gr13, 40, 41), (Stab_Pause_1, Stab, 41, 42), (U14W_5K_Gr12_Hoch, Gr12, 41, 44), (U14W_5K_Gr12_Hoch, Hoch1, 41, 44), (U14W_5K_Gr7_Kugel, Gr7, 42, 44), (U14W_5K_Gr7_Kugel, Kugel2, 42, 44), (U14W_5K_Gr8_Pause_1, Gr8, 42, 43), (Weit1_Pause_9, Weit1, 42, 43), (MAN_10K_Gr23_Speer, Gr23, 43, 46), (MAN_10K_Gr23_Speer, Speer, 43, 46), (U14W_5K_Gr9_Weit, Gr9, 43, 46), (U14W_5K_Gr9_Weit, Weit1, 43, 46), (Weit2_Pause_13, Weit2, 43, 44), (U14W_5K_Gr7_Pause_1, Gr7, 44, 45), (U14W_5K_Gr11_Pause_3, Gr11, 45, 46), (U14W_5K_Gr7_Hoch, Gr7, 45, 48), (U14W_5K_Gr7_Hoch, Hoch2, 45, 48), (Kugel2_Pause_4, Kugel2, 46, 47), (Läufe_Pause_8, Läufe, 47, 48), (U14W_5K_Gr10_Weit, Gr10, 47, 50), (U14W_5K_Gr10_Weit, Weit2, 47, 50), (U14W_5K_Gr12_Pause_2, Gr12, 47, 48), (MAN_10K_Gr23_Pause_4, Gr23, 48, 51), (U14W_5K_Gr9_Pause_3, Gr9, 49, 50), (Speer_Pause_2, Speer, 50, 51), (U14W_5K_Gr7_Pause_3, Gr7, 50, 51), (U14W_5K_Gr10_Pause_1, Gr10, 51, 52), (U14W_5K_Gr7_to_Gr13_600m, Gr10, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr11, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr12, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr13, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr7, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr8, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr9, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Läufe, 54, 57), (Läufe_Pause_2, Läufe, 57, 58), (MAN_10K_Gr23_to_Gr23_1500m, Gr23, 58, 59), (MAN_10K_Gr23_to_Gr23_1500m, Läufe, 58, 59), (Hoch1_Pause_8, Hoch1, 61, 62), (Weit2_Pause_10, Weit2, 62, 63), (Läufe_Pause_6, Läufe, 63, 64), (Kugel1_Pause_10, Kugel1, 72, 73), (Weit1_Pause_5, Weit1, 86, 87), (Hoch2_Pause_1, Hoch2, 88, 89), (Hoch1_Pause_5, Hoch1, 89, 90), (Hoch2_Pause_2, Hoch2, 89, 90), (Kugel1_Pause_1, Kugel1, 89, 90), (Kugel2_Pause_1, Kugel2, 89, 90), (Läufe_Pause_3, Läufe, 89, 90), (Speer_Pause_3, Speer, 89, 90), (Weit1_Pause_10, Weit1, 89, 90), (Weit2_Pause_7, Weit2, 89, 90)]
+$ python umm2019.py saturday --horizon=51 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 22..46 (24)
+        U16W_5K: 3..30 (27)
+        WOM_7K: 18..38 (20)
+        U12M_4K: 10..26 (16)
+        U16M_6K: 0..34 (34)
+        MAN_10K: 15..50 (35)
+    objective_value: 1692
 
-===============================================================================
-2020-11-21T02:30:13_umm2019_sunday: time_limit=6h
+$ python umm2019.py saturday --horizon=50 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1640
 
-Objective value:                720.00000000
-Lower bound:                    593.552
-Gap:                            0.21
-Enumerated nodes:               12978
-Total iterations:               12128631
-Time (CPU seconds):             21544.53
-Time (Wallclock seconds):       21563.70
+$ python umm2019.py saturday --horizon=49 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..44 (20)
+        U16W_5K: 0..18 (18)
+        WOM_7K: 12..30 (18)
+        U12M_4K: 8..33 (25)
+        U16M_6K: 5..38 (33)
+        MAN_10K: 16..48 (32)
+    objective_value: 1616
 
-Option for printingOptions changed from normal to all
-Total time (CPU seconds):       21545.16   (Wallclock seconds):       21564.39
+$ python umm2019.py saturday --horizon=48 --time-limit=8h -v
+    NoSolutionError
 
-INFO: execution time for solving mip (sec) = 21570.0600168705
-INFO: objective = 720.0
-[(U14M_5K_Gr26_to_Gr29_60m, Gr26, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr27, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr28, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Gr29, 0, 3), (U14M_5K_Gr26_to_Gr29_60m, Läufe, 0, 3), (U14M_5K_Gr28_Pause_4, Gr28, 3, 4), (U14M_5K_Gr29_Pause_3, Gr29, 3, 4), (U14M_5K_Gr26_Pause_4, Gr26, 4, 5), (U14M_5K_Gr28_Weit, Gr28, 4, 7), (U14M_5K_Gr28_Weit, Weit1, 4, 7), (U14M_5K_Gr29_Hoch, Gr29, 4, 7), (U14M_5K_Gr29_Hoch, Hoch1, 4, 7), (U14M_5K_Gr26_Kugel, Gr26, 5, 7), (U14M_5K_Gr26_Kugel, Kugel2, 5, 7), (U14M_5K_Gr27_Pause_4, Gr27, 6, 7), (Hoch1_Pause_10, Hoch1, 7, 8), (U14M_5K_Gr26_Pause_1, Gr26, 7, 8), (U14M_5K_Gr27_Kugel, Gr27, 7, 9), (U14M_5K_Gr27_Kugel, Kugel1, 7, 9), (U14M_5K_Gr26_Weit, Gr26, 8, 11), (U14M_5K_Gr26_Weit, Weit2, 8, 11), (U14M_5K_Gr29_Pause_1, Gr29, 8, 9), (Weit1_Pause_1, Weit1, 8, 9), (U14M_5K_Gr28_Pause_2, Gr28, 9, 10), (Kugel1_Pause_11, Kugel1, 10, 11), (U14M_5K_Gr29_Weit, Gr29, 10, 13), (U14M_5K_Gr29_Weit, Weit1, 10, 13), (U14M_5K_Gr28_Kugel, Gr28, 11, 13), (U14M_5K_Gr28_Kugel, Kugel1, 11, 13), (Läufe_Pause_11, Läufe, 12, 13), (U14M_5K_Gr27_Pause_2, Gr27, 12, 13), (U14M_5K_Gr27_Hoch, Gr27, 13, 16), (U14M_5K_Gr27_Hoch, Hoch1, 13, 16), (U14M_5K_Gr28_Pause_1, Gr28, 13, 14), (U14M_5K_Gr29_Pause_2, Gr29, 13, 14), (Kugel1_Pause_5, Kugel1, 14, 15), (MAN_10K_Gr23_to_Gr23_110mHü, Gr23, 14, 17), (MAN_10K_Gr23_to_Gr23_110mHü, Läufe, 14, 17), (Weit1_Pause_2, Weit1, 14, 15), (U14M_5K_Gr29_Kugel, Gr29, 15, 17), (U14M_5K_Gr29_Kugel, Kugel1, 15, 17), (Weit2_Pause_1, Weit2, 15, 16), (U14M_5K_Gr26_Pause_2, Gr26, 16, 17), (U14M_5K_Gr27_Pause_3, Gr27, 16, 17), (Hoch1_Pause_4, Hoch1, 17, 18), (Läufe_Pause_13, Läufe, 17, 18), (MAN_10K_Gr23_Pause_1, Gr23, 17, 20), (U14M_5K_Gr26_Hoch, Gr26, 17, 20), (U14M_5K_Gr26_Hoch, Hoch2, 17, 20), (U14M_5K_Gr27_Weit, Gr27, 18, 21), (U14M_5K_Gr27_Weit, Weit2, 18, 21), (U14W_5K_Gr7_to_Gr13_60m, Gr10, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr11, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr12, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr13, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr7, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr8, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Gr9, 18, 23), (U14W_5K_Gr7_to_Gr13_60m, Läufe, 18, 23), (MAN_10K_Gr23_Diskus, Diskus, 20, 22), (MAN_10K_Gr23_Diskus, Gr23, 20, 22), (U14M_5K_Gr28_Hoch, Gr28, 20, 23), (U14M_5K_Gr28_Hoch, Hoch1, 20, 23), (MAN_10K_Gr23_Pause_2, Gr23, 22, 26), (U14M_5K_Gr26_Pause_3, Gr26, 22, 23), (Weit2_Pause_12, Weit2, 22, 23), (Hoch2_Pause_3, Hoch2, 23, 24), (Läufe_Pause_12, Läufe, 23, 24), (U14M_5K_Gr27_Pause_1, Gr27, 23, 24), (U14M_5K_Gr28_Pause_3, Gr28, 23, 24), (U14M_5K_Gr29_Pause_4, Gr29, 23, 24), (U14W_5K_Gr10_Pause_3, Gr10, 23, 24), (U14W_5K_Gr11_Pause_2, Gr11, 23, 24), (U14W_5K_Gr12_Pause_4, Gr12, 23, 24), (U14W_5K_Gr13_Pause_2, Gr13, 23, 24), (U14W_5K_Gr9_Pause_2, Gr9, 23, 24), (WOM_7K_Gr1_to_Gr2_Weit, Gr1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Gr2, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit1, 23, 26), (WOM_7K_Gr1_to_Gr2_Weit, Weit2, 23, 26), (Kugel1_Pause_4, Kugel1, 24, 25), (U14M_5K_Gr26_to_Gr29_600m, Gr26, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr27, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr28, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Gr29, 24, 27), (U14M_5K_Gr26_to_Gr29_600m, Läufe, 24, 27), (U14W_5K_Gr11_Hoch, Gr11, 24, 27), (U14W_5K_Gr11_Hoch, Hoch2, 24, 27), (Hoch1_Pause_11, Hoch1, 26, 27), (MAN_10K_Gr23_Stab, Gr23, 26, 37), (MAN_10K_Gr23_Stab, Stab, 26, 37), (U14W_5K_Gr8_Pause_4, Gr8, 26, 27), (WOM_7K_Gr1_Pause_1, Gr1, 26, 29), (WOM_7K_Gr2_Pause_1, Gr2, 26, 29), (Weit1_Pause_12, Weit1, 26, 27), (Weit2_Pause_3, Weit2, 26, 27), (Hoch2_Pause_10, Hoch2, 27, 28), (Kugel2_Pause_3, Kugel2, 27, 28), (U14W_5K_Gr11_Pause_1, Gr11, 27, 28), (U14W_5K_Gr12_Weit, Gr12, 27, 30), (U14W_5K_Gr12_Weit, Weit2, 27, 30), (U14W_5K_Gr8_Kugel, Gr8, 27, 29), (U14W_5K_Gr8_Kugel, Kugel1, 27, 29), (U14W_5K_Gr9_Hoch, Gr9, 27, 30), (U14W_5K_Gr9_Hoch, Hoch1, 27, 30), (U14W_5K_Gr11_Kugel, Gr11, 28, 30), (U14W_5K_Gr11_Kugel, Kugel2, 28, 30), (U14W_5K_Gr13_Hoch, Gr13, 28, 31), (U14W_5K_Gr13_Hoch, Hoch2, 28, 31), (U14W_5K_Gr7_Pause_4, Gr7, 28, 29), (U14W_5K_Gr8_Pause_3, Gr8, 29, 30), (WOM_7K_Gr1_to_Gr2_Speer, Gr1, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Gr2, 29, 35), (WOM_7K_Gr1_to_Gr2_Speer, Speer, 29, 35), (Hoch1_Pause_9, Hoch1, 30, 31), (Kugel2_Pause_10, Kugel2, 30, 31), (U14W_5K_Gr11_Pause_4, Gr11, 30, 31), (U14W_5K_Gr7_Weit, Gr7, 30, 33), (U14W_5K_Gr7_Weit, Weit1, 30, 33), (U14W_5K_Gr9_Pause_1, Gr9, 30, 31), (Hoch2_Pause_7, Hoch2, 31, 32), (U14W_5K_Gr8_Hoch, Gr8, 31, 34), (U14W_5K_Gr8_Hoch, Hoch1, 31, 34), (U14W_5K_Gr9_Kugel, Gr9, 31, 33), (U14W_5K_Gr9_Kugel, Kugel2, 31, 33), (U14W_5K_Gr10_Hoch, Gr10, 32, 35), (U14W_5K_Gr10_Hoch, Hoch2, 32, 35), (U14W_5K_Gr13_Pause_3, Gr13, 32, 33), (Kugel1_Pause_3, Kugel1, 33, 34), (Läufe_Pause_1, Läufe, 33, 34), (U14W_5K_Gr12_Pause_1, Gr12, 33, 34), (U14W_5K_Gr9_Pause_4, Gr9, 33, 34), (Weit1_Pause_13, Weit1, 33, 34), (Kugel2_Pause_5, Kugel2, 34, 35), (U14W_5K_Gr13_Weit, Gr13, 34, 37), (U14W_5K_Gr13_Weit, Weit1, 34, 37), (U14W_5K_Gr7_Pause_2, Gr7, 34, 35), (U14W_5K_Gr8_Pause_2, Gr8, 34, 35), (Speer_Pause_1, Speer, 35, 36), (U14W_5K_Gr12_Kugel, Gr12, 35, 37), (U14W_5K_Gr12_Kugel, Kugel1, 35, 37), (WOM_7K_Gr1_Pause_2, Gr1, 35, 38), (WOM_7K_Gr2_Pause_2, Gr2, 35, 38), (Diskus_Pause_1, Diskus, 36, 37), (Hoch1_Pause_7, Hoch1, 36, 37), (U14W_5K_Gr10_Pause_2, Gr10, 36, 37), (Weit2_Pause_11, Weit2, 36, 37), (Kugel1_Pause_2, Kugel1, 37, 38), (MAN_10K_Gr23_Pause_3, Gr23, 37, 43), (U14W_5K_Gr10_Kugel, Gr10, 37, 39), (U14W_5K_Gr10_Kugel, Kugel2, 37, 39), (U14W_5K_Gr12_Pause_3, Gr12, 37, 38), (U14W_5K_Gr13_Pause_1, Gr13, 37, 38), (Weit1_Pause_11, Weit1, 37, 38), (U14W_5K_Gr13_Kugel, Gr13, 38, 40), (U14W_5K_Gr13_Kugel, Kugel1, 38, 40), (U14W_5K_Gr8_Weit, Gr8, 38, 41), (U14W_5K_Gr8_Weit, Weit1, 38, 41), (WOM_7K_Gr1_to_Gr2_800m, Gr1, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Gr2, 38, 40), (WOM_7K_Gr1_to_Gr2_800m, Läufe, 38, 40), (Kugel2_Pause_11, Kugel2, 39, 40), (Hoch2_Pause_11, Hoch2, 40, 41), (U14W_5K_Gr10_Pause_4, Gr10, 40, 41), (U14W_5K_Gr11_Weit, Gr11, 40, 43), (U14W_5K_Gr11_Weit, Weit2, 40, 43), (U14W_5K_Gr13_Pause_4, Gr13, 40, 41), (Stab_Pause_1, Stab, 41, 42), (U14W_5K_Gr12_Hoch, Gr12, 41, 44), (U14W_5K_Gr12_Hoch, Hoch1, 41, 44), (U14W_5K_Gr7_Kugel, Gr7, 42, 44), (U14W_5K_Gr7_Kugel, Kugel2, 42, 44), (U14W_5K_Gr8_Pause_1, Gr8, 42, 43), (Weit1_Pause_9, Weit1, 42, 43), (MAN_10K_Gr23_Speer, Gr23, 43, 46), (MAN_10K_Gr23_Speer, Speer, 43, 46), (U14W_5K_Gr9_Weit, Gr9, 43, 46), (U14W_5K_Gr9_Weit, Weit1, 43, 46), (Weit2_Pause_13, Weit2, 43, 44), (U14W_5K_Gr7_Pause_1, Gr7, 44, 45), (U14W_5K_Gr11_Pause_3, Gr11, 45, 46), (U14W_5K_Gr7_Hoch, Gr7, 45, 48), (U14W_5K_Gr7_Hoch, Hoch2, 45, 48), (Kugel2_Pause_4, Kugel2, 46, 47), (Läufe_Pause_8, Läufe, 47, 48), (U14W_5K_Gr10_Weit, Gr10, 47, 50), (U14W_5K_Gr10_Weit, Weit2, 47, 50), (U14W_5K_Gr12_Pause_2, Gr12, 47, 48), (MAN_10K_Gr23_Pause_4, Gr23, 48, 51), (U14W_5K_Gr9_Pause_3, Gr9, 49, 50), (Speer_Pause_2, Speer, 50, 51), (U14W_5K_Gr7_Pause_3, Gr7, 50, 51), (U14W_5K_Gr10_Pause_1, Gr10, 51, 52), (U14W_5K_Gr7_to_Gr13_600m, Gr10, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr11, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr12, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr13, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr7, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr8, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Gr9, 54, 57), (U14W_5K_Gr7_to_Gr13_600m, Läufe, 54, 57), (Läufe_Pause_2, Läufe, 57, 58), (MAN_10K_Gr23_to_Gr23_1500m, Gr23, 58, 59), (MAN_10K_Gr23_to_Gr23_1500m, Läufe, 58, 59), (Hoch1_Pause_8, Hoch1, 61, 62), (Weit2_Pause_10, Weit2, 62, 63), (Läufe_Pause_6, Läufe, 63, 64), (Kugel1_Pause_10, Kugel1, 72, 73), (Weit1_Pause_5, Weit1, 86, 87), (Hoch2_Pause_1, Hoch2, 88, 89), (Hoch1_Pause_5, Hoch1, 89, 90), (Hoch2_Pause_2, Hoch2, 89, 90), (Kugel1_Pause_1, Kugel1, 89, 90), (Kugel2_Pause_1, Kugel2, 89, 90), (Läufe_Pause_3, Läufe, 89, 90), (Speer_Pause_3, Speer, 89, 90), (Weit1_Pause_10, Weit1, 89, 90), (Weit2_Pause_7, Weit2, 89, 90)]
 
+$ python umm2019.py saturday --horizon=56 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 23..48 (25)
+        U16W_5K: 6..30 (24)
+        WOM_7K: 14..39 (25)
+        U12M_4K: 0..18 (18)
+        U16M_6K: 11..52 (41)
+        MAN_10K: 28..55 (27)
+    objective_value: 1735
+
+$ python umm2019.py saturday --horizon=55 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 17..41 (24)
+        U16W_5K: 28..49 (21)
+        WOM_7K: 13..35 (22)
+        U12M_4K: 5..21 (16)
+        U16M_6K: 0..32 (32)
+        MAN_10K: 26..54 (28)
+    objective_value: 1579
+
+$ python umm2019.py saturday --horizon=54 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 19..41 (22)
+        U16W_5K: 29..49 (20)
+        WOM_7K: 15..45 (30)
+        U12M_4K: 5..24 (19)
+        U16M_6K: 0..36 (36)
+        MAN_10K: 13..53 (40)
+    objective_value: 1675
+
+$ python umm2019.py saturday --horizon=53 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..46 (20)
+        U16W_5K: 4..35 (31)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 0..21 (21)
+        U16M_6K: 8..40 (32)
+        MAN_10K: 19..50 (31)
+    objective_value: 1647
+
+$ python umm2019.py saturday --horizon=52 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 26..47 (21)
+        U16W_5K: 1..22 (21)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 18..38 (20)
+        U16M_6K: 9..42 (33)
+        MAN_10K: 12..51 (39)
+    objective_value: 1618
+
+$ python umm2019.py saturday --horizon=51 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 8..39 (31)
+        U16W_5K: 0..19 (19)
+        WOM_7K: 24..43 (19)
+        U12M_4K: 30..46 (16)
+        U16M_6K: 4..36 (32)
+        MAN_10K: 12..50 (38)
+    objective_value: 1695
+
+$ python umm2019.py saturday --horizon=50 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1640
+
+$ python umm2019.py saturday --horizon=49 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 24..44 (20)
+        U16W_5K: 0..18 (18)
+        WOM_7K: 12..30 (18)
+        U12M_4K: 8..33 (25)
+        U16M_6K: 5..38 (33)
+        MAN_10K: 16..48 (32)
+    objective_value: 1616
+
+$ python umm2019.py saturday --horizon=48 --time-limit=12h -v
+    NoSolutionError
+
+
+Sunday
+======
+
+Reference: 53
+        U14W_5K: 18..49 (31)
+        MAN_6K: 4..45 (41)
+        WOM_5K: 10..38 (28)
+        MAN_10K: 14..53 (39)
+        U14M_5K: 0..26 (26)
+        WOM_7K: 23..41 (18)
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..19 (19)
+        MAN_6K: 10..30 (20)
+        WOM_5K: 7..34 (27)
+        MAN_10K: 14..47 (33)
+        U14W_5K: 23..43 (20)
+        WOM_7K: 22..37 (15)
+    objective_value: 1433
+
+$ python umm2019.py sunday --horizon=48 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 4..31 (27)
+        MAN_6K: 0..27 (27)
+        WOM_5K: 8..38 (30)
+        MAN_10K: 13..47 (34)
+        U14W_5K: 21..43 (22)
+        WOM_7K: 12..35 (23)
+    objective_value: 1729
+
+$ python umm2019.py sunday --horizon=47 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 18..37 (19)
+        MAN_6K: 4..30 (26)
+        WOM_5K: 10..34 (24)
+        MAN_10K: 14..46 (32)
+        U14W_5K: 0..42 (42)
+        WOM_7K: 12..27 (15)
+    objective_value: 1955
+
+$ python umm2019.py sunday --horizon=46 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 4..23 (19)
+        MAN_6K: 0..27 (27)
+        WOM_5K: 10..36 (26)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 19..40 (21)
+        WOM_7K: 16..31 (15)
+    objective_value: 1536
+
+$ python umm2019.py sunday --horizon=45 --time-limit=30m -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..28 (28)
+        MAN_6K: 4..24 (20)
+        WOM_5K: 9..37 (28)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 16..32 (16)
+    objective_value: 1516
+
+$ python umm2019.py sunday --horizon=44 --time-limit=30m -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=30m -v
+    NoSolutionError
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..19 (19)
+        MAN_6K: 10..30 (20)
+        WOM_5K: 7..34 (27)
+        MAN_10K: 14..47 (33)
+        U14W_5K: 23..43 (20)
+        WOM_7K: 22..37 (15)
+    objective_value: 1433
+
+$ python umm2019.py sunday --horizon=48 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 4..31 (27)
+        MAN_6K: 0..27 (27)
+        WOM_5K: 8..38 (30)
+        MAN_10K: 13..47 (34)
+        U14W_5K: 21..43 (22)
+        WOM_7K: 12..35 (23)
+    objective_value: 1729
+
+$ python umm2019.py sunday --horizon=47 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 20..39 (19)
+        MAN_6K: 7..32 (25)
+        WOM_5K: 11..43 (32)
+        MAN_10K: 14..46 (32)
+        U14W_5K: 0..24 (24)
+        WOM_7K: 20..36 (16)
+    objective_value: 1582
+
+$ python umm2019.py sunday --horizon=46 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 4..23 (19)
+        MAN_6K: 0..27 (27)
+        WOM_5K: 10..36 (26)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 19..40 (21)
+        WOM_7K: 16..31 (15)
+    objective_value: 1533
+
+$ python umm2019.py sunday --horizon=45 --time-limit=1h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..32 (24)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 20..36 (16)
+    objective_value: 1420
+
+$ python umm2019.py sunday --horizon=44 --time-limit=1h -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=1h -v
+    NoSolutionError
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..18 (18)
+        MAN_6K: 6..31 (25)
+        WOM_5K: 10..35 (25)
+        MAN_10K: 14..47 (33)
+        U14W_5K: 23..43 (20)
+        WOM_7K: 12..27 (15)
+    objective_value: 1432
+
+$ python umm2019.py sunday --horizon=48 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..22 (22)
+        MAN_6K: 4..39 (35)
+        WOM_5K: 19..44 (25)
+        MAN_10K: 15..47 (32)
+        U14W_5K: 10..34 (24)
+        WOM_7K: 12..28 (16)
+    objective_value: 1713
+
+$ python umm2019.py sunday --horizon=47 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 20..39 (19)
+        MAN_6K: 7..32 (25)
+        WOM_5K: 11..43 (32)
+        MAN_10K: 14..46 (32)
+        U14W_5K: 0..24 (24)
+        WOM_7K: 20..36 (16)
+    objective_value: 1581
+
+$ python umm2019.py sunday --horizon=46 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 26..41 (15)
+        MAN_6K: 4..33 (29)
+        WOM_5K: 8..30 (22)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 0..22 (22)
+        WOM_7K: 20..37 (17)
+    objective_value: 1511
+
+$ python umm2019.py sunday --horizon=45 --time-limit=2h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..32 (24)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 20..36 (16)
+    objective_value: 1420
+
+$ python umm2019.py sunday --horizon=44 --time-limit=2h -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=2h -v
+    NoSolutionError
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..18 (18)
+        MAN_6K: 6..30 (24)
+        WOM_5K: 11..35 (24)
+        MAN_10K: 14..47 (33)
+        U14W_5K: 23..43 (20)
+        WOM_7K: 12..27 (15)
+    objective_value: 1417
+
+$ python umm2019.py sunday --horizon=48 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..22 (22)
+        MAN_6K: 4..39 (35)
+        WOM_5K: 19..44 (25)
+        MAN_10K: 15..47 (32)
+        U14W_5K: 10..33 (23)
+        WOM_7K: 12..28 (16)
+    objective_value: 1698
+
+$ python umm2019.py sunday --horizon=47 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 1..17 (16)
+        MAN_6K: 5..28 (23)
+        WOM_5K: 9..37 (28)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 17..32 (15)
+    objective_value: 1437
+
+$ python umm2019.py sunday --horizon=46 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..31 (23)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..45 (33)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 21..38 (17)
+    objective_value: 1439
+
+$ python umm2019.py sunday --horizon=45 --time-limit=4h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..32 (24)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 20..36 (16)
+    objective_value: 1420
+
+$ python umm2019.py sunday --horizon=44 --time-limit=4h -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=4h -v
+    NoSolutionError
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..18 (18)
+        MAN_6K: 6..30 (24)
+        WOM_5K: 10..35 (25)
+        MAN_10K: 14..47 (33)
+        U14W_5K: 23..43 (20)
+        WOM_7K: 12..27 (15)
+    objective_value: 1424
+
+$ python umm2019.py sunday --horizon=48 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 1..22 (21)
+        MAN_6K: 9..42 (33)
+        WOM_5K: 5..27 (22)
+        MAN_10K: 14..46 (32)
+        U14W_5K: 18..38 (20)
+        WOM_7K: 13..30 (17)
+    objective_value: 1589
+
+$ python umm2019.py sunday --horizon=47 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 1..17 (16)
+        MAN_6K: 5..28 (23)
+        WOM_5K: 9..35 (26)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 17..32 (15)
+    objective_value: 1429
+
+$ python umm2019.py sunday --horizon=46 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..31 (23)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..45 (33)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 21..38 (17)
+    objective_value: 1436
+
+$ python umm2019.py sunday --horizon=45 --time-limit=8h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..32 (24)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 20..36 (16)
+    objective_value: 1420
+
+$ python umm2019.py sunday --horizon=44 --time-limit=8h -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=8h -v
+    NoSolutionError
+
+
+$ python umm2019.py sunday --horizon=49 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..27 (19)
+        WOM_5K: 5..33 (28)
+        MAN_10K: 12..47 (35)
+        U14W_5K: 22..43 (21)
+        WOM_7K: 19..36 (17)
+    objective_value: 1416
+
+$ python umm2019.py sunday --horizon=48 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 1..22 (21)
+        MAN_6K: 9..42 (33)
+        WOM_5K: 5..27 (22)
+        MAN_10K: 14..46 (32)
+        U14W_5K: 18..38 (20)
+        WOM_7K: 13..30 (17)
+    objective_value: 1588
+
+$ python umm2019.py sunday --horizon=47 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 1..17 (16)
+        MAN_6K: 5..28 (23)
+        WOM_5K: 9..35 (26)
+        MAN_10K: 13..45 (32)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 17..32 (15)
+    objective_value: 1429
+
+$ python umm2019.py sunday --horizon=46 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..33 (25)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..45 (33)
+        U14W_5K: 21..41 (20)
+        WOM_7K: 21..37 (16)
+    objective_value: 1434
+
+$ python umm2019.py sunday --horizon=45 --time-limit=12h -v
+    Wettkampf-Duration-Summary:
+        U14M_5K: 0..16 (16)
+        MAN_6K: 8..32 (24)
+        WOM_5K: 4..28 (24)
+        MAN_10K: 12..44 (32)
+        U14W_5K: 20..40 (20)
+        WOM_7K: 20..36 (16)
+    objective_value: 1420
+
+$ python umm2019.py sunday --horizon=44 --time-limit=12h -v
+    NoSolutionError
+
+$ python umm2019.py sunday --horizon=43 --time-limit=12h -v
+    NoSolutionError
