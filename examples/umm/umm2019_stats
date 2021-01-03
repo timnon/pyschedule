@@ -9,6 +9,124 @@ Reference: 54
         U16M_6K: 6..45 (39)
         MAN_10K: 20..53 (33)
 
+$ python umm2019.py saturday --horizon=50 --time-limit=5m -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=50 --time-limit=225 --random-seed=42 -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=50 --time-limit=225 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..29 (29)
+        U16W_5K: 8..37 (29)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 19..45 (26)
+        U16M_6K: 5..42 (37)
+        MAN_10K: 12..49 (37)
+    objective_value: 1988
+
+$ python umm2019.py saturday --horizon=50 --time-limit=300 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1658
+
+$ python umm2019.py saturday --horizon=50 --time-limit=400 --random-seed=42 -v
+    NoSolutionError
+
+$ python umm2019.py saturday --horizon=50 --time-limit=400 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1658
+
+$ python umm2019.py saturday --horizon=50 --time-limit=10m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1658
+
+$ python umm2019.py saturday --horizon=50 --time-limit=15m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30   )
+    objective_value: 1658
+
+$ python umm2019.py saturday --horizon=50 --time-limit=20m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1645
+
+$ python umm2019.py saturday --horizon=50 --time-limit=25m -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1645
+
+$ python umm2019.py saturday --horizon=50 --time-limit=30m --ratio-gap=0.72 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 3..34 (31)
+        U16W_5K: 11..38 (27)
+        WOM_7K: 22..42 (20)
+        U12M_4K: 26..45 (19)
+        U16M_6K: 0..31 (31)
+        MAN_10K: 15..49 (34)
+    objective_value: 1861
+
+$ python umm2019.py saturday --horizon=50 --time-limit=30m --ratio-gap=1.049 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 3..34 (31)
+        U16W_5K: 11..38 (27)
+        WOM_7K: 22..42 (20)
+        U12M_4K: 26..45 (19)
+        U16M_6K: 0..31 (31)
+        MAN_10K: 15..49 (34)
+    objective_value: 1861
+
+$ python umm2019.py saturday --horizon=50 --time-limit=30m --ratio-gap=0.6 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..29 (29)
+        U16W_5K: 8..37 (29)
+        WOM_7K: 14..34 (20)
+        U12M_4K: 19..45 (26)
+        U16M_6K: 5..42 (37)
+        MAN_10K: 12..49 (37)
+    objective_value: 1989
+
+$ python umm2019.py saturday --horizon=50 --time-limit=30m --ratio-gap=0.5 -v
+    Wettkampf-Duration-Summary:
+        U12W_4K: 0..24 (24)
+        U16W_5K: 10..37 (27)
+        WOM_7K: 14..32 (18)
+        U12M_4K: 28..44 (16)
+        U16M_6K: 7..41 (34)
+        MAN_10K: 18..48 (30)
+    objective_value: 1658
 
 $ python umm2019.py saturday --horizon=56 --time-limit=30m -v
     Wettkampf-Duration-Summary:
