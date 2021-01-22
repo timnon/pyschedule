@@ -177,17 +177,26 @@ class AthleticsEventScheduler(object):
         self._scenario += first_disziplin * -(factor_sum - 1)
 
     def _set_wettkampf_duration_constraint(self, wettkampf_name, first_disziplin, last_disziplin):
+        day = self._name.split("_")[-1]
         max_wettkampf_duration = {
-            "U12W_4K": 27,
-            "U16W_5K": 29,
-            "WOM_7K": 26,
-            "U12M_4K": 27,
-            "U16M_6K": 39,
-            "MAN_10K": 33,
+            "saturday": {
+                "U12W_4K": 27,
+                "U16W_5K": 29,
+                "WOM_7K": 26,
+                "U12M_4K": 27,
+                "U16M_6K": 39,
+                "MAN_10K": 33,
+            },
+            "sunday": {
+                "U14W_5K": 31,
+                "WOM_7K": 18,
+                "WOM_5K": 28,
+                "U14M_5K": 26,
+                "MAN_10K": 39,
+                "MAN_6K": 41,
+            },
         }
-        max_duration = max_wettkampf_duration[wettkampf_name]
-        #self._scenario += last_disziplin - first_disziplin < max_duration
-        self._scenario += last_disziplin < first_disziplin + max_duration
+        self._scenario += last_disziplin <= first_disziplin + max_wettkampf_duration[day][wettkampf_name]
 
     def set_wettkampf_start_times(self, wettkampf_start_times):
         logging.debug('setting wettkampf start times...')
