@@ -233,13 +233,16 @@ class AthleticsEventScheduler(object):
     def get_wettkampf_duration_summary(self):
         heading = "Wettkampf-Duration-Summary:"
         lines = []
+        wettkampf_duration_sum = 0
         for wettkampf_name, (first_disziplin, last_disziplin) in self._wettkampf_first_last_disziplinen.items():
             lines.append("  {}: {}..{} ({})".format(
                 wettkampf_name,
                 first_disziplin.start_value,
                 last_disziplin.start_value,
                 last_disziplin.start_value - first_disziplin.start_value,
-             ))
+            ))
+            wettkampf_duration_sum += last_disziplin.start_value - first_disziplin.start_value
+        lines.append("cumulated-wettkampf-duration: {}".format(wettkampf_duration_sum))
         return "{}\n{}".format(heading, "\n".join(lines))
 
     def solve(self, time_limit, ratio_gap=0.0, random_seed=None, threads=None, msg=1):
