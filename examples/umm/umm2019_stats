@@ -2,12 +2,14 @@ Saturday
 ========
 
 Reference: 54
+    Wettkampf-Duration-Summary:
         U12W_4K: 22..49 (27)
         U16W_5K: 13..42 (29)
         WOM_7K: 9..35 (26)
         U12M_4K: 0..27 (27)
         U16M_6K: 6..45 (39)
         MAN_10K: 20..53 (33)
+    cumulated-wettkampf-duration: 181
 
 $ python umm2019.py saturday --horizon=50 --time-limit=5m -v
     NoSolutionError
@@ -609,18 +611,30 @@ $ python umm2019.py saturday --horizon=49 --time-limit=12h -v
 $ python umm2019.py saturday --horizon=48 --time-limit=12h -v
     NoSolutionError
 
+$ python umm2019.py saturday --horizon=48 --time-limit=30m -v --alternative-objective
+    Wettkampf-Duration-Summary:
+      U12W_4K: 21..44 (23)
+      U16W_5K: 0..25 (25)
+      WOM_7K: 13..36 (23)
+      U12M_4K: 9..32 (23)
+      U16M_6K: 5..41 (36)
+      MAN_10K: 18..48 (30)
+    cumulated-wettkampf-duration: 160
+objective_value: 160
+
 
 Sunday
 ======
 
 Reference: 53
+    Wettkampf-Duration-Summary:
         U14W_5K: 18..49 (31)
         MAN_6K: 4..45 (41)
         WOM_5K: 10..38 (28)
         MAN_10K: 14..53 (39)
         U14M_5K: 0..26 (26)
         WOM_7K: 23..41 (18)
-
+    cumulated-wettkampf-duration: 183
 
 $ python umm2019.py sunday --horizon=49 --time-limit=30m -v
     Wettkampf-Duration-Summary:
@@ -962,3 +976,14 @@ $ python umm2019.py sunday --horizon=44 --time-limit=12h -v
 
 $ python umm2019.py sunday --horizon=43 --time-limit=12h -v
     NoSolutionError
+
+$ python umm2019.py sunday --horizon=50 --time-limit=30m -v --alternative-objective
+    Wettkampf-Duration-Summary:
+      U14M_5K: 23..45 (22)
+      MAN_6K: 0..37 (37)
+      WOM_5K: 16..41 (25)
+      MAN_10K: 12..49 (37)
+      U14W_5K: 4..31 (27)
+      WOM_7K: 12..27 (15)
+    cumulated-wettkampf-duration: 163
+    objective_value: 160
