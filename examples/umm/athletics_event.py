@@ -165,7 +165,8 @@ class AthleticsEventScheduler(object):
                 wettkampf_disziplinen_factors[disziplin['name']] += 1
 
             self._wettkampf_first_last_disziplinen[wettkampf_name] = (first_disziplin, last_disziplin)
-            self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
+            #self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
+            self._set_wettkampf_duration_objective(first_disziplin, last_disziplin)
             self._set_wettkampf_duration_constraint(wettkampf_name, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
@@ -175,6 +176,9 @@ class AthleticsEventScheduler(object):
             self._scenario += disziplin * factor
         factor_sum = sum([factor for factor in wettkampf_disziplinen_factors.values()])
         self._scenario += first_disziplin * -(factor_sum - 1)
+
+    def _set_wettkampf_duration_objective(self, first_disziplin, last_disziplin):
+        self._scenario += last_disziplin - first_disziplin
 
     def _set_wettkampf_duration_constraint(self, wettkampf_name, first_disziplin, last_disziplin):
         day = self._name.split("_")[-1]
