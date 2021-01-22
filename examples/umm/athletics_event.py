@@ -30,9 +30,10 @@ class AnlagenDescriptor(object):
 
 
 class AthleticsEventScheduler(object):
-    def __init__(self, name, duration_in_units):
+    def __init__(self, name, duration_in_units, alternative_objective=True):
         self._name = name
         self._duration_in_units = duration_in_units
+        self._alternative_objective = alternative_objective
         self._anlagen = {}
         self._last_disziplin = {}
         self._disziplinen = {}
@@ -165,9 +166,11 @@ class AthleticsEventScheduler(object):
                 wettkampf_disziplinen_factors[disziplin['name']] += 1
 
             self._wettkampf_first_last_disziplinen[wettkampf_name] = (first_disziplin, last_disziplin)
-            #self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
-            self._set_wettkampf_duration_objective(first_disziplin, last_disziplin)
-            self._set_wettkampf_duration_constraint(wettkampf_name, first_disziplin, last_disziplin)
+            if not self._alternative_objective:
+                self._set_default_objective(wettkampf_disziplinen_factors, first_disziplin, last_disziplin)
+            else:
+                self._set_wettkampf_duration_objective(first_disziplin, last_disziplin)
+                self._set_wettkampf_duration_constraint(wettkampf_name, first_disziplin, last_disziplin)
             self._last_disziplin[wettkampf_name] = last_disziplin
 
     def _set_default_objective(self, wettkampf_disziplinen_factors, first_disziplin, last_disziplin):
