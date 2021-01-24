@@ -273,6 +273,25 @@ teilnehmer_data = {
     },
 }
 
+maximum_wettkampf_duration = {
+    "saturday": {
+        "U12W_4K": 27,
+        "U16W_5K": 29,
+        "WOM_7K": 26,
+        "U12M_4K": 27,
+        "U16M_6K": 39,
+        "MAN_10K": 33,
+    },
+    "sunday": {
+        "U14W_5K": 31,
+        "WOM_7K": 18,
+        "WOM_5K": 28,
+        "U14M_5K": 26,
+        "MAN_10K": 39,
+        "MAN_6K": 41,
+    },
+}
+
 
 def setup_logging(verbose, event_name):
     log_level = logging.INFO
@@ -310,9 +329,13 @@ def main(args):
     logging.debug('output folder: {!r}'.format(output_folder_name))
 
     event = athletics_event.AthleticsEventScheduler(
-        name=event_name, duration_in_units=args.horizon, alternative_objective=args.alternative_objective)
+        name=event_name, duration_in_units=args.horizon)
     event.create_anlagen(anlagen_descriptors[args.day])
-    event.create_disziplinen(wettkampf_data[args.day], teilnehmer_data)
+    event.create_disziplinen(
+        wettkampf_data[args.day],
+        teilnehmer_data,
+        maximum_wettkampf_duration=maximum_wettkampf_duration[args.day],
+        alternative_objective=args.fast)
     if not args.dont_set_start_time:
         event.set_wettkampf_start_times(wettkampf_start_times[args.day])
     event.ensure_last_wettkampf_of_the_day()
@@ -355,7 +378,7 @@ if __name__ == "__main__":
     parser.add_argument('--dont-set-start-time', action="store_true", help="don't set start time")
     help_text = 'horizon, (default: {})'.format(default_arguments["horizon"])
     parser.add_argument('--horizon', type=int, default=default_arguments["horizon"], help=help_text)
-    parser.add_argument('--alternative-objective', action="store_true")
+    parser.add_argument('--fast', action="store_true")
     valid_wettkampf_days = ['saturday', 'sunday']
     parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
     args = parser.parse_args()

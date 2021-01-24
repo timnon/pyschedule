@@ -1,8 +1,8 @@
 Run athletics-event-scheduler:
 $ python umm2019.py saturday --horizon=50 --time-limit=30m -v
-$ python umm2019.py saturday --horizon=48 --time-limit=30m -v --alternative-objective
+$ python umm2019.py saturday --horizon=49 --time-limit=30m --fast -v
 $ python umm2019.py sunday --horizon=45 --time-limit=30m -v
-$ python umm2019.py sunday --horizon=50 --time-limit=30m -v --alternative-objective
+$ python umm2019.py sunday --horizon=50 --time-limit=30m --fast -v
 
 Run tests:
 $ python -m nose test/test_athletics_event.py

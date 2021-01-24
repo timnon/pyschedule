@@ -611,7 +611,7 @@ $ python umm2019.py saturday --horizon=49 --time-limit=12h -v
 $ python umm2019.py saturday --horizon=48 --time-limit=12h -v
     NoSolutionError
 
-$ python umm2019.py saturday --horizon=48 --time-limit=30m -v --alternative-objective
+$ python umm2019.py saturday --horizon=49 --time-limit=30m -v --alternative-objective
     Wettkampf-Duration-Summary:
       U12W_4K: 21..44 (23)
       U16W_5K: 0..25 (25)
