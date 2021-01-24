@@ -255,12 +255,6 @@ class AthleticsEventScheduler(object):
     def solve_with_ortools(self, time_limit, msg=1):
         logging.debug('solving problem with ortools solver...')
         status = solvers.ortools.solve(self._scenario, time_limit=time_limit, msg=msg)
-        cbc_logfile_name = "cbc.log"
-        if os.path.exists(cbc_logfile_name):
-            with open(cbc_logfile_name) as cbc_logfile:
-                logging.info(cbc_logfile.read())
-        else:
-            logging.info("no {!r} found".format(cbc_logfile_name))
         if not status:
             raise NoSolutionError()
 

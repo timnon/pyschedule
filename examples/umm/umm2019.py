@@ -348,7 +348,10 @@ def main(args):
         sys.exit()
     logging.debug("scenario: {}".format(scenario_as_string))
     try:
-        event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed, threads=args.threads)
+        if not args.with_ortools:
+            event.solve(time_limit=args.time_limit, ratio_gap=args.ratio_gap, random_seed=args.random_seed, threads=args.threads)
+        else:
+            event.solve_with_ortools(time_limit=args.time_limit)
     except athletics_event.NoSolutionError as e:
         logging.error("Exception caught: {}".format(e.__class__.__name__))
     logging.debug("done")
@@ -379,6 +382,7 @@ if __name__ == "__main__":
     help_text = 'horizon, (default: {})'.format(default_arguments["horizon"])
     parser.add_argument('--horizon', type=int, default=default_arguments["horizon"], help=help_text)
     parser.add_argument('--fast', action="store_true")
+    parser.add_argument('--with-ortools', action="store_true")
     valid_wettkampf_days = ['saturday', 'sunday']
     parser.add_argument('day', type=str.lower, choices=valid_wettkampf_days, help='wettkampf day')
     args = parser.parse_args()
