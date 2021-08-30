@@ -265,3 +265,5 @@ class AthleticsEventScheduler(object):
         logging.info(solution_as_string)
         plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
                                  fig_size=(100, 5), hide_tasks=self._hide_tasks)
+        logging.info(self.get_wettkampf_duration_summary())
+        logging.info("objective_value: {}".format(self._scenario.objective_value()))
