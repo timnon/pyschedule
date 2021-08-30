@@ -1,0 +1,96 @@
+Saturday
+========
+
+$ python umm2019.py saturday --horizon=42 --time-limit=200
+    NoSolutionError
+
+$ python umm2021.py saturday --horizon=45 --time-limit=200
+Wettkampf-Duration-Summary:
+  U12W_4K: 8..29 (21)
+  U16W_5K: 1..17 (16)
+  WOM_7K: 12..35 (23)
+  U12M_4K: 20..37 (17)
+  U16M_6K: 4..41 (37)
+  MAN_10K: 15..44 (29)
+cumulated-wettkampf-duration: 143
+objective_value: 1196
+
+$ python umm2021.py saturday --horizon=42 --time-limit=600
+NoSolutionError
+
+$ python umm2021.py saturday --horizon=43 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 22..38 (16)
+  U16W_5K: 3..30 (27)
+  WOM_7K: 17..36 (19)
+  U12M_4K: 6..26 (20)
+  U16M_6K: 0..33 (33)
+  MAN_10K: 12..42 (30)
+cumulated-wettkampf-duration: 145
+objective_value: 1204
+
+$ python umm2021.py saturday --horizon=44 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 22..39 (17)
+  U16W_5K: 3..30 (27)
+  WOM_7K: 18..36 (18)
+  U12M_4K: 6..26 (20)
+  U16M_6K: 0..33 (33)
+  MAN_10K: 12..43 (31)
+cumulated-wettkampf-duration: 146
+objective_value: 1215
+
+$ python umm2021.py saturday --horizon=45 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 8..29 (21)
+  U16W_5K: 1..17 (16)
+  WOM_7K: 12..35 (23)
+  U12M_4K: 20..37 (17)
+  U16M_6K: 4..41 (37)
+  MAN_10K: 15..44 (29)
+cumulated-wettkampf-duration: 143
+objective_value: 1196
+
+
+Sunday
+======
+
+$ python umm2021.py sunday --horizon=42 --time-limit=100
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=43 --time-limit=100
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=44 --time-limit=100
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=45 --time-limit=100
+Wettkampf-Duration-Summary:
+  U14M_5K: 16..40 (24)
+  MAN_6K: 8..37 (29)
+  WOM_5K: 4..34 (30)
+  MAN_10K: 12..44 (32)
+  U14W_5K: 0..27 (27)
+  WOM_7K: 19..31 (12)
+cumulated-wettkampf-duration: 154
+objective_value: 1545
+
+$ python umm2021.py sunday --horizon=42 --time-limit=600
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=43 --time-limit=600
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=44 --time-limit=600
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=45 --time-limit=600
+Wettkampf-Duration-Summary:
+  U14M_5K: 16..40 (24)
+  MAN_6K: 8..37 (29)
+  WOM_5K: 5..34 (29)
+  MAN_10K: 12..44 (32)
+  U14W_5K: 0..27 (27)
+  WOM_7K: 19..31 (12)
+cumulated-wettkampf-duration: 153
+objective_value: 1496
