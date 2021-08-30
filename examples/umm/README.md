@@ -1,6 +1,7 @@
 Run athletics-event-scheduler:
 $ python umm2019.py saturday --horizon=50 --time-limit=30m -v
 $ python umm2019.py saturday --horizon=49 --time-limit=30m --fast -v
+$ python umm2019.py saturday --horizon=50 --time-limit=30m --with-ortools -v
 $ python umm2019.py sunday --horizon=45 --time-limit=30m -v
 $ python umm2019.py sunday --horizon=50 --time-limit=30m --fast -v
 
