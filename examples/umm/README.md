@@ -6,7 +6,7 @@ $ python umm2019.py sunday --horizon=45 --time-limit=30m -v
 $ python umm2019.py sunday --horizon=50 --time-limit=30m --fast -v
 
 Run tests:
-$ python -m nose test/test_athletics_event.py
+$ python -m nose test/test_athletics_event/
 
 Stuff to read:
 - https://github.com/timnon/pyschedule
