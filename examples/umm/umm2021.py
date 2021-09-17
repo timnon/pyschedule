@@ -51,6 +51,7 @@ wettkampf_data = {
                 dict(name="Pause_4", length=3),
                 dict(name="600m", together=True, resource="Läufe", length=2),
             ],
+            "is_wettkampf_with_strict_sequence": True,
             "plot_color": "pink",
         },
         "WOM_7K": {
