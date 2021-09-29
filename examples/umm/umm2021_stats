@@ -48,6 +48,142 @@ Wettkampf-Duration-Summary:
 cumulated-wettkampf-duration: 149
 objective_value: 1252
 
+--
+
+$ python umm2021.py sunday --horizon=44 --time-limit=60
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=45 --time-limit=60
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=46 --time-limit=60
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=47 --time-limit=60
+NoSolutionError
+
+$ python umm2021.py sunday --horizon=48 --time-limit=60
+Wettkampf-Duration-Summary:
+  U12W_4K: 9..30 (21)
+  U16W_5K: 0..27 (27)
+  WOM_7K: 17..37 (20)
+  U12M_4K: 22..39 (17)
+  U16M_6K: 3..44 (41)
+  MAN_10K: 15..47 (32)
+cumulated-wettkampf-duration: 158
+objective_value: 1330
+
+python umm2021.py saturday --horizon=47 --time-limit=600
+NoSolutionError
+
+python umm2021.py saturday --horizon=48 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 9..30 (21)
+  U16W_5K: 0..27 (27)
+  WOM_7K: 17..37 (20)
+  U12M_4K: 22..39 (17)
+  U16M_6K: 4..44 (40)
+  MAN_10K: 15..47 (32)
+cumulated-wettkampf-duration: 157
+objective_value: 1319
+
+python umm2021.py saturday --horizon=49 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 28..44 (16)
+  U16W_5K: 0..25 (25)
+  WOM_7K: 22..42 (20)
+  U12M_4K: 9..32 (23)
+  U16M_6K: 6..39 (33)
+  MAN_10K: 17..48 (31)
+cumulated-wettkampf-duration: 148
+objective_value: 1269
+
+python umm2021.py saturday --horizon=50 --time-limit=600
+Wettkampf-Duration-Summary:
+  U12W_4K: 4..27 (23)
+  U16W_5K: 0..24 (24)
+  WOM_7K: 17..35 (18)
+  U12M_4K: 13..42 (29)
+  U16M_6K: 9..46 (37)
+  MAN_10K: 22..49 (27)
+cumulated-wettkampf-duration: 158
+objective_value: 1447
+
+python umm2021.py saturday --horizon=43 --time-limit=6h
+NoSolutionError
+
+python umm2021.py saturday --horizon=44 --time-limit=6h
+NoSolutionError
+
+python umm2021.py saturday --horizon=45 --time-limit=6h
+NoSolutionError
+
+python umm2021.py saturday --horizon=46 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 25..41 (16)
+  U16W_5K: 4..36 (32)
+  WOM_7K: 21..39 (18)
+  U12M_4K: 9..29 (20)
+  U16M_6K: 0..33 (33)
+  MAN_10K: 15..45 (30)
+cumulated-wettkampf-duration: 149
+objective_value: 1239
+
+python umm2021.py saturday --horizon=47 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 24..40 (16)
+  U16W_5K: 4..33 (29)
+  WOM_7K: 21..44 (23)
+  U12M_4K: 9..29 (20)
+  U16M_6K: 0..36 (36)
+  MAN_10K: 15..46 (31)
+cumulated-wettkampf-duration: 155
+objective_value: 1251
+
+python umm2021.py saturday --horizon=48 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 9..25 (16)
+  U16W_5K: 4..36 (32)
+  WOM_7K: 16..39 (23)
+  U12M_4K: 21..41 (20)
+  U16M_6K: 0..32 (32)
+  MAN_10K: 19..46 (27)
+cumulated-wettkampf-duration: 150
+objective_value: 1259
+
+python umm2021.py saturday --horizon=49 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 27..44 (17)
+  U16W_5K: 16..41 (25)
+  WOM_7K: 13..39 (26)
+  U12M_4K: 4..21 (17)
+  U16M_6K: 0..33 (33)
+  MAN_10K: 19..48 (29)
+cumulated-wettkampf-duration: 147
+objective_value: 1216
+
+python umm2021.py saturday --horizon=50 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 26..43 (17)
+  U16W_5K: 16..40 (24)
+  WOM_7K: 13..36 (23)
+  U12M_4K: 5..22 (17)
+  U16M_6K: 0..33 (33)
+  MAN_10K: 20..48 (28)
+cumulated-wettkampf-duration: 142
+objective_value: 1205
+
+python umm2021.py saturday --horizon=51 --time-limit=6h
+Wettkampf-Duration-Summary:
+  U12W_4K: 21..37 (16)
+  U16W_5K: 3..27 (24)
+  WOM_7K: 17..44 (27)
+  U12M_4K: 30..46 (16)
+  U16M_6K: 9..41 (32)
+  MAN_10K: 12..50 (38)
+cumulated-wettkampf-duration: 153
+objective_value: 1222
+
 
 Sunday
 ======
