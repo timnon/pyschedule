@@ -1,6 +1,5 @@
 *~
 __pycache__
 /venv
-/examples/umm/results
 .vscode
 cbc.log
