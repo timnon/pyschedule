@@ -348,6 +348,7 @@ def main(args):
             event.solve_with_ortools(time_limit=args.time_limit)
     except athletics_event.NoSolutionError as e:
         logging.error("Exception caught: {}".format(e.__class__.__name__))
+    logging.debug('output folder: {!r}'.format(output_folder_name))
     logging.debug("done")
 
 
