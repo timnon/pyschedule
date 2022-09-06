@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 import pandas
 
@@ -77,6 +78,13 @@ def main(args):
     empty_table_cell_format = workbook.add_format()
     empty_table_cell_format.set_border()
 
+    def get_time(row_index):
+        if args.start_time is None:
+            return str(row_index)
+        ts_start = datetime.strptime(args.start_time, "%H:%M")
+        ts_end = ts_start + timedelta(minutes=10*row_index)
+        return ts_end.time().strftime("%-H:%M")
+
     for column_index, resource in enumerate(resources):
         tasks = zeitplan.getTasks(resource)
         if resource == "Läufe":
@@ -84,7 +92,7 @@ def main(args):
             last_task = tasks[-1][0][3] - 2
             worksheet.write(2, 0, 'Zeit', heading_cell_format)
             for row_index in range(first_task, last_task + 1):
-                worksheet.write(row_index + 3, 0, str(row_index), empty_table_cell_format)
+                worksheet.write(row_index + 3, 0, get_time(row_index), empty_table_cell_format)
         filled_slots = []
         for task in tasks:
             worksheet.write(2, column_index + 1, resource, heading_cell_format)
@@ -114,6 +122,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='generate xlsx zeitplan')
     parser.add_argument('-v', '--verbose', action="store_true", help="be verbose")
+    parser.add_argument('-s', '--start-time', help="start time")
     parser.add_argument('file', type=argparse.FileType('r'), help='solution-file')
     args = parser.parse_args()
     main(args)
