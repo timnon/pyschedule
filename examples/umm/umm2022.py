@@ -98,13 +98,13 @@ wettkampf_data = {
         },
         "MAN_10K": {
             "disziplinen": [
-                dict(name="100m", together=True, resource="Läufe", length=1),
+                dict(name="100m", together=True, resource="Läufe", length=2),
                 dict(name="Pause_1", length=5),
-                dict(name="Weit", resource="Weit1&Weit2", length=3),
+                dict(name="Weit", resource="Weit1&Weit2", length=3),  # auf Weit1 und Weit2
                 dict(name="Pause_2", length=3),
-                dict(name="Kugel", resource="Kugel1&Kugel2", length=2),
+                dict(name="Kugel", resource="Kugel1&Kugel2", length=4),  # nur auf Kugel1
                 dict(name="Pause_3", length=4),
-                dict(name="Hoch", resource="Hoch1&Hoch2", length=5),
+                dict(name="Hoch", resource="Hoch1&Hoch2", length=5),  # auf Hoch1 und Hoch2
                 dict(name="Pause_4", length=4),
                 dict(name="400m", together=True, resource="Läufe", length=2),
             ],
@@ -160,15 +160,15 @@ wettkampf_data = {
         },
         "MAN_10K": {
             "disziplinen": [
-                dict(name="110mHü", together=True, resource="Läufe", length=3),
+                dict(name="110mHü", together=True, resource="Läufe", length=4),
                 dict(name="Pause_1", length=3),
-                dict(name="Diskus", resource="Diskus", length=2),
+                dict(name="Diskus", resource="Diskus", length=4),
                 dict(name="Pause_2", length=4),
-                dict(name="Stab", resource="Stab", length=11),
+                dict(name="Stab", resource="Stab", length=18),
                 dict(name="Pause_3", length=3),
-                dict(name="Speer", resource="Speer", length=3),
+                dict(name="Speer", resource="Speer", length=6),
                 dict(name="Pause_4", length=3),
-                dict(name="1500m", together=True, resource="Läufe", length=1),
+                dict(name="1500m", together=True, resource="Läufe", length=2),
             ],
             "is_wettkampf_with_strict_sequence": True,
             "is_last_wettkampf_of_the_day": True,
