@@ -216,8 +216,8 @@ wettkampf_start_times = {
 
 teilnehmer_data = {
     "WOM_7K": {
-        "Gr1": 6,
-        "Gr2": 14,
+        "Gr1": 7,
+        "Gr2": 16,
     },
     "U16W_5K": {
         "Gr3": 11,
@@ -243,11 +243,11 @@ teilnehmer_data = {
     },
     "WOM_5K": {
         "Gr19": 7,
-        "Gr20": 14,
+        "Gr20": 16,
         "Gr21": 13,
     },
     "MAN_10K": {
-        "Gr22": 17,
+        "Gr22": 20,
     },
     "U16M_6K": {
         "Gr23": 13,
