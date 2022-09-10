@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import logging
+import os
 import pandas
+import re
 
 
 class Zeitplan(object):
@@ -62,7 +64,12 @@ def main(args):
 
     zeitplan = Zeitplan(tasks, resources)
 
-    writer = pandas.ExcelWriter('zeitplan.xlsx', engine='xlsxwriter')
+    directory, filename = os.path.split(args.file.name)
+    match = re.search(r'(.*)_solution.txt$', filename)
+    filename_base = match.group(1)
+    filename = filename_base + '_zeitplan.xlsx'
+    path = os.path.join(directory, filename)
+    writer = pandas.ExcelWriter(path, engine='xlsxwriter')
     workbook = writer.book
     worksheet = workbook.add_worksheet()
 
