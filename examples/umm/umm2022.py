@@ -58,9 +58,9 @@ wettkampf_data = {
             "disziplinen": [
                 dict(name="100mHü", together=True, resource="Läufe", length=3),
                 dict(name="Pause_1", length=3),
-                dict(name="Hoch", resource="Hoch", length=5),
+                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=5),
                 dict(name="Pause_2", length=3),
-                dict(name="Kugel", resource="Kugel", length=3),
+                dict(name="Kugel", together=True, resource="Kugel1&Kugel2", length=3),
                 dict(name="Pause_3", length=3),
                 dict(name="200m", together=True, resource="Läufe", length=2),
             ],
@@ -100,13 +100,13 @@ wettkampf_data = {
             "disziplinen": [
                 dict(name="100m", together=True, resource="Läufe", length=2),
                 dict(name="Pause_1", length=5),
-                dict(name="Weit", resource="Weit1&Weit2", length=3),  # auf Weit1 und Weit2
+                dict(name="Weit", together=True, resource="Weit1&Weit2", length=3),  # auf Weit1 und Weit2
                 dict(name="Pause_2", length=3),
-                dict(name="Kugel", resource="Kugel1&Kugel2", length=4),  # nur auf Kugel1
+                dict(name="Kugel", together=True, resource="Kugel1&Kugel2", length=4),  # nur auf Kugel1
                 dict(name="Pause_3", length=4),
-                dict(name="Hoch", resource="Hoch1&Hoch2", length=5),  # auf Hoch1 und Hoch2
+                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=5),  # auf Hoch1 und Hoch2
                 dict(name="Pause_4", length=4),
-                dict(name="400m", together=True, resource="Läufe", length=2),
+                dict(name="400m", together=True, resource="Läufe", length=4),
             ],
             "is_wettkampf_with_strict_sequence": True,
             "is_last_wettkampf_of_the_day": True,
@@ -160,13 +160,13 @@ wettkampf_data = {
         },
         "MAN_10K": {
             "disziplinen": [
-                dict(name="110mHü", together=True, resource="Läufe", length=4),
+                dict(name="110mHü", together=True, resource="Läufe", length=5),
                 dict(name="Pause_1", length=3),
-                dict(name="Diskus", resource="Diskus", length=4),
+                dict(name="Diskus", together=True, resource="Diskus", length=6),
                 dict(name="Pause_2", length=4),
-                dict(name="Stab", resource="Stab", length=18),
+                dict(name="Stab", together=True, resource="Stab", length=18),
                 dict(name="Pause_3", length=3),
-                dict(name="Speer", resource="Speer", length=6),
+                dict(name="Speer", together=True, resource="Speer", length=6),
                 dict(name="Pause_4", length=3),
                 dict(name="1500m", together=True, resource="Läufe", length=2),
             ],
@@ -247,31 +247,32 @@ teilnehmer_data = {
         "Gr21": 13,
     },
     "MAN_10K": {
-        "Gr22": 20,
+        "Gr22": 11,
+        "Gr23": 11,
     },
     "U16M_6K": {
-        "Gr23": 13,
         "Gr24": 13,
+        "Gr25": 13,
     },
     "U14M_5K": {
-        "Gr25": 12,
         "Gr26": 12,
         "Gr27": 12,
         "Gr28": 12,
         "Gr29": 12,
+        "Gr30": 12,
     },
     "U12M_4K": {
-        "Gr30": 12,
         "Gr31": 12,
         "Gr32": 12,
         "Gr33": 12,
         "Gr34": 12,
+        "Gr35": 12,
     },
     "MAN_6K": {
-        "Gr35": 10,
         "Gr36": 10,
         "Gr37": 10,
-        "Gr38": 12,
+        "Gr38": 10,
+        "Gr39": 12,
     },
 }
 
