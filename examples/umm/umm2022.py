@@ -104,9 +104,9 @@ wettkampf_data = {
                 dict(name="Pause_2", length=3),
                 dict(name="Kugel", together=True, resource="Kugel1&Kugel2", length=4),  # nur auf Kugel1
                 dict(name="Pause_3", length=4),
-                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=5),  # auf Hoch1 und Hoch2
+                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=7),  # auf Hoch1 und Hoch2
                 dict(name="Pause_4", length=4),
-                dict(name="400m", together=True, resource="Läufe", length=4),
+                dict(name="400m", together=True, resource="Läufe", length=3),
             ],
             "is_wettkampf_with_strict_sequence": True,
             "is_last_wettkampf_of_the_day": True,
@@ -160,15 +160,15 @@ wettkampf_data = {
         },
         "MAN_10K": {
             "disziplinen": [
-                dict(name="110mHü", together=True, resource="Läufe", length=5),
+                dict(name="110mHü", together=True, resource="Läufe", length=3),
                 dict(name="Pause_1", length=3),
-                dict(name="Diskus", together=True, resource="Diskus", length=6),
+                dict(name="Diskus", together=True, resource="Diskus", length=4),
                 dict(name="Pause_2", length=4),
-                dict(name="Stab", together=True, resource="Stab", length=18),
+                dict(name="Stab", together=True, resource="Stab", length=9),
                 dict(name="Pause_3", length=3),
-                dict(name="Speer", together=True, resource="Speer", length=6),
+                dict(name="Speer", together=True, resource="Speer", length=4),
                 dict(name="Pause_4", length=3),
-                dict(name="1500m", together=True, resource="Läufe", length=2),
+                dict(name="1500m", together=True, resource="Läufe", length=3),
             ],
             "is_wettkampf_with_strict_sequence": True,
             "is_last_wettkampf_of_the_day": True,
