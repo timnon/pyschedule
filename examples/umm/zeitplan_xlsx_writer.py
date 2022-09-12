@@ -32,7 +32,6 @@ class Zeitplan(object):
         column_index = self._resources.index(resource_name)
         for task in self._tasks:
             if task[1] == resource_name:
-                print(column_index, task, self.getColorFromEvent(task[0]))
                 tasks.append((task, column_index, self.getColorFromEvent(task[0])))
         return tasks
 
@@ -43,9 +42,9 @@ class Zeitplan(object):
         return self._eventToColorMapping[eventName]
 
 
-def main(args):
-    logging.debug("main({})".format(args))
-    contentAsString = args.file.read()
+def main(solution_file, start_time):
+    logging.debug("main(solution_file={}, start_time={})".format(solution_file, start_time))
+    contentAsString = solution_file.read()
     #print("content: {!r}".format(contentAsString))
 
     withoutBrackets = contentAsString[1:-1]
@@ -64,7 +63,7 @@ def main(args):
 
     zeitplan = Zeitplan(tasks, resources)
 
-    directory, filename = os.path.split(args.file.name)
+    directory, filename = os.path.split(solution_file.name)
     match = re.search(r'(.*)_solution.txt$', filename)
     filename_base = match.group(1)
     filename = filename_base + '_zeitplan.xlsx'
@@ -76,6 +75,7 @@ def main(args):
     title_cell_format = workbook.add_format()
     title_cell_format.set_font_size(14)
     title_cell_format.set_bold()
+    logging.debug("worksheet-1: {}: '{}'".format('A1', 'Zeitplan Uster Mehrkampf Meeting'))
     worksheet.write('A1', 'Zeitplan Uster Mehrkampf Meeting', title_cell_format)
 
     heading_cell_format = workbook.add_format()
@@ -86,22 +86,27 @@ def main(args):
     empty_table_cell_format.set_border()
 
     def get_time(row_index):
-        if args.start_time is None:
+        if start_time is None:
             return str(row_index)
-        ts_start = datetime.strptime(args.start_time, "%H:%M")
+        ts_start = datetime.strptime(start_time, "%H:%M")
         ts_end = ts_start + timedelta(minutes=10*row_index)
         return ts_end.time().strftime("%-H:%M")
 
     for column_index, resource in enumerate(resources):
+        logging.debug("column_index={}, resource={}".format(column_index, resource))
         tasks = zeitplan.getTasks(resource)
         if resource == "Läufe":
             first_task = tasks[0][0][2]
             last_task = tasks[-1][0][3] - 2
+            logging.debug("worksheet-2: {}/{}: '{}'".format(2, 0, 'Zeit'))
             worksheet.write(2, 0, 'Zeit', heading_cell_format)
             for row_index in range(first_task, last_task + 1):
+                logging.debug("worksheet-3: {}/{}: '{}'".format(row_index + 3, 0, get_time(row_index)))
                 worksheet.write(row_index + 3, 0, get_time(row_index), empty_table_cell_format)
         filled_slots = []
         for task in tasks:
+            logging.debug("task: {}".format(task))
+            logging.debug("worksheet-4: {}/{}: '{}'".format(2, column_index + 1, resource))
             worksheet.write(2, column_index + 1, resource, heading_cell_format)
             color = task[2]
             start_time = task[0][2]
@@ -116,10 +121,12 @@ def main(args):
                     content = task[0][0]
                     if resource != "Läufe":
                         content = content.split('_')[-2]
+                logging.debug("worksheet-5: {}/{}: '{}'".format(row_index + 3, column_index + 1, content))
                 worksheet.write(row_index + 3, column_index + 1, content, cell_format)
                 filled_slots.append(row_index)
         for row_index in range(first_task, last_task + 1):
             if row_index not in filled_slots:
+                logging.debug("worksheet-6: {}/{}: '{}'".format(row_index + 3, column_index + 1, ''))
                 worksheet.write(row_index + 3, column_index + 1, '', empty_table_cell_format)
     writer.save()
 
@@ -132,4 +139,4 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--start-time', help="start time")
     parser.add_argument('file', type=argparse.FileType('r'), help='solution-file')
     args = parser.parse_args()
-    main(args)
+    main(args.file, args.start_time)

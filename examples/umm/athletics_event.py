@@ -9,6 +9,7 @@ import logging
 import operator
 import os
 from pyschedule import Scenario, solvers, plotters, alt
+import zeitplan_xlsx_writer
 
 
 class NoSolutionError(RuntimeError):
@@ -249,6 +250,8 @@ class AthleticsEventScheduler(object):
         logging.info(solution_as_string)
         plotters.matplotlib.plot(self._scenario, show_task_labels=True, img_filename='{}.png'.format(self._name),
                                  fig_size=(100, 5), hide_tasks=self._hide_tasks)
+        with open(solution_filename, 'r') as solution_file:
+            zeitplan_xlsx_writer.main(solution_file, start_time="9:00")
         logging.info(self.get_wettkampf_duration_summary())
         logging.info("objective_value: {}".format(self._scenario.objective_value()))
 
