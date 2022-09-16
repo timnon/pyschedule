@@ -191,7 +191,7 @@ wettkampf_data = {
         },
         "WOM_7K": {
             "disziplinen": [
-                dict(name="Weit", resource="Weit", length=4),
+                dict(name="Weit", together=True, resource="Weit1&Weit2", length=4),  # auf Weit1 und Weit2
                 dict(name="Pause_1", length=3),
                 dict(name="Speer", resource="Speer", length=4),
                 dict(name="Pause_2", length=3),
