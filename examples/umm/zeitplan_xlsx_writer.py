@@ -5,6 +5,10 @@ import pandas
 import re
 
 
+logger = logging.getLogger('zeitplan')
+logger.setLevel(logging.INFO)
+
+
 class Zeitplan(object):
     _eventToColorMapping = {
         # Saturday:
@@ -43,7 +47,7 @@ class Zeitplan(object):
 
 
 def main(solution_file, start_time):
-    logging.debug("main(solution_file={}, start_time={})".format(solution_file, start_time))
+    logger.debug("main(solution_file={}, start_time={})".format(solution_file, start_time))
     contentAsString = solution_file.read()
     #print("content: {!r}".format(contentAsString))
 
@@ -75,7 +79,7 @@ def main(solution_file, start_time):
     title_cell_format = workbook.add_format()
     title_cell_format.set_font_size(14)
     title_cell_format.set_bold()
-    logging.debug("worksheet-1: {}: '{}'".format('A1', 'Zeitplan Uster Mehrkampf Meeting'))
+    logger.debug("worksheet-1: {}: '{}'".format('A1', 'Zeitplan Uster Mehrkampf Meeting'))
     worksheet.write('A1', 'Zeitplan Uster Mehrkampf Meeting', title_cell_format)
 
     heading_cell_format = workbook.add_format()
@@ -93,20 +97,20 @@ def main(solution_file, start_time):
         return ts_end.time().strftime("%-H:%M")
 
     for column_index, resource in enumerate(resources):
-        logging.debug("column_index={}, resource={}".format(column_index, resource))
+        logger.debug("column_index={}, resource={}".format(column_index, resource))
         tasks = zeitplan.getTasks(resource)
         if resource == "Läufe":
             first_task = tasks[0][0][2]
             last_task = tasks[-1][0][3] - 2
-            logging.debug("worksheet-2: {}/{}: '{}'".format(2, 0, 'Zeit'))
+            logger.debug("worksheet-2: {}/{}: '{}'".format(2, 0, 'Zeit'))
             worksheet.write(2, 0, 'Zeit', heading_cell_format)
             for row_index in range(first_task, last_task + 1):
-                logging.debug("worksheet-3: {}/{}: '{}'".format(row_index + 3, 0, get_time(row_index)))
+                logger.debug("worksheet-3: {}/{}: '{}'".format(row_index + 3, 0, get_time(row_index)))
                 worksheet.write(row_index + 3, 0, get_time(row_index), empty_table_cell_format)
         filled_slots = []
         for task in tasks:
-            logging.debug("task: {}".format(task))
-            logging.debug("worksheet-4: {}/{}: '{}'".format(2, column_index + 1, resource))
+            logger.debug("task: {}".format(task))
+            logger.debug("worksheet-4: {}/{}: '{}'".format(2, column_index + 1, resource))
             worksheet.write(2, column_index + 1, resource, heading_cell_format)
             color = task[2]
             start_time = task[0][2]
@@ -121,12 +125,12 @@ def main(solution_file, start_time):
                     content = task[0][0]
                     if resource != "Läufe":
                         content = content.split('_')[-2]
-                logging.debug("worksheet-5: {}/{}: '{}'".format(row_index + 3, column_index + 1, content))
+                logger.debug("worksheet-5: {}/{}: '{}'".format(row_index + 3, column_index + 1, content))
                 worksheet.write(row_index + 3, column_index + 1, content, cell_format)
                 filled_slots.append(row_index)
         for row_index in range(first_task, last_task + 1):
             if row_index not in filled_slots:
-                logging.debug("worksheet-6: {}/{}: '{}'".format(row_index + 3, column_index + 1, ''))
+                logger.debug("worksheet-6: {}/{}: '{}'".format(row_index + 3, column_index + 1, ''))
                 worksheet.write(row_index + 3, column_index + 1, '', empty_table_cell_format)
     writer.save()
 
