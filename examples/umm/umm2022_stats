@@ -878,3 +878,39 @@ NoSolutionError
 
 python umm2022.py sunday --horizon=54 --time-limit=2h -v
 NoSolutionError
+
+
+Runde 7: Diskus und Speer nicht zur gleichen Zeit
+
+Sonntag
+=======
+
+python umm2022.py sunday --horizon=55 --time-limit=8h -v
+NoSolutionError
+
+python umm2022.py sunday --horizon=56 --time-limit=8h -v
+NoSolutionError
+
+python umm2022.py sunday --horizon=57 --time-limit=8h -v
+Wettkampf-Duration-Summary:
+  U14M_5K: 29..52 (23)
+  MAN_6K: 0..45 (45)
+  WOM_5K: 12..48 (36)
+  MAN_10K: 21..56 (35)
+  U14W_5K: 3..33 (30)
+  WOM_7K: 10..39 (29)
+cumulated-wettkampf-duration: 198
+objective_value: 2704
+output folder: '2022-09-21T18:15:24_umm2022_sunday_57_8h'
+
+python umm2022.py sunday --horizon=58 --time-limit=8h -v
+Wettkampf-Duration-Summary:
+  U14M_5K: 9..53 (44)
+  MAN_6K: 0..46 (46)
+  WOM_5K: 13..49 (36)
+  MAN_10K: 17..57 (40)
+  U14W_5K: 3..35 (32)
+  WOM_7K: 9..39 (30)
+cumulated-wettkampf-duration: 228
+objective_value: 3284
+output folder: '2022-09-21T22:22:17_umm2022_sunday_58_8h'

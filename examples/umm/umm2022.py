@@ -58,9 +58,9 @@ wettkampf_data = {
             "disziplinen": [
                 dict(name="100mHü", together=True, resource="Läufe", length=3),
                 dict(name="Pause_1", length=3),
-                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=5),
+                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", use_num_anlagen=2, length=5),
                 dict(name="Pause_2", length=3),
-                dict(name="Kugel", together=True, resource="Kugel1&Kugel2", length=3),
+                dict(name="Kugel", together=True, resource="Kugel1&Kugel2", use_num_anlagen=2, length=3),
                 dict(name="Pause_3", length=3),
                 dict(name="200m", together=True, resource="Läufe", length=2),
             ],
@@ -100,11 +100,11 @@ wettkampf_data = {
             "disziplinen": [
                 dict(name="100m", together=True, resource="Läufe", length=2),
                 dict(name="Pause_1", length=5),
-                dict(name="Weit", together=True, resource="Weit1&Weit2", length=3),  # auf Weit1 und Weit2
+                dict(name="Weit", together=True, resource="Weit1&Weit2", use_num_anlagen=2, length=3),  # auf Weit1 und Weit2
                 dict(name="Pause_2", length=3),
                 dict(name="Kugel", together=True, resource="Kugel1&Kugel2", length=4),  # nur auf Kugel1
                 dict(name="Pause_3", length=4),
-                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", length=7),  # auf Hoch1 und Hoch2
+                dict(name="Hoch", together=True, resource="Hoch1&Hoch2", use_num_anlagen=2, length=7),  # auf Hoch1 und Hoch2
                 dict(name="Pause_4", length=4),
                 dict(name="400m", together=True, resource="Läufe", length=3),
             ],
@@ -162,9 +162,9 @@ wettkampf_data = {
             "disziplinen": [
                 dict(name="110mHü", together=True, resource="Läufe", length=3),
                 dict(name="Pause_1", length=3),
-                dict(name="Diskus", together=True, resource="Diskus", length=4),
+                dict(name="Diskus", together=True, resource="Diskus&Speer", length=4),
                 dict(name="Pause_2", length=4),
-                dict(name="Stab", together=True, resource="Stab", length=9),
+                dict(name="Stab", together=True, resource="Stab&Speer", length=9),
                 dict(name="Pause_3", length=3),
                 dict(name="Speer", together=True, resource="Speer", length=4),
                 dict(name="Pause_4", length=3),
@@ -191,7 +191,7 @@ wettkampf_data = {
         },
         "WOM_7K": {
             "disziplinen": [
-                dict(name="Weit", together=True, resource="Weit1&Weit2", length=4),  # auf Weit1 und Weit2
+                dict(name="Weit", together=True, resource="Weit1&Weit2", use_num_anlagen=2, length=4),  # auf Weit1 und Weit2
                 dict(name="Pause_1", length=3),
                 dict(name="Speer", resource="Speer", length=4),
                 dict(name="Pause_2", length=3),
