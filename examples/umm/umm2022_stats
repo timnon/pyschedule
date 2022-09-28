@@ -820,7 +820,8 @@ objective_value: 2447
 output folder: '2022-09-12T21:55:36_umm2022_sunday_59_8h'
 
 
-==== Runde 7: corrected WOM_7K_Weit together=True (2022-09-13)
+Runde 7: corrected WOM_7K_Weit together=True (2022-09-13)
+=========================================================
 
 Sunday
 ------
@@ -880,10 +881,11 @@ python umm2022.py sunday --horizon=54 --time-limit=2h -v
 NoSolutionError
 
 
-Runde 7: Diskus und Speer nicht zur gleichen Zeit
+Runde 8: Diskus und Stab nicht mit Speer
+========================================
 
 Sonntag
-=======
+-------
 
 python umm2022.py sunday --horizon=55 --time-limit=8h -v
 NoSolutionError
@@ -914,3 +916,45 @@ Wettkampf-Duration-Summary:
 cumulated-wettkampf-duration: 228
 objective_value: 3284
 output folder: '2022-09-21T22:22:17_umm2022_sunday_58_8h'
+
+Runde 9: nur Diskus nicht mit Speer
+===================================
+
+python umm2022.py sunday --horizon=55 --time-limit=8h -v
+NoSolutionError
+
+python umm2022.py sunday --horizon=56 --time-limit=8h -v
+Wettkampf-Duration-Summary:
+  U14M_5K: 27..50 (23)
+  MAN_6K: 4..47 (43)
+  WOM_5K: 7..43 (36)
+  MAN_10K: 11..54 (43)
+  U14W_5K: 0..39 (39)
+  WOM_7K: 12..34 (22)
+cumulated-wettkampf-duration: 206
+objective_value: 2764
+output folder: '2022-09-22T06:45:08_umm2022_sunday_56_8h'
+
+python umm2022.py sunday --horizon=57 --time-limit=8h -v
+Wettkampf-Duration-Summary:
+  U14M_5K: 0..16 (16)
+  MAN_6K: 9..53 (44)
+  WOM_5K: 5..38 (33)
+  MAN_10K: 12..56 (44)
+  U14W_5K: 22..49 (27)
+  WOM_7K: 20..42 (22)
+cumulated-wettkampf-duration: 186
+objective_value: 2489
+output folder: '2022-09-22T06:45:10_umm2022_sunday_57_8h'
+
+python umm2022.py sunday --horizon=58 --time-limit=8h -v
+Wettkampf-Duration-Summary:
+  U14M_5K: 26..53 (27)
+  MAN_6K: 0..46 (46)
+  WOM_5K: 19..49 (30)
+  MAN_10K: 13..57 (44)
+  U14W_5K: 6..42 (36)
+  WOM_7K: 9..36 (27)
+cumulated-wettkampf-duration: 210
+objective_value: 2871
+output folder: '2022-09-22T06:45:13_umm2022_sunday_58_8h'
