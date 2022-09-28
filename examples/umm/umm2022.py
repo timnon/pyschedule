@@ -316,7 +316,8 @@ def setup_logging(verbose, event_name):
 
 def main(args):
     start_time = datetime.datetime.now()
-    event_name = "{}_{}".format(os.path.splitext(__file__)[0], args.day)
+    scriptname_without_extension = os.path.splitext(os.path.basename(__file__))[0]
+    event_name = "{}_{}".format(scriptname_without_extension, args.day)
     output_folder_name = "{}_{}_{}_{}".format(
         start_time.isoformat(timespec="seconds"), event_name, args.horizon, args.time_limit)
     output_folder_path = os.path.join("results", output_folder_name)
