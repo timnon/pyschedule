@@ -3,9 +3,8 @@ from time import perf_counter
 import re
 import subprocess
 import pulp
-import pulp.solvers
 
-class SCIP_CMD(pulp.solvers.LpSolver_CMD):
+class SCIP_CMD(pulp.LpSolver_CMD):
     def __init__(self, path = None, keepFiles = 0, mip = 1,
             msg = 0, options = [], time_limit = None, ratio_gap = None):
         pulp.solvers.LpSolver_CMD.__init__(self, path, keepFiles, mip, msg, options)
