@@ -41,7 +41,7 @@ class MIP(object):
 	def __init__(self,name,kind='Minimize'):
 		kinds = {'Minimize':pl.LpMinimize, 'Maximize':pl.LpMaximize}
 		# self.mip = pl.LpProblem(name, kinds[kind])
-		self.mip = pl.LpProblem('Integer Program', kinds[kind])
+		self.mip = pl.LpProblem('Integer_Program', kinds[kind])
 
 	def var(self,name,low=0,up=0,cat='Binary'):
 		return pl.LpVariable(name, low, up, cat=cat)
